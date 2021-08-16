@@ -3,7 +3,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from ..perception.simple_cnn import SplitNetCNN
 from ..plan.rl_linear import AClinear, Qlinear
-from utils.net_utils import weights_init
+from vnenv.utils.net_utils import weights_init
+import numpy as np
 
 
 class SimpleMP(torch.nn.Module):
@@ -152,18 +153,18 @@ class FcLinearModel(torch.nn.Module):
     def __init__(
         self,
         obs_shapes,
-        act_info
+        act_sz
     ):
         super(FcLinearModel, self).__init__()
         # self.obs_stack = obs_stack
-        self.vobs_sz = obs_shapes['fc']
-        tobs_sz = obs_shapes['glove']
+        self.vobs_sz = np.prod(obs_shapes['fc'])
+        tobs_sz = np.prod(obs_shapes['glove'])
         # self.key = '' if obs_stack == 1 else f'|{obs_stack}'
 
-        self.net = SimpleMP(act_info['size'], self.vobs_sz, tobs_sz)
+        self.net = SimpleMP(act_sz, self.vobs_sz, tobs_sz)
 
     def forward(self, model_input):
 
-        vobs_embed = torch.flatten(model_input['fc'+self.key]) \
+        vobs_embed = torch.flatten(model_input['fc']) \
             .view(-1, self.vobs_sz)
         return self.net(vobs_embed, model_input['glove'])
