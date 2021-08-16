@@ -30,7 +30,7 @@ class BaseBuffer:
         o: Dict[str, np.ndarray]
     ):
         for k, v in o.items():
-            np.copyto(self.obs[k][-1], v)
+            self.obs[k][-1] = v
 
     def write_in(
         self,
@@ -40,10 +40,10 @@ class BaseBuffer:
         m: np.ndarray
     ) -> None:
         for k, v in o.items():
-            np.copyto(self.obs[k][self.p], v)
-        np.copyto(self.reward[self.p], r)
-        np.copyto(self.mask[self.p], m)
-        np.copyto(self.a_idx[self.p], a)
+            self.obs[k][self.p] = v
+        self.reward[self.p] = r
+        self.mask[self.p] = m
+        self.a_idx[self.p] = a
         self.p += 1
 
     def batched_out(
@@ -59,6 +59,6 @@ class BaseBuffer:
                 for k, v in self.obs_Dshape.items()
             },
             'a': self.a_idx.reshape(-1, 1),
-            'r': self.reward.copy(),
-            'm': self.mask.copy()
+            'r': self.reward,
+            'm': self.mask
         }
