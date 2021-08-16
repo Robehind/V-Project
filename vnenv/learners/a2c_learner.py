@@ -27,7 +27,7 @@ class A2CLearner(AbsLearner):
         self.optimizer = optimizer
         self.nsteps = nsteps
         self.vf_param = vf_param
-        self.gamma = gamma
+        self.gamma = np.float32(gamma)
         self.ent_param = ent_param
 
     def learn(

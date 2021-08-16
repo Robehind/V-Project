@@ -8,7 +8,7 @@ def _basic_return(
     v_array: np.ndarray,
     rew: np.ndarray,
     mask: np.ndarray,
-    gamma: float,
+    gamma: np.float32,
     nsteps: int
 ):
     # input array should in (sample_steps, env_nums)

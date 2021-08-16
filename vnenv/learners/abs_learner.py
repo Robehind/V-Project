@@ -12,7 +12,9 @@ class AbsLearner:
         agent: AbsAgent,
         optimizer: torch.optim,
         gamma: float,
-        nsteps: int
+        nsteps: int,
+        *args,
+        **kwargs
     ) -> None:
         pass
 
@@ -20,7 +22,7 @@ class AbsLearner:
         self,
         batched_exps: Dict[str, Any]
     ) -> Dict[str, float]:
-        return NotImplemented
+        return {'loss': 1}
 
     def checkpoint(self, path2save, steps):
         optim_name = self.optimizer.__class__.__name__
