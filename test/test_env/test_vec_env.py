@@ -20,7 +20,8 @@ def test_vec_env():
             'obs_dict': {
                 'vis': 'mat',
                 'rela': 'relapos'
-            }
+            },
+            'map_sz': (10, 20)
         },
         event_args={'max_steps': 50},
         seed=1114
