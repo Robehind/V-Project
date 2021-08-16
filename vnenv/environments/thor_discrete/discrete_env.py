@@ -7,11 +7,12 @@ import os
 import json
 import importlib
 from .agent_pose_state import AgentPoseState
-from vnenv.utils.thordata_utils import get_type
-from typing import Dict, List, Optional
+from .thordata_utils import get_type
+from ..abs_env import AbsEnv
+from typing import Optional, Tuple
 
 
-class DiscreteEnvironment:
+class DiscreteEnvironment(AbsEnv):
     """
     使用thordata的离散环境。
     读取数据集，模拟交互，按照dict的组织和标识来返回数据和信息。
@@ -21,21 +22,9 @@ class DiscreteEnvironment:
 
     def __init__(
         self,
-        offline_data_dir: str,  # 包含所有房间文件夹的路径
-        action_dict: Dict[str, str],
-        target_dict: Dict[str, str],
-        obs_dict: Dict[str, str],
-        reward_dict: Dict[str, float],
-        max_steps: int,
-        grid_size: float,
-        rotate_angle: int,
-        move_angle: int,
-        horizon_angle: int,
-        chosen_scenes: List[str],  # scene names random from
-        chosen_targets: Optional[List[str]] = None,
-        # 默认值为None时取当前房间里有的里随机一个。
-        # 必须自己保证这个列表里的目标合法，例如受glove支持，在房间中可以被找到，等等
-        debug: bool = False,
+        dynamics_args,
+        obs_args,
+        event_args,
         seed: int = 1114,
         min_len_file: Optional[str] = None,
     ):
@@ -43,21 +32,22 @@ class DiscreteEnvironment:
 
         self.min_len_file = min_len_file
 
+        action_dict = dynamics_args['action_dict']
         self.actions = list(action_dict.keys())
+        self.action_sz = len(self.actions)
         self.action_dict = action_dict
-        self.reward_dict = reward_dict
-        self.offline_data_dir = offline_data_dir
-        self.max_steps = max_steps
+        self.reward_dict = event_args['reward_dict']
+        self.offline_data_dir = dynamics_args['offline_data_dir']
+        self.max_steps = event_args['max_steps']
 
-        self.debug = debug
-        self.chosen_targets = chosen_targets
+        self.chosen_targets = dynamics_args['chosen_targets']
         self.intersect_targets = None
-        self.chosen_scenes = chosen_scenes
+        self.chosen_scenes = dynamics_args['chosen_scenes']
 
-        self.grid_size = grid_size
-        self.rotate_angle = rotate_angle
-        self.move_angle = move_angle
-        self.horizon_angle = horizon_angle
+        self.grid_size = 0.25
+        self.rotate_angle = dynamics_args['rotate_angle']
+        self.move_angle = dynamics_args['move_angle']
+        self.horizon_angle = dynamics_args['horizon_angle']
 
         # 根据不同的绝对移动角度，x和z坐标的变化符合以下表格规律
         # 智能体面向z轴正方向，右手为x轴正方向时，角度为0度。向右转为正角度。
@@ -93,12 +83,12 @@ class DiscreteEnvironment:
         self.last_opt = None
         self.last_opt_success = True
 
-        self.obs_dict = obs_dict
-        self.obs_loader = {k: None for k in obs_dict}
+        self.obs_dict = obs_args['obs_dict']
+        self.obs_loader = {k: None for k in self.obs_dict}
 
         self.target_str = None
-        self.target_type = list(target_dict.keys())
-        self.target_dict = target_dict
+        self.target_type = list(obs_args['target_dict'].keys())
+        self.target_dict = obs_args['target_dict']
         self.info = {}
 
         # Reading and gernerating meta data
@@ -147,7 +137,7 @@ class DiscreteEnvironment:
         self.obs_info = {}
         for type_, name_ in self.obs_dict.items():
             loader = h5py.File(
-                os.path.join(offline_data_dir, scene_name, name_), "r",
+                os.path.join(self.offline_data_dir, scene_name, name_), "r",
             )
             tmp = loader[list(loader.keys())[0]][:]
             if '|' in type_:
@@ -158,9 +148,9 @@ class DiscreteEnvironment:
             self.obs_info.update({type_: (shape, tmp.dtype)})
             loader.close()
 
-        self.data_info = {}
-        self.data_info.update(self.target_repre_info)
-        self.data_info.update(self.obs_info)
+        self._data_info = {}
+        self._data_info.update(self.target_repre_info)
+        self._data_info.update(self.obs_info)
 
         # action check
         need_pitch = False
@@ -185,6 +175,18 @@ class DiscreteEnvironment:
             self.horizons = [0]
         if min_rotate > self.rotate_angle:
             print("Warning: min rotate angle is bigger than rotate_angle")
+
+    def data_info(self) -> Tuple[list, dict, dict]:
+        keys = list(self._data_info.keys())
+        shapes = {
+            k: v[0]
+            for k, v in self._data_info.items()
+        }
+        dtypes = {
+            k: v[1]
+            for k, v in self._data_info.items()
+        }
+        return keys, shapes, dtypes
 
     def close(self):
         pass
@@ -224,7 +226,7 @@ class DiscreteEnvironment:
         target_str: Optional[str] = None,
         agent_state: Optional[str] = None,
         allow_no_target: bool = False,
-        calc_best_len: bool = False
+        min_len: bool = False
     ):
         """重置环境.前三个参数如果保持为None，就会随机取。allow_no_target是是否允许在没有
         设定目标的情况下运行环境。一般是不允许的。calc_best_len也是暂时保留的参数，选择是否需要
@@ -254,10 +256,12 @@ class DiscreteEnvironment:
             agent_done=False,
             false_action=0,
             )
-        if calc_best_len:
-            self.info.update(dict(best_len=self.best_path_len()[1]))
-
-        return self.get_obs(), self.get_target_repre(self.target_str)
+        if min_len:
+            self.info.update(dict(min_len=self.best_path_len()[1]))
+        _target_repre = self.get_target_repre(self.target_str)
+        _obs = self.get_obs()
+        _obs.update(_target_repre)
+        return _obs
 
     def set_agent_state(self, agent_state=None):
         """设置智能体的位姿。如果agent_state为None
@@ -291,18 +295,15 @@ class DiscreteEnvironment:
     def get_obs(self):
         """返回obs。可能有多个，以初始化时的关键字为索引"""
         tmp = {}
-        try:
-            for k, v in self.obs_loader.items():
-                if '|' in k:
-                    data = np.array([
-                        v[str(s)][:]
-                        for s in self.his_states[: int(k.split('|')[1])]
-                    ])
-                    tmp.update({k: data})
-                else:
-                    tmp.update({k: v[str(self.agent_state)][:]})
-        except:
-            print(self.scene_name)
+        for k, v in self.obs_loader.items():
+            if '|' in k:
+                data = np.array([
+                    v[str(s)][:]
+                    for s in self.his_states[: int(k.split('|')[1])]
+                ])
+                tmp.update({k: data})
+            else:
+                tmp.update({k: v[str(self.agent_state)][:]})
         return tmp
 
     def rotate(self, angle: int):
@@ -359,8 +360,12 @@ class DiscreteEnvironment:
                     break
 
     def step(self, action):
+        action = self.actions[action]
+        return self.str_step(action)
+
+    def str_step(self, action):
         """env的核心功能，获得一个动作，进行相关的处理，向外输出观察以及其他信息"""
-        if self.done and not self.debug:
+        if self.done:
             raise Exception('Should not interact with env when env is done')
         if action not in self.actions:
             raise Exception("Unsupported action")
@@ -373,6 +378,7 @@ class DiscreteEnvironment:
         # 分析events，给reward
         event, self.done = self.judge(action)
         self.reward = self.reward_dict[event]
+        self.info['event'] = event
         if event == 'collision':
             self.info['false_action'] += 1
         # 可以配置更多的额外环境信息在info里
@@ -389,18 +395,18 @@ class DiscreteEnvironment:
                 event = 'collision'
         if self.auto_done:
             if self.target_visiable():
-                event = 'SuccessDone'
+                event = 'success'
                 done = True
                 self.info['success'] = True
         elif action == 'Done':
-            event = 'SuccessDone' if self.target_visiable() else 'FalseDone'
+            event = 'success' if self.target_visiable() else 'fail'
             done = True
             self.info['agent_done'] = True
-            self.info['success'] = (event == 'SuccessDone')
+            self.info['success'] = (event == 'success')
 
         if self.steps == self.max_steps:
             done = True
-            if event not in ['SuccessDone', 'FalseDone']:
+            if event not in ['success', 'fail']:
                 self.info['success'] = False
 
         return event, done

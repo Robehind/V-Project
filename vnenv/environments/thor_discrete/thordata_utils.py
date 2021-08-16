@@ -1,6 +1,7 @@
 import random
 import os
 
+
 def get_scene_names(train_scenes):
     """根据参数生成完整的房间的名字"""
     tmp = {}
@@ -14,26 +15,30 @@ def get_scene_names(train_scenes):
         tmp[k] = [make_scene_name(k, i) for i in number]
     return tmp
 
+
 def get_type(scene_name):
     """根据房间名称返回该房间属于哪个类型"""
-    mapping = {'2':'living_room','3':'bedroom', '4':'bathroom'}
+    mapping = {'2': 'living_room', '3': 'bedroom', '4': 'bathroom'}
     num = scene_name.split('_')[0].split('n')[-1]
     if len(num) < 3:
         return 'kitchen'
     return mapping[num[0]]
 
+
 def make_scene_name(scene_type, num):
     """根据房间的类别和序号生成房间的名称
     例如，scene_type = kitchen的第num = 5个房间，为FloorPlan5_physics
     """
-    mapping = {"kitchen":'', "living_room":'2', "bedroom":'3', "bathroom":'4'}
+    mapping = {"kitchen": '', "living_room": '2',
+               "bedroom": '3', "bathroom": '4'}
     front = mapping[scene_type]
     endd = '_physics' if (front == '' or front == '2') else ''
     if num >= 10 or front == '':
         return "FloorPlan" + front + str(num) + endd
     return "FloorPlan" + front + "0" + str(num) + endd
 
-def random_divide(total_epi, chosen_scenes, n, shuffle = True):
+
+def random_divide(total_epi, chosen_scenes, n, shuffle=True):
     """
     total_epi是个整数，是一共需要训练的epi数，chosen_scenes需要是一个dict，
     键值为任意字符串组成的list
@@ -42,27 +47,30 @@ def random_divide(total_epi, chosen_scenes, n, shuffle = True):
     """
     scenes = [x for i in chosen_scenes.values() for x in i]
     out = []
-    if shuffle: random.shuffle(scenes)
+    if shuffle:
+        random.shuffle(scenes)
     if n > len(scenes):
         epi_nums = [total_epi//n for _ in range(n)]
-        for i in range(0, total_epi%n):
-            epi_nums[i%n]+=1
+        for i in range(0, total_epi % n):
+            epi_nums[i % n] += 1
         out = [scenes for _ in range(n)]
         return out, epi_nums
     step = len(scenes)//n
-    mod = len(scenes)%n
-    
+    mod = len(scenes) % n
+
     for i in range(0, n*step, step):
         out.append(scenes[i:i + step])
-    
+
     for i in range(0, mod):
         out[i].append(scenes[-(i+1)])
 
     num_per_epi = total_epi/len(scenes)
     epi_nums = [round(len(x)*num_per_epi) for x in out]
     epi_nums[0] += total_epi-sum(epi_nums)
-    if not shuffle: epi_nums = [total_epi//n for _ in range(n)]
+    if not shuffle:
+        epi_nums = [total_epi//n for _ in range(n)]
     return out, epi_nums
+
 
 def get_test_set(args):
     """
@@ -81,18 +89,20 @@ def get_test_set(args):
             args.total_eval_epi, chosen_scene_names, args.threads, shuffle
             )
     else:
-        print('Using Test Schedule at ',args.test_sche_dir)
+        print('Using Test Schedule at ', args.test_sche_dir)
         total_epi = 0
         scene_names_div = []
-        #是按照chosen scene names指定的房间类型加载json的，所以不能只单单指定一个路径
+        # 是按照chosen scene names指定的房间类型加载json的，所以不能只单单指定一个路径
         for k in chosen_scene_names:
-            pa = os.path.join(args.test_sche_dir,k+'_test_set.json')
+            pa = os.path.join(args.test_sche_dir, k+'_test_set.json')
             import json
             with open(pa, 'r') as f:
                 sche[k] = json.load(f)
             total_epi += len(sche[k])
         args.total_eval_epi = total_epi
-        test_set_div , nums_div = random_divide(total_epi, sche, args.threads, shuffle)
+        test_set_div, nums_div = random_divide(
+            total_epi, sche, args.threads, shuffle
+        )
         for i in range(args.threads):
             scene_names_div.append(set())
             for x in test_set_div[i]:
@@ -100,12 +110,13 @@ def get_test_set(args):
             scene_names_div[i] = list(scene_names_div[i])
     return scene_names_div, chosen_objects, nums_div, test_set_div
 
+
 if __name__ == "__main__":
     train_scenes = {
-        'kitchen':'21-30',
-        'living_room':'21-30',
-        'bedroom':'21-30',
-        'bathroom':'21-30',
+        'kitchen': '21-30',
+        'living_room': '21-30',
+        'bedroom': '21-30',
+        'bathroom': '21-30',
     }
     cc = get_scene_names(train_scenes)
     name_div, num_div = random_divide(1000, cc, 4, False)
