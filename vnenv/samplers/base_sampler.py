@@ -57,7 +57,7 @@ class BaseSampler:
             a_idx = self.Vagent.action(self.last_obs, self.last_done)
             obs_new, r, done, info = self.Venv.step(a_idx)
             # 记录o_t, a_t, r_t+1, m_t+1
-            self.buffer.write_in(self.last_obs, a_idx, r, 1 - done, )
+            self.buffer.write_in(self.last_obs, a_idx, r, 1 - done)
             self.last_obs = obs_new
             self.last_done = done
             # scalar records
