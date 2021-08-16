@@ -15,5 +15,5 @@ def _ac_loss(
     pi_a = F.softmax(pi_batch, dim=1).gather(1, a_batch)
     policy_loss = (-torch.log(pi_a) * adv).mean()
     # TODO 可以不用smooth l1
-    value_loss = vf_param * F.smooth_l1_loss(v_batch, td_target).mean()
+    value_loss = vf_param * F.smooth_l1_loss(v_batch, td_target)
     return policy_loss, value_loss

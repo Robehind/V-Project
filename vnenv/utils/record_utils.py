@@ -1,4 +1,3 @@
-from .thordata_utils import get_type
 import os
 from typing import Union, List, Dict
 import json
@@ -96,6 +95,13 @@ class LabelMeanCalcer(object):
 def data_output(args, test_scalars):
     """整理数据并输出到json。输入的这个是一个dict，键有房间名称，
     以及前缀一个场景类型的目标字符串(为了告诉函数这个目标是在哪个房间找的)"""
+    def get_type(scene_name):
+        """根据房间名称返回该房间属于哪个类型"""
+        mapping = {'2': 'living_room', '3': 'bedroom', '4': 'bathroom'}
+        num = scene_name.split('_')[0].split('n')[-1]
+        if len(num) < 3:
+            return 'kitchen'
+        return mapping[num[0]]
     total_scalars = LabelMeanCalcer()
     scene_split = {k: {} for k in args.test_scenes}
     target_split = {k: {} for k in args.test_scenes}
