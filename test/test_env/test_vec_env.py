@@ -71,11 +71,12 @@ def test_vec_env():
         ),
         (
             {'scene_id': 0, 'min_len': 4,
-             'event': 'success', 'agent_done': True},
+             'event': 'success', 'agent_done': True, 'success': True},
             {'scene_id': 1, 'min_len': 4, 'event': 'step'},
             {'scene_id': 0, 'min_len': 3,
-             'event': 'success', 'agent_done': True},
-            {'scene_id': 1, 'min_len': 1, 'event': 'fail', 'agent_done': True},
+             'event': 'success', 'agent_done': True, 'success': True},
+            {'scene_id': 1, 'min_len': 1, 'event': 'fail',
+             'agent_done': True, 'success': False},
         ),
 
     ]
@@ -98,13 +99,29 @@ def test_vec_env():
     env_fns = [make_envs(e, AbsEnv) for e in env_args_list]
     Venv = VecEnv(env_fns, min_len=True)
     Venv.sche_update(sche)
-    assert np.allclose(obss.pop(0)['rela'], Venv.reset()['rela'])
+    assert np.allclose(obss[0]['rela'], Venv.reset()['rela'])
     for i, a in enumerate(actions):
         obs, r, d, info = Venv.step(a)
-        assert np.allclose(obs['rela'], obss[i]['rela'])
+        assert np.allclose(obs['rela'], obss[i+1]['rela'])
         assert np.allclose(r, rs[i])
         assert np.allclose(d, ds[i])
         assert info == infos[i]
+    Venv.close()
+    # test for proc waiting feature
+    Venv = VecEnv(env_fns, min_len=True, no_sche_no_op=True)
+    Venv.sche_update([sche[0]])
+    init_obs = Venv.reset()['rela']
+    for i, a in enumerate(actions):
+        obs, r, d, info = Venv.step(a)
+        assert np.allclose(obs['rela'][0], obss[i+1]['rela'][0])
+        assert np.allclose(obs['rela'][1:4], init_obs[1:4])
+        assert np.allclose(r[0], rs[i][0])
+        assert np.allclose(r[1:4], 0)
+        assert np.allclose(d[0], ds[i][0])
+        assert np.allclose(d[1:4], 0)
+        assert info[0] == infos[i][0]
+        assert info[1:4] == (None, None, None)
+    Venv.close()
 
 
 if __name__ == '__main__':

@@ -1,5 +1,5 @@
 import multiprocessing as mp
-from typing import Dict
+from typing import Dict, List
 import numpy as np
 import ctypes
 
@@ -42,9 +42,10 @@ class VecEnv:
 
     def __init__(
         self,
-        env_fns,
-        context='spawn',
-        min_len=False
+        env_fns: List[callable],
+        context: str = 'spawn',
+        min_len: bool = False,
+        no_sche_no_op: bool = False
     ):
         """
         多线程环境。对env的一个封装，输入的是环境的构造函数.min_len=True下会及算最短路，很慢
@@ -85,7 +86,8 @@ class VecEnv:
                     self.shapes,
                     self.dtypes,
                     min_len,
-                    self.sche
+                    self.sche,
+                    no_sche_no_op
                 )
             )
             proc.daemon = True
@@ -94,10 +96,9 @@ class VecEnv:
             proc.start()
             child_pipe.close()
         self.waiting_step = False
-        self.viewer = None
 
     def sche_update(self, sche, clear=False):
-        if sche == []:
+        if sche == [] or sche is None:
             return
         if self.waiting_step:
             self.step_wait()
@@ -174,7 +175,8 @@ def _subproc_worker(
     obs_shapes,
     obs_dtypes,
     min_len,
-    sche
+    sche,
+    no_op=False  # 在sche为空时，如果为true，则会无任何操作
 ):
     """
     Control a single environment instance using IPC and
@@ -191,12 +193,17 @@ def _subproc_worker(
             np.copyto(dst_np, dict_data[k])
     env = env_fn.x()
     parent_pipe.close()
+    waiting = False
     try:
         while True:
             cmd, data = pipe.recv()
+            if waiting:
+                pipe.send((None, 0, 0, None))
+                continue
             if cmd == 'reset':
                 if len(sche) == 0:
                     obs = env.reset(min_len=min_len)
+                    waiting = no_op
                 else:
                     obs = env.reset(
                         **sche.pop(0), min_len=min_len
@@ -207,6 +214,7 @@ def _subproc_worker(
                 if done:
                     if len(sche) == 0:
                         obs = env.reset(min_len=min_len)
+                        waiting = no_op
                     else:
                         obs = env.reset(
                             **sche.pop(0), min_len=min_len

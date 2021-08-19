@@ -50,6 +50,7 @@ args_dict = dict(
     # eval proc params
     total_eval_epi=1000,  # 指定测试时测试多少个episode
     best_a=False,  # 测试阶段是否取概率最高的动作，如果为false，那么就还是随机取
+    calc_spl=True,  # 是否计算SPL，需要环境提供最短路信息
     results_json='result.json',  # 测试完成后结果输出到哪个文件
 
     # task params
@@ -107,7 +108,7 @@ args_dict = dict(
 
     # train or eval funcs
     trainer='basic_train',
-    evalor=''
+    evalor='basic_eval'
 )
 
 args = VNENVargs(args_dict)
