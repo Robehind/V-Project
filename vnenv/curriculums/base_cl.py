@@ -5,10 +5,10 @@ class BaseCL:
     def sche_create(self):
         return list()
 
-    def init_sche(self, sampler):
+    def init_sche(self, *args, **kwargs):
         pass
 
-    def next_sche(self, dones, sampler, *args, **kwargs):
+    def next_sche(self, dones, *args, **kwargs):
         pass
         # sche = self.sche_create()
         # sampler.Venv.sche_update(sche)
