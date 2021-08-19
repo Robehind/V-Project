@@ -70,7 +70,7 @@ class DiscreteEnvironment(AbsEnv):
             self.auto_done = False
 
         # 可变变量
-        self.scene_name = None
+        self.scene_id = None
         self.done = False
         self.reward = 0
         self.steps = 0
@@ -133,11 +133,11 @@ class DiscreteEnvironment(AbsEnv):
         # 随机读一个房间的数据，生成状态的信息，在并行化环境的时候用得上
         self.his_states = []  # in str
         self.his_len = 0
-        scene_name = random.choice(self.chosen_scenes)
+        scene_id = random.choice(self.chosen_scenes)
         self.obs_info = {}
         for type_, name_ in self.obs_dict.items():
             loader = h5py.File(
-                os.path.join(self.offline_data_dir, scene_name, name_), "r",
+                os.path.join(self.offline_data_dir, scene_id, name_), "r",
             )
             tmp = loader[list(loader.keys())[0]][:]
             if '|' in type_:
@@ -191,15 +191,15 @@ class DiscreteEnvironment(AbsEnv):
     def close(self):
         pass
 
-    def init_scene(self, scene_name: Optional[str] = None) -> None:
-        if scene_name is None:
-            scene_name = random.choice(self.chosen_scenes)
-        assert scene_name in self.chosen_scenes
-        if scene_name == self.scene_name:
+    def init_scene(self, scene_id: Optional[str] = None) -> None:
+        if scene_id is None:
+            scene_id = random.choice(self.chosen_scenes)
+        assert scene_id in self.chosen_scenes
+        if scene_id == self.scene_id:
             return
-        self.scene_name = scene_name
+        self.scene_id = scene_id
         self.scene_path = os.path.join(
-            self.offline_data_dir, self.scene_name
+            self.offline_data_dir, self.scene_id
         )
         with open(
             os.path.join(self.scene_path, self.trans_file_name), "r",
@@ -210,9 +210,9 @@ class DiscreteEnvironment(AbsEnv):
             os.path.join(self.scene_path, self.visible_file_name), "r",
         ) as f:
             self.visible_data = json.load(f)
-        self.all_objects_id = self.all_s_objects_id[self.scene_name]
-        self.all_objects = self.all_s_objects[self.scene_name]
-        self.intersect_targets = self.intersect_s_targets[self.scene_name]
+        self.all_objects_id = self.all_s_objects_id[self.scene_id]
+        self.all_objects = self.all_s_objects[self.scene_id]
+        self.intersect_targets = self.intersect_s_targets[self.scene_id]
         for type_, image_ in self.obs_loader.items():
             if image_ is not None:
                 self.obs_loader[type_].close()
@@ -222,7 +222,7 @@ class DiscreteEnvironment(AbsEnv):
 
     def reset(
         self,
-        scene_name: Optional[str] = None,
+        scene_id: Optional[str] = None,
         target_str: Optional[str] = None,
         agent_state: Optional[str] = None,
         allow_no_target: bool = False,
@@ -233,7 +233,7 @@ class DiscreteEnvironment(AbsEnv):
         计算最短路（很耗时，所以一般训练阶段会关掉的）
         """
         # reading metadata and obs data
-        self.init_scene(scene_name)
+        self.init_scene(scene_id)
         # set target
         if target_str is None and not allow_no_target:
             target_str = random.choice(self.intersect_targets)
@@ -251,7 +251,7 @@ class DiscreteEnvironment(AbsEnv):
         self.steps = 0
         self.info = dict(
             success=False,
-            scene_name=self.scene_name,
+            scene_id=self.scene_id,
             target=self.target_str,
             agent_done=False,
             false_action=0,
@@ -491,10 +491,10 @@ class DiscreteEnvironment(AbsEnv):
             try:
                 path = nx.shortest_path(graph, str(start_state), k)
             except nx.exception.NetworkXNoPath:
-                print(self.scene_name)
+                print(self.scene_id)
                 path = nx.shortest_path(graph, str(start_state), k)
             except nx.NodeNotFound:
-                print(self.scene_name)
+                print(self.scene_id)
                 path = nx.shortest_path(graph, str(start_state), k)
             path_len = len(path) - 1
             # path_len = len(path)
