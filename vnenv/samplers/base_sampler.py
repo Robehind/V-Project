@@ -30,7 +30,7 @@ class BaseSampler:
         self.sample_steps = batch_size // self.env_num
 
         # init curriculum
-        CLscher.init_sche(self)
+        CLscher.init_sche(sampler=self)
 
         # init buffer
         self.buffer = BaseBuffer(
@@ -70,7 +70,7 @@ class BaseSampler:
                     self.mean_calc.add(dict(total_reward=self.env_reward[i]))
                     self.mean_calc.add(dict(total_steps=self.env_steps[i]))
                     self.mean_calc.add(dict(
-                        success_rate=int(info[i]['event'] == 'success')
+                        success_rate=int(info[i]['success'])
                     ))
                     self.env_steps[i] = 0
                     self.env_reward[i] = 0

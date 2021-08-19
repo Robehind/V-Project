@@ -9,7 +9,7 @@ class TESTcl:
     def next_sche(self, *args, **kwargs):
         pass
 
-    def init_sche(self, *args):
+    def init_sche(self, *args, **kwargs):
         pass
 
 
@@ -113,11 +113,12 @@ _infos = [
     ),
     (
         {'scene_id': 0, 'min_len': 4,
-         'event': 'success', 'agent_done': True},
+         'event': 'success', 'agent_done': True, 'success': True},
         {'scene_id': 1, 'min_len': 4, 'event': 'step'},
         {'scene_id': 0, 'min_len': 3,
-         'event': 'success', 'agent_done': True},
-        {'scene_id': 1, 'min_len': 1, 'event': 'fail', 'agent_done': True},
+         'event': 'success', 'agent_done': True, 'success': True},
+        {'scene_id': 1, 'min_len': 1, 'event': 'fail',
+         'agent_done': True, 'success': False},
     ),
 ]
 _rs = [

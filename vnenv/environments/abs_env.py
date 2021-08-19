@@ -209,11 +209,14 @@ class AbsEvent:
             info['agent_done'] = True
             self.done = True
             event = 'fail'
+            info['success'] = False
             if state[0] == state[1]:
                 event = 'success'
+                info['success'] = True
         elif self.steps >= self.max_steps:
             self.done = True
             event = 'fail'
+            info['success'] = False
         elif self.last_state[0] == state[0]:
             event = 'collision'
         self.last_state = state
