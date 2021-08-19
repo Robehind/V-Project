@@ -33,7 +33,7 @@ class MeanCalcer(object):
         a = self._sums[label]
         b = in_list
         c = self._counts[label]
-        # list长度可以继续变长？
+        # list长度可以继续变长？为了计算false action ratio
         if len(a) < len(b):
             c += [1 for _ in range(len(a), len(b))]
             a, b = in_list, self._sums[label]
@@ -92,7 +92,7 @@ class LabelMeanCalcer(object):
         return out
 
 
-def data_output(args, test_scalars):
+def thor_data_output(args, test_scalars):
     """整理数据并输出到json。输入的这个是一个dict，键有房间名称，
     以及前缀一个场景类型的目标字符串(为了告诉函数这个目标是在哪个房间找的)"""
     def get_type(scene_name):
@@ -139,3 +139,10 @@ def data_output(args, test_scalars):
     result_path = os.path.join(args.exp_dir, 'Total_'+args.results_json)
     with open(result_path, "w") as fp:
         json.dump(out, fp, indent=4)
+
+
+def data_output(path: str, filename: str, test_scalars: MeanCalcer):
+    result = test_scalars.pop(['epis'])
+    result_path = os.path.join(path, 'Total_'+filename)
+    with open(result_path, "w") as fp:
+        json.dump(result, fp, indent=4)
