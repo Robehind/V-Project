@@ -22,7 +22,7 @@ def basic_train(
     pbar = tqdm(total=args.total_train_steps)
     while steps < args.total_train_steps:
 
-        batched_exp = sampler.run()
+        batched_exp = sampler.sample()
         obj_salars = learner.learn(batched_exp)
         pbar.update(update_steps)
         steps += update_steps

@@ -21,7 +21,6 @@ class A2CLearner(AbsLearner):
         ent_param: float = 0
     ) -> None:
         self.agent = agent
-        self.proc_num = agent.proc_num
         self.dev = agent.device
 
         self.optimizer = optimizer
@@ -37,15 +36,17 @@ class A2CLearner(AbsLearner):
         obs, r = batched_exp['o'], batched_exp['r']
         a, m = batched_exp['a'], batched_exp['m']
         model_out = self.agent.model_forward(obs)
-        # reshape to (sample_steps+1, env_num)
-        v_array = toNumpy(model_out['value']).reshape(-1, self.proc_num)
+        exp_num = r.shape[1]
+        # reshape to (exp_length+1, exp_num)
+        v_array = toNumpy(model_out['value']).reshape(-1, exp_num)
         returns = _basic_return(
             v_array, r, m,
-            self.gamma, self.nsteps
+            self.gamma,
+            self.nsteps
         )
         pi_loss, v_loss = _ac_loss(
-            model_out['policy'][:-self.proc_num],
-            model_out['value'][:-self.proc_num],
+            model_out['policy'][:-exp_num],
+            model_out['value'][:-exp_num],
             toTensor(returns, self.dev),
             toTensor(a, self.dev),
             self.vf_param

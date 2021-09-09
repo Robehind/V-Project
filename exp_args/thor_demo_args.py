@@ -2,7 +2,7 @@ from vnenv.utils.default_args import args
 
 args.update(
     # general params
-    seed=9417,  # 随机数生成种子
+    seed=7519,  # 随机数生成种子
     gpu_ids=[0],  # 指定要使用的显卡，为-1时使用cpu。gpu_ids = [0,1,2,3]
     load_model_dir='',  # 要读取的模型参数的完整路径，包括文件名
     load_optim_dir='',  # 要读取的优化其参数的完整路径，包括文件名
@@ -72,5 +72,7 @@ args.update(
     sampler='BaseSampler',
     sampler_args=dict(
         batch_size=80,
+        exp_length=10,
+        buffer_limit=8
     ),
 )
