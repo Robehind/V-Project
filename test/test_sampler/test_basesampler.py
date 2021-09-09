@@ -2,6 +2,39 @@ from vnenv.samplers import BaseSampler
 import numpy as np
 
 
+# TODO not well tested
+def cross_cmp(a, b):
+    # assert a.shape[1] == len(b), f'{a.shape[1]} vs {len(b)}'
+    assert a.shape == b.shape
+    n = a.shape[0]
+    for i in range(n):
+        x = a[i]
+        flag = False
+        for j in range(n):
+            if np.allclose(x, b[j]):
+                flag = True
+                break
+        if not flag:
+            return False
+    return True
+
+
+def cross_cmp2(a, b):
+    # assert a.shape[1] == len(b), f'{a.shape[1]} vs {len(b)}'
+    assert a.shape == b.shape
+    n = a.shape[1]
+    for i in range(n):
+        x = a[:, i]
+        flag = False
+        for j in range(n):
+            if np.allclose(x, b[:, j]):
+                flag = True
+                break
+        if not flag:
+            return False
+    return True
+
+
 class TESTcl:
     def __init__(self) -> None:
         pass
@@ -52,17 +85,23 @@ class TESTagent:
         pass
 
 
-# TODO 跑通就算成功...
 def test_sampler():
     cl = TESTcl()
     Venv = TESTenv()
     agent = TESTagent()
-    sampler = BaseSampler(Venv, agent, cl, 20)
-    out = sampler.run()
-    assert np.allclose(out['o']['rela'], np.array(_obss).reshape(-1, 2))
-    assert np.allclose(out['r'], np.array(_rs))
-    assert np.allclose(out['a'], np.array(_acts).reshape(-1, 1))
-    assert np.allclose(out['m'], np.array(1 - _ds))
+    sampler = BaseSampler(
+        Venv,
+        agent,
+        cl,
+        batch_size=20,
+        exp_length=5,
+        buffer_limit=4
+    )
+    out = sampler.sample()
+    assert cross_cmp(out['o']['rela'], np.array(_obss).reshape(-1, 2))
+    assert cross_cmp2(out['r'], np.array(_rs))
+    assert cross_cmp(out['a'], np.array(_acts).reshape(-1, 1))
+    assert cross_cmp2(out['m'], np.array(1 - _ds))
     records = sampler.pop_records()
     assert records['epis'] == 3
     assert records['success_rate'] == 2/3
