@@ -77,7 +77,7 @@ def main():
     # init sampler
     sampler = sampler_cls(Venv, agent, clscher, **args.sampler_args)
     # init learner
-    learner = learner_cls(agent, optim, **args.learner_args)
+    learner = learner_cls(model, optim, **args.learner_args)
     # make exp directory
     make_exp_dir(args)
     # init tensorboardx
