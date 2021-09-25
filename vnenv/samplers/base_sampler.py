@@ -51,6 +51,8 @@ class BaseSampler:
         self.buffer = BaseBuffer(
             Venv.shapes,
             Venv.dtypes,
+            Vagent.rct_shapes,
+            Vagent.rct_dtypes,
             exp_length,
             sample_num,
             self.env_num,
@@ -75,13 +77,15 @@ class BaseSampler:
         return self.buffer.sample()
 
     def run(self) -> np.ndarray:
-        # TODO agent能不在这里操作自己吗
-        self.Vagent.clear_mems()
         for _ in range(self.exp_length):
+            last_rct = self.Vagent.get_rct()
             a_idx = self.Vagent.action(self.last_obs, self.last_done)
             obs_new, r, done, info = self.Venv.step(a_idx)
-            # 记录o_t, a_t, r_t+1, m_t+1
-            self.buffer.write_in(self.last_obs, a_idx, r, 1 - done)
+            # record obs_t, rct_t, a_t, r_t+1, m_t+1
+            self.buffer.write_in(
+                self.last_obs, last_rct,
+                a_idx, r, 1 - done
+            )
             self.last_obs = obs_new
             self.last_done = done
             # scalar records

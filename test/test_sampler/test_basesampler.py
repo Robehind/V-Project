@@ -1,25 +1,11 @@
 from vnenv.samplers import BaseSampler
 import numpy as np
+import torch
+import pytest
 
 
 # TODO not well tested
 def cross_cmp(a, b):
-    # assert a.shape[1] == len(b), f'{a.shape[1]} vs {len(b)}'
-    assert a.shape == b.shape
-    n = a.shape[0]
-    for i in range(n):
-        x = a[i]
-        flag = False
-        for j in range(n):
-            if np.allclose(x, b[j]):
-                flag = True
-                break
-        if not flag:
-            return False
-    return True
-
-
-def cross_cmp2(a, b):
     # assert a.shape[1] == len(b), f'{a.shape[1]} vs {len(b)}'
     assert a.shape == b.shape
     n = a.shape[1]
@@ -70,25 +56,34 @@ class TESTenv:
 
 
 class TESTagent:
-    def __init__(self) -> None:
+    def __init__(self, rct_on=True) -> None:
         self.step = -1
         self.acts = _acts
+        self.rct_shapes = {}
+        self.rct_dtypes = {}
+        self.rct_on = rct_on
+        if rct_on:
+            self.rct_shapes = {'lstm': (1, )}
+            self.rct_dtypes = {'lstm': torch.float32}
+            self.rcts = torch.randn(5, 4, 1)
+            self.rcts[0] = 0
 
     def action(self, obs, done):
         self.step += 1
         return np.array(self.acts[self.step])
 
-    def clear_mems(self):
-        pass
+    def get_rct(self):
+        return {'lstm': self.rcts[self.step+1]} if self.rct_on else {}
 
     def close(self):
         pass
 
 
-def test_sampler():
+@pytest.mark.parametrize('rct_on', [True, False])
+def test_sampler(rct_on):
     cl = TESTcl()
     Venv = TESTenv()
-    agent = TESTagent()
+    agent = TESTagent(rct_on)
     sampler = BaseSampler(
         Venv,
         agent,
@@ -98,10 +93,12 @@ def test_sampler():
         buffer_limit=4
     )
     out = sampler.sample()
-    assert cross_cmp(out['o']['rela'], np.array(_obss).reshape(-1, 2))
-    assert cross_cmp2(out['r'], np.array(_rs))
-    assert cross_cmp(out['a'], np.array(_acts).reshape(-1, 1))
-    assert cross_cmp2(out['m'], np.array(1 - _ds))
+    assert cross_cmp(out['obs']['rela'], np.array(_obss))
+    assert cross_cmp(out['r'], np.array(_rs))
+    assert cross_cmp(out['a'], np.array(_acts))
+    assert cross_cmp(out['m'], np.array(1 - _ds))
+    if rct_on:
+        assert cross_cmp(out['rct']['lstm'], agent.rcts)
     records = sampler.pop_records()
     assert records['epis'] == 3
     assert records['success_rate'] == 2/3

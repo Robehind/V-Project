@@ -1,32 +1,67 @@
 from typing import Dict, Union
 import numpy as np
+from vnenv.utils.convert import dtype2numpy
 
 
-class BaseBuffer:
+class Buff:
     """"""
     def __init__(
         self,
-        obs_Dshape: Dict[str, tuple],
-        obs_Dtype: Dict[str, np.dtype],
+        dshapes: Dict[str, tuple],
+        dtypes: Dict[str, np.dtype],
+        bshapes: Dict[str, tuple]
+    ) -> None:
+        self.dshapes = dshapes
+        self.dtypes = dtypes
+        self.bshapes = bshapes
+        self.buff = {
+            k: np.zeros((*bshapes[k], *v), dtype=dtype2numpy(dtypes[k]))
+            for k, v in dshapes.items()
+        }
+
+
+class BaseBuffer(Buff):
+    """"""
+    def __init__(
+        self,
+        obs_shapes: Dict[str, tuple],
+        obs_dtypes: Dict[str, np.dtype],
+        rct_shapes: Dict[str, tuple],
+        rct_dtypes: Dict[str, np.dtype],
         exp_length: int,
         sample_num: int,
         env_num: int,
         max_exp_num: int
     ) -> None:
         assert env_num <= max_exp_num
-        # obs维度要多1，因为有的算法需要一个额外的obs来计算return
-        # buffer for r，a，mask and observation
-        self.reward = np.zeros((exp_length, max_exp_num), dtype=np.float32)
-        # TODO a和m改成更小的数据类型是不是会更快？
-        self.a_idx = np.zeros((exp_length, max_exp_num), dtype=np.int64)
-        self.mask = np.zeros((exp_length, max_exp_num), dtype=np.int8)
-        self.obs = {
-            k: np.zeros((exp_length + 1, max_exp_num, *v), dtype=obs_Dtype[k])
-            for k, v in obs_Dshape.items()
+        # buffer for r，a，mask and observation and rcts
+        shapes = {
+            "r": (),  # TODO if (1, ) can't broadcast (x) to (x, 1)
+            "m": (),
+            "a": (),
         }
+        shapes.update(obs_shapes)
+        shapes.update(rct_shapes)
+        dtypes = {
+            "r": np.float32,
+            "m": np.int8,
+            "a": np.int64,
+        }
+        dtypes.update(obs_dtypes)
+        dtypes.update(rct_dtypes)
+        # buff shapes
+        bshapes = {}
+        for k in shapes:
+            bshapes[k] = (exp_length, max_exp_num)
+        # exp_length for obs plus 1 for extral value calc
+        for k in obs_shapes:
+            bshapes[k] = (exp_length + 1, max_exp_num)
+
+        super().__init__(shapes, dtypes, bshapes)
 
         self.exp_length = exp_length
-        self.obs_Dshape = obs_Dshape
+        self.obs_shapes = obs_shapes
+        self.rct_shapes = rct_shapes
         self.max_exp_num = max_exp_num
         self.env_num = env_num
         self.sample_num = sample_num
@@ -39,20 +74,20 @@ class BaseBuffer:
 
     def one_more_obs(
         self,
-        o: Dict[str, np.ndarray]
+        obs: Dict[str, np.ndarray]
     ):
         ed = self.exp_p + self.env_num
         # if max_exp_num can't be divided exactly by env_num
         # then the write_in process will sometimes be splited
         if ed > self.max_exp_num:
             spt1 = self.max_exp_num - self.exp_p
-            for k, v in o.items():
-                self.obs[k][-1][self.exp_p:] = v[:spt1]
-            for k, v in o.items():
-                self.obs[k][-1][:self.env_num-spt1] = v[spt1:]
+            for k, v in obs.items():
+                self.buff[k][-1][self.exp_p:] = v[:spt1]
+            for k, v in obs.items():
+                self.buff[k][-1][:self.env_num-spt1] = v[spt1:]
         else:
-            for k, v in o.items():
-                self.obs[k][-1][self.exp_p:ed] = v
+            for k, v in obs.items():
+                self.buff[k][-1][self.exp_p:ed] = v
         if self.step_p == self.exp_length:
             self.step_p = 0
             self.exp_p += self.env_num
@@ -64,21 +99,25 @@ class BaseBuffer:
         self,
         st: int,
         ed: int,
-        o: Dict[str, np.ndarray],
+        obs: Dict[str, np.ndarray],
+        rct: Dict[str, np.ndarray],
         a: np.ndarray,
         r: np.ndarray,
         m: np.ndarray
     ) -> None:
         # no matter what, just write in
-        for k, v in o.items():
-            self.obs[k][self.step_p][st:ed] = v
-        self.reward[self.step_p][st:ed] = r
-        self.mask[self.step_p][st:ed] = m
-        self.a_idx[self.step_p][st:ed] = a
+        for k, v in obs.items():
+            self.buff[k][self.step_p][st:ed] = v
+        for k, v in rct.items():
+            self.buff[k][self.step_p][st:ed] = v
+        self.buff['r'][self.step_p][st:ed] = r
+        self.buff['m'][self.step_p][st:ed] = m
+        self.buff['a'][self.step_p][st:ed] = a
 
     def write_in(
         self,
-        o: Dict[str, np.ndarray],
+        obs: Dict[str, np.ndarray],
+        rct: Dict[str, np.ndarray],
         a: np.ndarray,
         r: np.ndarray,
         m: np.ndarray
@@ -91,7 +130,8 @@ class BaseBuffer:
             self._write_in(
                 self.exp_p,
                 self.max_exp_num,
-                {k: v[:spt1] for k, v in o.items()},
+                {k: v[:spt1] for k, v in obs.items()},
+                {k: v[:spt1] for k, v in rct.items()},
                 a[:spt1],
                 r[:spt1],
                 m[:spt1]
@@ -99,13 +139,14 @@ class BaseBuffer:
             self._write_in(
                 0,
                 self.env_num - spt1,
-                {k: v[spt1:] for k, v in o.items()},
+                {k: v[spt1:] for k, v in obs.items()},
+                {k: v[spt1:] for k, v in rct.items()},
                 a[spt1:],
                 r[spt1:],
                 m[spt1:]
                 )
         else:
-            self._write_in(self.exp_p, ed, o, a, r, m)
+            self._write_in(self.exp_p, ed, obs, rct, a, r, m)
         self.step_p += 1
 
     def sample(
@@ -123,12 +164,16 @@ class BaseBuffer:
         np.random.shuffle(tmp)
         idx = tmp[:self.sample_num]
         return {
-            'o': {
-                k: self.obs[k][:, idx].reshape(-1, *v)
-                for k, v in self.obs_Dshape.items()
+            'obs': {
+                k: self.buff[k][:, idx]
+                for k in self.obs_shapes
             },
-            'a': self.a_idx[:, idx].reshape(-1, 1),
+            'rct': {
+                k: self.buff[k][:, idx]
+                for k in self.rct_shapes
+            },
+            'a': self.buff['a'][:, idx],
             # don't flatten r and m for faster numpy mat computation
-            'r': self.reward[:, idx],
-            'm': self.mask[:, idx]
+            'r': self.buff['r'][:, idx],
+            'm': self.buff['m'][:, idx]
         }
