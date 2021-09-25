@@ -3,7 +3,7 @@ from numba import njit
 
 
 # define some returns calculation functions for learner to use
-@njit
+# TODO bug fix @njit
 def _basic_return(
     v_array: np.ndarray,
     rew: np.ndarray,
