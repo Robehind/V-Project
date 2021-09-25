@@ -63,6 +63,9 @@ args.update(
     ),
     model='FcLinearModel',
     agent='BaseAgent',
+    agent_args=dict(
+        select_func='policy_select'
+    ),
     optim='Adam',
     optim_args=dict(
         lr=0.0001,
