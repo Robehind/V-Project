@@ -111,9 +111,6 @@ class VecEnv:
             self.step_wait()
         for pipe in self.parent_pipes:
             pipe.send(('reset', None))
-            # TODO 为了测试的时候进程加载的房间不乱套
-            import time
-            time.sleep(0.2)
         [pipe.recv() for pipe in self.parent_pipes]
         return self.get_obs()
 
@@ -197,17 +194,18 @@ def _subproc_worker(
     try:
         while True:
             cmd, data = pipe.recv()
-            if waiting:
+            if waiting and cmd != 'close':
                 pipe.send((None, 0, 0, None))
                 continue
             if cmd == 'reset':
-                if len(sche) == 0:
+                try:
+                    ss = sche.pop(0)
+                    obs = env.reset(
+                        **ss, min_len=min_len
+                    )
+                except IndexError:
                     obs = env.reset(min_len=min_len)
                     waiting = no_op
-                else:
-                    obs = env.reset(
-                        **sche.pop(0), min_len=min_len
-                    )
                 pipe.send((_write_bufs(obs)))
             elif cmd == 'step':
                 obs, reward, done, info = env.step(data)
