@@ -9,34 +9,31 @@ class Qlinear(torch.nn.Module):
     """输出Q的输出层, 挂一个激活函数的"""
     def __init__(
         self,
-        action_sz,
-        infer_sz,
+        input_sz,
+        action_sz
     ):
         super(Qlinear, self).__init__()
-        self.q_linear = nn.Linear(infer_sz, action_sz)
+        self.q_linear = nn.Linear(input_sz, action_sz)
         self.q_linear.weight.data = norm_col_init(
             self.q_linear.weight.data, 1.0
         )
         self.q_linear.bias.data.fill_(0)
 
-    def forward(self, x):
+    def forward(self, x, rct=None):
 
-        x = F.relu(x, True)
-        return dict(
-            value=self.q_linear(x)
-            )
+        return dict(q_value=self.q_linear(F.relu(x)))
 
 
 class AClinear(torch.nn.Module):
     """Actor-critic的输出层, 挂一个激活函数的"""
     def __init__(
         self,
-        action_sz,
-        infer_sz,
+        input_sz,
+        action_sz
     ):
         super(AClinear, self).__init__()
-        self.actor_linear = nn.Linear(infer_sz, action_sz)
-        self.critic_linear = nn.Linear(infer_sz, 1)
+        self.actor_linear = nn.Linear(input_sz, action_sz)
+        self.critic_linear = nn.Linear(input_sz, 1)
         self.actor_linear.weight.data = norm_col_init(
             self.actor_linear.weight.data, 0.01
         )
@@ -46,10 +43,9 @@ class AClinear(torch.nn.Module):
         )
         self.critic_linear.bias.data.fill_(0)
 
-    def forward(self, x):
+    def forward(self, x, rct=None):
 
-        x = F.relu(x, True)
         return dict(
-            policy=self.actor_linear(x),
-            value=self.critic_linear(x),
+            policy=self.actor_linear(F.relu(x)),
+            value=self.critic_linear(F.relu(x))
         )

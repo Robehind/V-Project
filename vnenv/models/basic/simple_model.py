@@ -35,16 +35,17 @@ class SimpleMP(torch.nn.Module):
                 nn.Linear(infer_sz, infer_sz)
             )
         else:
-            self.hidden_sz = infer_sz
             self.infer = nn.LSTMCell(tobs_embed_sz+vobs_embed_sz, infer_sz)
+            self.rct_shapes = {'lstm': (infer_sz, )}
+            self.rct_dtypes = {'lstm': next(self.infer.parameters()).dtype}
         # plan
         if q_flag:
-            self.plan_out = Qlinear(action_sz, infer_sz)
+            self.plan_out = Qlinear(infer_sz, action_sz)
         else:
-            self.plan_out = AClinear(action_sz, infer_sz)
+            self.plan_out = AClinear(infer_sz, action_sz)
         # self.apply(weights_init)
 
-    def forward(self, vobs, tobs, hidden=None):
+    def forward(self, vobs, tobs, rct):
 
         vobs_embed = F.relu(self.vobs_embed(vobs), True)
         tobs_embed = F.relu(self.tobs_embed(tobs), True)
@@ -53,9 +54,9 @@ class SimpleMP(torch.nn.Module):
         if self.mode == 0:
             x = self.infer(x)
             return self.plan_out(x)
-        (x, cx) = self.infer(x, hidden)
+        (x, cx) = self.infer(x, rct)
         out = self.plan_out(x)
-        out.update(dict(hidden=(x, cx)))
+        out.update(dict(lstm=(x, cx)))
         return out
 
 
@@ -67,8 +68,6 @@ class SplitLinear(torch.nn.Module):
         vobs_sz=(128, 128, 3),
         tobs_sz=300,
         obs_stack=1
-        # state_sz,
-        # target_sz,
     ):
         super(SplitLinear, self).__init__()
         self.obs_stack = obs_stack
@@ -114,7 +113,8 @@ class SplitLstm(torch.nn.Module):
         )
         self.apply(weights_init)
         self.MP = SimpleMP(action_sz, self.conv_out_sz, tobs_sz, mode=1)
-        self.hidden_sz = self.MP.hidden_sz
+        self.rct_shapes = self.net.rct_shapes
+        self.rct_dtypes = self.net.rct_dtypes
 
     def forward(self, model_input):
 
@@ -128,23 +128,25 @@ class FcLstmModel(torch.nn.Module):
     """观察都是预处理好的特征向量的lstm模型"""
     def __init__(
         self,
-        action_sz,
-        vobs_sz=2048,
-        tobs_sz=300,
+        obs_shapes,
+        act_sz,
         dropout_rate=0,
         q_flag=0
     ):
         super(FcLstmModel, self).__init__()
-        self.net = SimpleMP(action_sz, vobs_sz, tobs_sz,
+        self.net = SimpleMP(act_sz,
+                            np.prod(obs_shapes['fc']),
+                            np.prod(obs_shapes['glove']),
                             dropout_rate=dropout_rate,
                             mode=1, q_flag=q_flag)
-        self.hidden_sz = self.net.hidden_sz
+        self.rct_shapes = self.net.rct_shapes
+        self.rct_dtypes = self.net.rct_dtypes
 
-    def forward(self, model_input):
+    def forward(self, obs, rct):
         return self.net(
-            model_input['fc'],
-            model_input['glove'],
-            model_input['hidden']
+            obs['fc'],
+            obs['glove'],
+            rct['lstm']
         )
 
 
@@ -156,15 +158,13 @@ class FcLinearModel(torch.nn.Module):
         act_sz
     ):
         super(FcLinearModel, self).__init__()
-        # self.obs_stack = obs_stack
         self.vobs_sz = np.prod(obs_shapes['fc'])
         tobs_sz = np.prod(obs_shapes['glove'])
-        # self.key = '' if obs_stack == 1 else f'|{obs_stack}'
 
         self.net = SimpleMP(act_sz, self.vobs_sz, tobs_sz)
 
-    def forward(self, model_input):
+    def forward(self, obs, rct={}):
 
-        vobs_embed = torch.flatten(model_input['fc']) \
+        vobs_embed = torch.flatten(obs['fc']) \
             .view(-1, self.vobs_sz)
-        return self.net(vobs_embed, model_input['glove'])
+        return self.net(vobs_embed, obs['glove'], rct)

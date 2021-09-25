@@ -5,8 +5,13 @@ import numpy as np
 import torch
 
 
+# rule1: don't activate the input, do acivate the output
+# rule2: forward has 2 params: obs and rct, rct for recurrent inputs,
+#        keys shouldn't repeat
+#        the output has a key "rct" to contain the rct data
+# rule3: if has recurrent inputs, define rct_shapes attr and rct_dtypes
 class DemoModel(nn.Module):
-    """观察都是预处理好的特征向量的linear模型"""
+    """A model for demo and a template for model definition"""
     def __init__(
         self,
         obs_shapes,
@@ -19,8 +24,8 @@ class DemoModel(nn.Module):
         self.net = nn.Linear(256, 256)
         self.plan = AClinear(act_sz, 256)
 
-    def forward(self, model_input):
-        mapp = torch.flatten(model_input['map']) \
+    def forward(self, obs, rct=None):
+        mapp = torch.flatten(obs['map']) \
             .view(-1, self.obs_sz)
         x = F.relu(self.embed(mapp))
         x = F.relu(self.net(x))
