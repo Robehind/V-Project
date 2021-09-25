@@ -1,11 +1,11 @@
 from typing import Dict
 import torch
+import torch.nn as nn
+import numpy as np
 from .abs_learner import AbsLearner
 from .returns_calc import _basic_return
 from .loss_functions import _ac_loss
-from vnenv.agents import AbsAgent
-from vnenv.utils.convert import toNumpy, toTensor
-import numpy as np
+from vnenv.utils.convert import toNumpy, toTensor, dict2tensor
 
 
 # to manage all the algorithm params
@@ -13,15 +13,15 @@ class A2CLearner(AbsLearner):
 
     def __init__(
         self,
-        agent: AbsAgent,
+        model: nn.Module,
         optimizer: torch.optim,
         gamma: float,
         nsteps: int,
         vf_param: float = 0.5,
         ent_param: float = 0
     ) -> None:
-        self.agent = agent
-        self.dev = agent.device
+        self.model = model
+        self.dev = next(model.parameters()).device
 
         self.optimizer = optimizer
         self.nsteps = nsteps
@@ -29,15 +29,46 @@ class A2CLearner(AbsLearner):
         self.gamma = np.float32(gamma)
         self.ent_param = ent_param
 
+    def rct_forward(
+        self,
+        obs: Dict[str, np.ndarray],
+        rct: Dict[str, np.ndarray],
+        mask: np.ndarray
+    ) -> Dict[str, torch.Tensor]:
+        # get one obs to see the exp_num and exp_length
+        for k in obs:
+            exp_length = obs[k].shape[1]
+            break
+        output = {'rct': [rct]}
+        # model forward step by step, store the recurrent data
+
+        for i in range(exp_length):
+            obs_t = rct_t = {}
+            for k in obs:
+                obs_t[k] = obs[k][i]
+            rct_t = {k: v[i] for k, v in rct.items()}
+            self.reset_rct(rct_t, mask[i] == 0)
+            out = self.model(obs_t, rct_t)
+
+            for k in out:
+                output[k] = torch.cat(output[k], out[k]) \
+                    if k in output else out[k]
+
+        return output
+
     def learn(
         self,
         batched_exp: Dict[str, np.ndarray]
     ) -> Dict[str, float]:
-        obs, r = batched_exp['o'], batched_exp['r']
-        a, m = batched_exp['a'], batched_exp['m']
-        model_out = self.agent.model_forward(obs)
+        obs, rct = batched_exp['obs'], batched_exp['rct']
+        r, a, m = batched_exp['r'], batched_exp['a'], batched_exp['m']
         exp_num = r.shape[1]
-        # reshape to (exp_length+1, exp_num)
+        if rct == {}:
+            obs = {k: v.reshape(-1, *v.shape[2:]) for k, v in obs.items()}
+            model_out = self.model(dict2tensor(obs, dev=self.dev))
+        else:
+            model_out = self.rct_forward(obs, rct, m)
+        # reshape value to (exp_length+1, exp_num)
         v_array = toNumpy(model_out['value']).reshape(-1, exp_num)
         returns = _basic_return(
             v_array, r, m,
@@ -48,7 +79,7 @@ class A2CLearner(AbsLearner):
             model_out['policy'][:-exp_num],
             model_out['value'][:-exp_num],
             toTensor(returns, self.dev),
-            toTensor(a, self.dev),
+            toTensor(a.reshape(-1, 1), self.dev),
             self.vf_param
         )
         obj_func = pi_loss + v_loss

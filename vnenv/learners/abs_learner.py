@@ -2,14 +2,13 @@ from typing import Any, Dict
 import os
 import torch
 from vnenv.utils.net_utils import save_model
-from vnenv.agents import AbsAgent
 
 
 class AbsLearner:
 
     def __init__(
         self,
-        agent: AbsAgent,
+        model: torch.nn.Module,
         optimizer: torch.optim,
         gamma: float,
         nsteps: int,
@@ -25,8 +24,11 @@ class AbsLearner:
         return {'loss': 1}
 
     def checkpoint(self, path2save, steps):
-        optim_name = self.optimizer.__class__.__name__
-        self.agent.save_model(path2save, steps)
+        # save model
+        title = self.model.__class__.__name__ + '_' + str(steps)
+        save_model(self.model, path2save, title)
         optim_path = os.path.join(path2save, 'optim')
+        # save optimizer
+        optim_name = self.optimizer.__class__.__name__
         save_model(self.optimizer, optim_path,
                    f'{optim_name}_{steps}')
