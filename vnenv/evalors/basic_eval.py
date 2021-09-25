@@ -52,10 +52,13 @@ def basic_eval(
                 epis += 1
                 pbar.update(1)
                 if args.calc_spl:
-                    assert t_info['min_len'] <= env_steps[i],\
-                        f"{t_info['min_len']}>{env_steps[i]}"
-                    # TODO spl计算问题。0？done？
-                    spl = t_info['min_len']*t_info['success']/env_steps[i]
+                    if t_info['success']:
+                        assert t_info['min_len'] <= env_steps[i],\
+                            f"{t_info['min_len']}>{env_steps[i]}"
+                        # TODO spl计算问题。0？done？
+                        spl = t_info['min_len']/env_steps[i]
+                    else:
+                        spl = 0
                 data = {
                     'ep_length:': env_steps[i],
                     'SR:': t_info['success'],
