@@ -46,8 +46,7 @@ class BaseAgent(AbsAgent):
 
     def action(
         self,
-        obs: Dict[str, np.ndarray],
-        done: Optional[np.ndarray] = None
+        obs: Dict[str, np.ndarray]
     ) -> List[int]:
         # no grad when sampling actions
         with torch.no_grad():
@@ -56,15 +55,14 @@ class BaseAgent(AbsAgent):
                 dict2tensor(obs.copy(), self.dev),
                 self.rct
             )
-        # if has recurrent states, update and reset
+        # if has recurrent states, update
         if self.rct_shapes != {}:
             del self.rct
             self.rct = out['rct']
-            self._reset_rct(done == 1)
         # action selection
         return self.select(out, *self.select_params)
 
-    def _reset_rct(self, idx: np.ndarray):
+    def reset_rct(self, idx: np.ndarray):
         # reset recurrent data specified by idx to 0
         # TODO learnable init state?
         assert not isinstance(idx, bool)

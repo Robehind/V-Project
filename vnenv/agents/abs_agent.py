@@ -1,4 +1,4 @@
-from typing import Dict, Tuple
+from typing import Tuple
 
 
 class AbsAgent:
@@ -11,14 +11,9 @@ class AbsAgent:
     ):
         pass
 
-    def model_out(self, obs, *args, **kw_args) -> Dict:
-        # 需要完成数据转换
-        return NotImplementedError
-
     def action(
         self,
         obs,
-        done,  # 指示是否已经开始新的epi。
         *args,
         **kw_args
     ) -> Tuple:
@@ -28,10 +23,7 @@ class AbsAgent:
     def sync_params(self, model):
         return NotImplementedError
 
-    def reset_hidden(self, thread_id):
-        pass
-
-    def clear_mems(self):
+    def reset_rct(self, idx):
         pass
 
     def close(self):

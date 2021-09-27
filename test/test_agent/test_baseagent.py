@@ -42,18 +42,21 @@ def test_base_agent(select_func, select_params):
     env = TESTenv()
     model = TESTmodel()
     agt = BaseAgent(model, env, None, select_func, select_params)
-    assert np.allclose(agt.get_rct()['lstm'], 0)
     for i in range(5):
+
+        if i == 4:
+            assert np.allclose(agt.get_rct()['lstm'][[0, 2]], 0)
+            assert np.allclose(agt.get_rct()['lstm'][[1, 3]],
+                               model.rcts[i-1][[1, 3]])
+        elif i == 0:
+            assert np.allclose(agt.get_rct()['lstm'], 0)
+        else:
+            assert np.allclose(agt.get_rct()['lstm'], model.rcts[i-1])
         done = np.array([0, 0, 0, 0])
         if i == 3:
             done = np.array([1, 0, 1, 0])
-        idx = agt.action(dict(place=np.array([1, 2, 3])), done=done)
-        if i == 3:
-            assert np.allclose(agt.get_rct()['lstm'][[0, 2]], 0)
-            assert np.allclose(agt.get_rct()['lstm'][[1, 3]],
-                               model.rcts[i][[1, 3]])
-        else:
-            assert np.allclose(agt.get_rct()['lstm'], model.rcts[i])
+        idx = agt.action(dict(place=np.array([1, 2, 3])))
+        agt.reset_rct(done == 1)
         assert np.allclose(idx, np.array(_acts[i]))
 
 
