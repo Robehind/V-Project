@@ -103,5 +103,5 @@ class A2CLearner(AbsLearner):
             obj_func=obj_func.item(),
             pi_loss=pi_loss.item(),
             v_loss=v_loss.item(),
-            ent_loss=ent_loss
+            ent_loss=ent_loss.item()
         )
