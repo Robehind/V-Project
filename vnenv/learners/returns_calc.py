@@ -1,5 +1,5 @@
 import numpy as np
-from numba import njit
+# from numba import njit
 
 
 # define some returns calculation functions for learner to use
@@ -10,7 +10,7 @@ def _basic_return(
     mask: np.ndarray,
     gamma: np.float32,
     nsteps: int
-):
+) -> np.ndarray:
     # input array should in (sample_steps, env_nums)
     # seperate last row as R
     v_array, R = v_array[:-1], v_array[-1]
@@ -26,4 +26,5 @@ def _basic_return(
             for i in range(nsteps):
                 R = rew[tau-i-1] + gamma * R * mask[tau-i-1]
         returns[i] = R
+    # output in (*, 1)
     return returns.reshape(-1, 1)
