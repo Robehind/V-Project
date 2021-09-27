@@ -35,26 +35,36 @@ class A2CLearner(AbsLearner):
         rct: Dict[str, np.ndarray],
         mask: np.ndarray
     ) -> Dict[str, torch.Tensor]:
-        # get one obs to see the exp_num and exp_length
-        for k in obs:
-            exp_length = obs[k].shape[1]
-            break
-        output = {'rct': [rct]}
-        # model forward step by step, store the recurrent data
-
-        for i in range(exp_length):
-            obs_t = rct_t = {}
-            for k in obs:
-                obs_t[k] = obs[k][i]
-            rct_t = {k: v[i] for k, v in rct.items()}
-            self.reset_rct(rct_t, mask[i] == 0)
-            out = self.model(obs_t, rct_t)
+        exp_length = mask.shape[0]
+        # model forward step by step
+        rct_t = {k: toTensor(v[0], self.dev) for k, v in rct.items()}
+        output = {}  # {'rct': rct_t}
+        for i in range(exp_length+1):
+            obs_t = {k: v[i] for k, v in obs.items()}
+            out = self.model(
+                dict2tensor(obs_t, self.dev),
+                rct_t,
+            )
+            rct_t = out.pop('rct')
 
             for k in out:
-                output[k] = torch.cat(output[k], out[k]) \
+                output[k] = torch.cat([output[k], out[k]]) \
                     if k in output else out[k]
-
+            if i < exp_length-1:
+                self.reset_rct(rct_t, mask[i] == 1)
         return output
+
+    def reset_rct(
+        self,
+        rct,
+        idxes
+    ):
+        # detach part of the batch to stop gradient between epis
+        # TODO more elegant detach method?
+        for k, v in rct.items():
+            nv = torch.zeros_like(v)
+            nv[idxes] = v[idxes]
+            rct[k] = nv
 
     def learn(
         self,
@@ -68,6 +78,7 @@ class A2CLearner(AbsLearner):
             model_out = self.model(dict2tensor(obs, dev=self.dev))
         else:
             model_out = self.rct_forward(obs, rct, m)
+        # all data in model_out should in (batch_size, *)
         # reshape value to (exp_length+1, exp_num)
         v_array = toNumpy(model_out['value']).reshape(-1, exp_num)
         returns = _basic_return(
