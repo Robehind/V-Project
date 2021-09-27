@@ -92,14 +92,16 @@ class A2CLearner(AbsLearner):
         v_loss = self.vf_param * F.smooth_l1_loss(
             model_out['value'][:-exp_num], toTensor(returns, self.dev))
         pi = F.softmax(model_out['policy'][:-exp_num], dim=1)
+        ent_loss = (- self.ent_param * torch.log(pi) * pi).sum(1).mean()
         pi_a = pi.gather(1, toTensor(a.reshape(-1, 1), self.dev))
         pi_loss = (-torch.log(pi_a) * toTensor(adv, dev=self.dev)).mean()
-        obj_func = pi_loss + v_loss
+        obj_func = pi_loss + v_loss - ent_loss
         self.optimizer.zero_grad()
         obj_func.backward()
         self.optimizer.step()
         return dict(
             obj_func=obj_func.item(),
             pi_loss=pi_loss.item(),
-            v_loss=v_loss.item()
+            v_loss=v_loss.item(),
+            ent_loss=ent_loss
         )
