@@ -57,7 +57,8 @@ args.update(
     learner='A2CLearner',
     learner_args=dict(
         gamma=0.99,
-        nsteps=1000,
+        gae_lbd=1,
+        vf_nsteps=float("inf"),
         vf_param=0.5,
         ent_param=0,
     ),

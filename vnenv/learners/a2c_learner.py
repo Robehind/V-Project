@@ -1,10 +1,10 @@
 from typing import Dict
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import numpy as np
 from .abs_learner import AbsLearner
-from .returns_calc import _basic_return
-from .loss_functions import _ac_loss
+from .returns_calc import _basic_return, _GAE
 from vnenv.utils.convert import toNumpy, toTensor, dict2tensor
 
 
@@ -16,7 +16,8 @@ class A2CLearner(AbsLearner):
         model: nn.Module,
         optimizer: torch.optim,
         gamma: float,
-        nsteps: int,
+        gae_lbd: float,
+        vf_nsteps: int,
         vf_param: float = 0.5,
         ent_param: float = 0
     ) -> None:
@@ -24,7 +25,8 @@ class A2CLearner(AbsLearner):
         self.dev = next(model.parameters()).device
 
         self.optimizer = optimizer
-        self.nsteps = nsteps
+        self.vf_nsteps = vf_nsteps
+        self.gae_lbd = gae_lbd
         self.vf_param = vf_param
         self.gamma = np.float32(gamma)
         self.ent_param = ent_param
@@ -73,26 +75,25 @@ class A2CLearner(AbsLearner):
         obs, rct = batched_exp['obs'], batched_exp['rct']
         r, a, m = batched_exp['r'], batched_exp['a'], batched_exp['m']
         exp_num = r.shape[1]
+        # all data in model_out should in (batch_size, *)
         if rct == {}:
             obs = {k: v.reshape(-1, *v.shape[2:]) for k, v in obs.items()}
             model_out = self.model(dict2tensor(obs, dev=self.dev))
         else:
             model_out = self.rct_forward(obs, rct, m)
-        # all data in model_out should in (batch_size, *)
         # reshape value to (exp_length+1, exp_num)
         v_array = toNumpy(model_out['value']).reshape(-1, exp_num)
+        adv = _GAE(v_array, r, m, self.gamma, self.gae_lbd)
         returns = _basic_return(
             v_array, r, m,
             self.gamma,
-            self.nsteps
+            self.vf_nsteps
         )
-        pi_loss, v_loss = _ac_loss(
-            model_out['policy'][:-exp_num],
-            model_out['value'][:-exp_num],
-            toTensor(returns, self.dev),
-            toTensor(a.reshape(-1, 1), self.dev),
-            self.vf_param
-        )
+        v_loss = self.vf_param * F.smooth_l1_loss(
+            model_out['value'][:-exp_num], toTensor(returns, self.dev))
+        pi = F.softmax(model_out['policy'][:-exp_num], dim=1)
+        pi_a = pi.gather(1, toTensor(a.reshape(-1, 1), self.dev))
+        pi_loss = (-torch.log(pi_a) * toTensor(adv, dev=self.dev)).mean()
         obj_func = pi_loss + v_loss
         self.optimizer.zero_grad()
         obj_func.backward()
