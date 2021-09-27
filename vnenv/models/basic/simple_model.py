@@ -36,8 +36,9 @@ class SimpleMP(torch.nn.Module):
             )
         else:
             self.infer = nn.LSTMCell(tobs_embed_sz+vobs_embed_sz, infer_sz)
-            self.rct_shapes = {'lstm': (infer_sz, )}
-            self.rct_dtypes = {'lstm': next(self.infer.parameters()).dtype}
+            self.rct_shapes = {'hx': (infer_sz, ), 'cx': (infer_sz, )}
+            dtype = next(self.infer.parameters()).dtype
+            self.rct_dtypes = {'hx': dtype, 'cx': dtype}
         # plan
         if q_flag:
             self.plan_out = Qlinear(infer_sz, action_sz)
@@ -45,7 +46,7 @@ class SimpleMP(torch.nn.Module):
             self.plan_out = AClinear(infer_sz, action_sz)
         # self.apply(weights_init)
 
-    def forward(self, vobs, tobs, rct):
+    def forward(self, vobs, tobs, hx, cx):
 
         vobs_embed = F.relu(self.vobs_embed(vobs), True)
         tobs_embed = F.relu(self.tobs_embed(tobs), True)
@@ -54,9 +55,10 @@ class SimpleMP(torch.nn.Module):
         if self.mode == 0:
             x = self.infer(x)
             return self.plan_out(x)
-        (x, cx) = self.infer(x, rct)
-        out = self.plan_out(x)
-        out.update(dict(lstm=(x, cx)))
+        h, c = self.infer(x, (hx, cx))
+        out = self.plan_out(h)
+        n_rct = dict(hx=h, cx=c)
+        out['rct'] = n_rct
         return out
 
 
@@ -146,7 +148,8 @@ class FcLstmModel(torch.nn.Module):
         return self.net(
             obs['fc'],
             obs['glove'],
-            rct['lstm']
+            rct['hx'],
+            rct['cx']
         )
 
 
@@ -167,4 +170,4 @@ class FcLinearModel(torch.nn.Module):
 
         vobs_embed = torch.flatten(obs['fc']) \
             .view(-1, self.vobs_sz)
-        return self.net(vobs_embed, obs['glove'], rct)
+        return self.net(vobs_embed, obs['glove'], None, None)
