@@ -79,8 +79,9 @@ class BaseSampler:
     def run(self) -> np.ndarray:
         for _ in range(self.exp_length):
             last_rct = self.Vagent.get_rct()
-            a_idx = self.Vagent.action(self.last_obs, self.last_done)
+            a_idx = self.Vagent.action(self.last_obs)
             obs_new, r, done, info = self.Venv.step(a_idx)
+            self.Vagent.reset_rct(done == 1)
             # record obs_t, rct_t, a_t, r_t+1, m_t+1
             self.buffer.write_in(
                 self.last_obs, last_rct,

@@ -68,9 +68,12 @@ class TESTagent:
             self.rcts = torch.randn(5, 4, 1)
             self.rcts[0] = 0
 
-    def action(self, obs, done):
+    def action(self, obs):
         self.step += 1
         return np.array(self.acts[self.step])
+
+    def reset_rct(self, idx):
+        pass
 
     def get_rct(self):
         return {'lstm': self.rcts[self.step+1]} if self.rct_on else {}

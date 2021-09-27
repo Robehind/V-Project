@@ -28,17 +28,16 @@ def basic_eval(
     env_steps = np.zeros((proc_num))
     env_rewards = np.zeros((proc_num))
     false_action_ratio = [[] for _ in range(proc_num)]
-    last_done = np.zeros((proc_num))
     test_scalars = MeanCalcer()
 
     obs = envs.reset()
 
     pbar = tqdm(total=total_epi)
     while epis < total_epi:
-        agent.clear_mems()
-        action = agent.action(obs, last_done)
+        action = agent.action(obs)
         obs_new, r, done, info = envs.step(action)
-        obs, last_done = obs_new, done
+        agent.reset_rct(done == 1)
+        obs = obs_new
         env_rewards += r
         env_steps += 1
         for i in range(proc_num):
