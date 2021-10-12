@@ -5,7 +5,7 @@ import torch.nn.functional as F
 import numpy as np
 from .rct_learner import RCTLearner
 from .returns_calc import _basic_return, _GAE
-from vnenv.utils.convert import toNumpy, toTensor, dict2tensor
+from vnenv.utils.convert import toNumpy, toTensor
 
 
 # to manage all the algorithm params
@@ -28,7 +28,7 @@ class A2CLearner(RCTLearner):
         self.vf_nsteps = vf_nsteps
         self.gae_lbd = gae_lbd
         self.vf_param = vf_param
-        self.gamma = np.float32(gamma)
+        self.gamma = gamma
         self.ent_param = ent_param
 
     def learn(
@@ -36,19 +36,16 @@ class A2CLearner(RCTLearner):
         batched_exp: Dict[str, np.ndarray]
     ) -> Dict[str, float]:
         obs, rct = batched_exp['obs'], batched_exp['rct']
-        r, a, m = batched_exp['r'], batched_exp['a'], batched_exp['m']
+        r, m = batched_exp['r'][:-1], batched_exp['m'][:-1]
+        a = batched_exp['a'][:-1].reshape(-1, 1)
         exp_num = r.shape[1]
         # all data in model_out should in (batch_size, *)
-        if rct == {}:
-            obs = {k: v.reshape(-1, *v.shape[2:]) for k, v in obs.items()}
-            model_out = self.model(dict2tensor(obs, dev=self.dev))
-        else:
-            model_out = self.rct_forward(obs, rct, m)
+        model_out = self.model_forward(obs, rct, m)
         # reshape value to (exp_length+1, exp_num)
         v_array = toNumpy(model_out['value']).reshape(-1, exp_num)
-        adv = _GAE(v_array[:-1], v_array[-1], r, m, self.gamma, self.gae_lbd)
+        adv = _GAE(v_array, r, m, self.gamma, self.gae_lbd)
         returns = _basic_return(
-            v_array[:-1], v_array[-1], r, m,
+            v_array, r, m,
             self.gamma,
             self.vf_nsteps
         )
@@ -56,7 +53,7 @@ class A2CLearner(RCTLearner):
             model_out['value'][:-exp_num], toTensor(returns, self.dev))
         pi = F.softmax(model_out['policy'][:-exp_num], dim=1)
         ent_loss = (- torch.log(pi) * pi).sum(1).mean()
-        pi_a = pi.gather(1, toTensor(a.reshape(-1, 1), self.dev))
+        pi_a = pi.gather(1, toTensor(a, self.dev))
         pi_loss = (-torch.log(pi_a) * toTensor(adv, dev=self.dev)).mean()
         obj_func = \
             pi_loss + self.vf_param * v_loss - self.ent_param * ent_loss

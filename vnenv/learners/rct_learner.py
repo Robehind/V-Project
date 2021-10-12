@@ -18,6 +18,14 @@ class RCTLearner(AbsLearner):
     ) -> None:
         pass
 
+    def model_forward(self, obs, rct, m):
+        if rct == {}:
+            obs = {k: v.reshape(-1, *v.shape[2:]) for k, v in obs.items()}
+            model_out = self.model(dict2tensor(obs, dev=self.dev))
+        else:
+            model_out = self.rct_forward(obs, rct, m)
+        return model_out
+
     def rct_forward(
         self,
         obs: Dict[str, np.ndarray],

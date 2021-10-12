@@ -6,14 +6,13 @@ import numpy as np
 # TODO bug fix @njit
 def _basic_return(
     v_array: np.ndarray,
-    last_v: np.ndarray,
     rew: np.ndarray,
     mask: np.ndarray,
     gamma: float,
     nsteps: int
 ) -> np.ndarray:
     # input array should in (exp_length, exp_nums)
-    R = last_v
+    v_array, R = v_array[:-1], v_array[-1]
     returns = np.zeros_like(rew)
     last_idx = returns.shape[0] - 1
     # TODO 所有项的gamma可以预先计算
@@ -32,7 +31,6 @@ def _basic_return(
 
 def _GAE(
     v_array: np.ndarray,
-    last_v: np.ndarray,
     rew: np.ndarray,
     mask: np.ndarray,
     gamma: float,
@@ -41,10 +39,10 @@ def _GAE(
 ) -> np.ndarray:
     # TODO GAE暂时没有nsteps选项，但是理论上可以只累加未来的几个delta项
     if lbd == 1:
-        return _basic_return(v_array, last_v, rew, mask, gamma, float("inf")) \
-               - v_array.reshape(-1, 1)
-    delta = _basic_return(v_array, last_v, rew, mask, gamma, 1) \
-        - v_array.reshape(-1, 1)
+        return _basic_return(v_array, rew, mask, gamma, float("inf")) \
+               - v_array[:-1].reshape(-1, 1)
+    delta = _basic_return(v_array, rew, mask, gamma, 1) \
+        - v_array[:-1].reshape(-1, 1)
     if lbd == 0:
         return delta
     exp_length = rew.shape[0]
