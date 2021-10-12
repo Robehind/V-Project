@@ -158,13 +158,16 @@ class FcLinearModel(torch.nn.Module):
     def __init__(
         self,
         obs_shapes,
-        act_sz
+        act_sz,
+        dropout_rate=0,
+        q_flag=0
     ):
         super(FcLinearModel, self).__init__()
         self.vobs_sz = np.prod(obs_shapes['fc'])
         tobs_sz = np.prod(obs_shapes['glove'])
 
-        self.net = SimpleMP(act_sz, self.vobs_sz, tobs_sz)
+        self.net = SimpleMP(act_sz, self.vobs_sz, tobs_sz,
+                            dropout_rate=dropout_rate, q_flag=q_flag)
 
     def forward(self, obs, rct={}):
 
