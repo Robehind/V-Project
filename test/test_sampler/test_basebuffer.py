@@ -54,8 +54,8 @@ def test_buffer(
     fc = deque(maxlen=max_exp_num)
     for _ in range(rounds):
         for _ in range(env_num):
-            mapp.append(np.random.rand(exp_length+1, 4, 4, 7))
-            fc.append(np.random.rand(exp_length+1, 1, 10))
+            mapp.append(np.random.rand(exp_length, 4, 4, 7))
+            fc.append(np.random.rand(exp_length, 1, 10))
             lstm.append(np.random.rand(exp_length, 10))
             r.append(np.random.randint(0, 10, (exp_length, )))
             m.append(np.random.randint(0, 2, (exp_length, )))
@@ -74,10 +74,6 @@ def test_buffer(
             bb.write_in(
                 **write_in_data
             )
-        bb.one_more_obs({
-            'map': np.array(list(mapp)[-env_num:])[:, -1],
-            'fc': np.array(list(fc)[-env_num:])[:, -1],
-        })
     out = bb.sample()
     assert cross_cmp(out['r'], r)
     assert cross_cmp(out['a'], a)

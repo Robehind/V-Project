@@ -53,7 +53,7 @@ class BaseSampler:
             Venv.dtypes,
             Vagent.rct_shapes,
             Vagent.rct_dtypes,
-            exp_length,
+            exp_length + 1,  # sample_length = exp_length + 1
             sample_num,
             self.env_num,
             buffer_limit
@@ -77,7 +77,8 @@ class BaseSampler:
         return self.buffer.sample()
 
     def run(self) -> np.ndarray:
-        for _ in range(self.exp_length):
+        # sample exp_length + 1 exps for learner's need
+        for _ in range(self.exp_length+1):
             last_rct = self.Vagent.get_rct()
             a_idx = self.Vagent.action(self.last_obs)
             obs_new, r, done, info = self.Venv.step(a_idx)
@@ -103,8 +104,6 @@ class BaseSampler:
                     ))
                     self.env_steps[i] = 0
                     self.env_reward[i] = 0
-        # get one more obs to calc returns
-        self.buffer.one_more_obs(self.last_obs)
         return dones
 
     def pop_records(self) -> Dict:

@@ -53,10 +53,6 @@ class BaseBuffer(Buff):
         bshapes = {}
         for k in shapes:
             bshapes[k] = (exp_length, max_exp_num)
-        # exp_length for obs plus 1 for extral value calc
-        for k in obs_shapes:
-            bshapes[k] = (exp_length + 1, max_exp_num)
-
         super().__init__(shapes, dtypes, bshapes)
 
         self.exp_length = exp_length
@@ -71,29 +67,6 @@ class BaseBuffer(Buff):
         self.exp_p = 0
         # once full flag
         self.once_full = False
-
-    def one_more_obs(
-        self,
-        obs: Dict[str, np.ndarray]
-    ):
-        ed = self.exp_p + self.env_num
-        # if max_exp_num can't be divided exactly by env_num
-        # then the write_in process will sometimes be splited
-        if ed > self.max_exp_num:
-            spt1 = self.max_exp_num - self.exp_p
-            for k, v in obs.items():
-                self.buff[k][-1][self.exp_p:] = v[:spt1]
-            for k, v in obs.items():
-                self.buff[k][-1][:self.env_num-spt1] = v[spt1:]
-        else:
-            for k, v in obs.items():
-                self.buff[k][-1][self.exp_p:ed] = v
-        if self.step_p == self.exp_length:
-            self.step_p = 0
-            self.exp_p += self.env_num
-            if self.exp_p >= self.max_exp_num:
-                self.once_full = True
-                self.exp_p %= self.max_exp_num
 
     def _write_in(
         self,
@@ -148,6 +121,12 @@ class BaseBuffer(Buff):
         else:
             self._write_in(self.exp_p, ed, obs, rct, a, r, m)
         self.step_p += 1
+        if self.step_p == self.exp_length:
+            self.step_p = 0
+            self.exp_p += self.env_num
+            if self.exp_p >= self.max_exp_num:
+                self.once_full = True
+                self.exp_p %= self.max_exp_num
 
     def sample(
         self

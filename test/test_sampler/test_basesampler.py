@@ -92,11 +92,11 @@ def test_sampler(rct_on):
         agent,
         cl,
         batch_size=20,
-        exp_length=5,
+        exp_length=4,
         buffer_limit=4
     )
     out = sampler.sample()
-    assert cross_cmp(out['obs']['rela'], np.array(_obss))
+    assert cross_cmp(out['obs']['rela'], np.array(_obss[:-1]))
     assert cross_cmp(out['r'], np.array(_rs))
     assert cross_cmp(out['a'], np.array(_acts))
     assert cross_cmp(out['m'], np.array(1 - _ds))
