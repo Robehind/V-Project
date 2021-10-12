@@ -3,13 +3,13 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
-from .abs_learner import AbsLearner
+from .rct_learner import RCTLearner
 from .returns_calc import _basic_return, _GAE
 from vnenv.utils.convert import toNumpy, toTensor, dict2tensor
 
 
 # to manage all the algorithm params
-class A2CLearner(AbsLearner):
+class A2CLearner(RCTLearner):
 
     def __init__(
         self,
@@ -31,43 +31,6 @@ class A2CLearner(AbsLearner):
         self.gamma = np.float32(gamma)
         self.ent_param = ent_param
 
-    def rct_forward(
-        self,
-        obs: Dict[str, np.ndarray],
-        rct: Dict[str, np.ndarray],
-        mask: np.ndarray
-    ) -> Dict[str, torch.Tensor]:
-        exp_length = mask.shape[0]
-        # model forward step by step
-        rct_t = {k: toTensor(v[0], self.dev) for k, v in rct.items()}
-        output = {}  # {'rct': rct_t}
-        for i in range(exp_length+1):
-            obs_t = {k: v[i] for k, v in obs.items()}
-            out = self.model(
-                dict2tensor(obs_t, self.dev),
-                rct_t,
-            )
-            rct_t = out.pop('rct')
-
-            for k in out:
-                output[k] = torch.cat([output[k], out[k]]) \
-                    if k in output else out[k]
-            if i < exp_length-1:
-                self.reset_rct(rct_t, mask[i] == 1)
-        return output
-
-    def reset_rct(
-        self,
-        rct,
-        idxes
-    ):
-        # detach part of the batch to stop gradient between epis
-        # TODO more elegant detach method?
-        for k, v in rct.items():
-            nv = torch.zeros_like(v)
-            nv[idxes] = v[idxes]
-            rct[k] = nv
-
     def learn(
         self,
         batched_exp: Dict[str, np.ndarray]
@@ -83,9 +46,9 @@ class A2CLearner(AbsLearner):
             model_out = self.rct_forward(obs, rct, m)
         # reshape value to (exp_length+1, exp_num)
         v_array = toNumpy(model_out['value']).reshape(-1, exp_num)
-        adv = _GAE(v_array, r, m, self.gamma, self.gae_lbd)
+        adv = _GAE(v_array[:-1], v_array[-1], r, m, self.gamma, self.gae_lbd)
         returns = _basic_return(
-            v_array, r, m,
+            v_array[:-1], v_array[-1], r, m,
             self.gamma,
             self.vf_nsteps
         )

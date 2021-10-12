@@ -76,12 +76,13 @@ class PPOLearner(A2CLearner):
             cliped = ratio.clamp(1-self.pi_eps, 1+self.pi_eps)
             v_array = toNumpy(model_out['value']).reshape(-1, exp_num)
             if adv is None or self.recalc_adv:
-                adv = _GAE(v_array, r, m, self.gamma, self.gae_lbd)
+                adv = _GAE(v_array[:-1], v_array[-1],
+                           r, m, self.gamma, self.gae_lbd)
                 adv = toTensor(adv, self.dev)
             # loss construct
             pi_loss = - torch.min(ratio*adv, cliped*adv).mean()
             returns = _basic_return(
-                v_array, r, m,
+                v_array[:-1], v_array[-1], r, m,
                 self.gamma,
                 self.vf_nsteps
             )
