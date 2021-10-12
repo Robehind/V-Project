@@ -7,7 +7,7 @@ args.update(
     load_model_dir='',  # 要读取的模型参数的完整路径，包括文件名
     load_optim_dir='',  # 要读取的优化其参数的完整路径，包括文件名
     exps_dir='../demoEXPS',  # 保存所有实验文件夹的路径
-    exp_name='thorlstmdemo',  # 将用于生成本次实验的实验文件夹的文件名，因此尽量不要包含特殊符号
+    exp_name='thordemo',  # 将用于生成本次实验的实验文件夹的文件名，因此尽量不要包含特殊符号
     exp_dir='',  # 单次实验的完整路径，会根据时间自动生成
     proc_num=8,  # 进程数
 

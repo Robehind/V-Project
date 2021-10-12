@@ -7,7 +7,7 @@ args.update(
     load_model_dir='',  # 要读取的模型参数的完整路径，包括文件名
     load_optim_dir='',  # 要读取的优化其参数的完整路径，包括文件名
     exps_dir='../demoEXPS',  # 保存所有实验文件夹的路径
-    exp_name='thordemo',  # 将用于生成本次实验的实验文件夹的文件名，因此尽量不要包含特殊符号
+    exp_name='q_demo',  # 将用于生成本次实验的实验文件夹的文件名，因此尽量不要包含特殊符号
     exp_dir='',  # 单次实验的完整路径，会根据时间自动生成
     proc_num=8,  # 进程数
 
@@ -54,18 +54,17 @@ args.update(
     },
 
     # algo params
-    learner='A2CLearner',
+    learner='QLearner',
     learner_args=dict(
         gamma=0.99,
-        gae_lbd=1,
-        vf_nsteps=float("inf"),
-        vf_param=0.5,
-        ent_param=0,
+        nsteps=1
     ),
-    model='FcLinearModel',
+    model='FcLstmModel',
+    model_args={'q_flag': 1},
     agent='BaseAgent',
     agent_args=dict(
-        select_func='policy_select'
+        select_func='epsilon_select',
+        select_params=[0.08]
     ),
     optim='Adam',
     optim_args=dict(
@@ -75,8 +74,8 @@ args.update(
     # exp params
     sampler='BaseSampler',
     sampler_args=dict(
-        batch_size=80,
-        exp_length=10,
+        batch_size=160,
+        exp_length=20,
         buffer_limit=8
     ),
 )
