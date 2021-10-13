@@ -22,7 +22,6 @@ class BaseAgent(AbsAgent):
     ):
         self.gpu_ids = gpu_ids
         self.model = model
-        self.done = False
         self.proc_num = Venv.env_num
         # TODO 多gpu训练同一个模型, DataParallel
         if gpu_ids is not None:
