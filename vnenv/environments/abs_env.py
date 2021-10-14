@@ -234,7 +234,8 @@ class AbsEnv:
         dynamics_args,  # 如果动作是可定制的，通过这个参数来控制
         obs_args,
         event_args,
-        seed=None
+        seed=None,
+        train=True
     ) -> None:
 
         if seed is not None:

@@ -20,13 +20,13 @@ class VNENVargs:
         with open(path, 'w', encoding='utf-8') as f:
             json.dump(self.__dict__, f, indent=4)
 
-    @property
-    def env_args(self):
+    def env_args(self, train=True):
         return dict(
             dynamics_args=self.dynamics_args,
             obs_args=self.obs_args,
             event_args=self.event_args,
-            seed=self.seed
+            seed=self.seed,
+            train=train
         )
 
 

@@ -39,7 +39,7 @@ def main():
 
     # 生成多进程环境，每个进程环境初始化参数可能不一样
     # TODO 不同的进程加载不同的环境这种操作还是以后再弄吧
-    env_args_list = env_cls.args_maker(args.env_args, args.proc_num)
+    env_args_list = env_cls.args_maker(args.env_args(False), args.proc_num)
     env_fns = [make_envs(e, env_cls) for e in env_args_list]
 
     # TODO 在使用随机测试时，环境自动随机初始状态，sche为空时需要继续操作
