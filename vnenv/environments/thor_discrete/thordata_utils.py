@@ -4,7 +4,7 @@ import os
 
 def get_scene_names(train_scenes):
     """根据参数生成完整的房间的名字"""
-    tmp = {}
+    tmp = []
     for k in train_scenes.keys():
         ranges = [x for x in train_scenes[k].split(',')]
         number = []
@@ -12,7 +12,7 @@ def get_scene_names(train_scenes):
             ss = [int(x) for x in a.split('-')]
             number += range(ss[0], ss[-1]+1)
         number = list(set(number))
-        tmp[k] = [make_scene_name(k, i) for i in number]
+        tmp += [make_scene_name(k, i) for i in number]
     return tmp
 
 

@@ -7,7 +7,7 @@ import os
 import json
 import importlib
 from .agent_pose_state import AgentPoseState
-from .thordata_utils import get_type
+from .thordata_utils import get_type, get_scene_names
 from ..abs_env import AbsEnv
 from typing import Optional, Tuple
 
@@ -26,6 +26,7 @@ class DiscreteEnvironment(AbsEnv):
         obs_args,
         event_args,
         seed: int = 1114,
+        train: bool = True,
         min_len_file: Optional[str] = None,
     ):
         random.seed(seed)
@@ -40,9 +41,16 @@ class DiscreteEnvironment(AbsEnv):
         self.offline_data_dir = dynamics_args['offline_data_dir']
         self.max_steps = event_args['max_steps']
 
-        self.chosen_targets = dynamics_args['chosen_targets']
+        if train:
+            self.chosen_scenes = \
+                get_scene_names(dynamics_args['train_scenes'])
+            self.chosen_targets = dynamics_args['train_targets']
+        else:
+            self.chosen_scenes = \
+                get_scene_names(dynamics_args['eval_scenes'])
+            self.chosen_targets = dynamics_args['eval_targets']
+
         self.intersect_targets = None
-        self.chosen_scenes = dynamics_args['chosen_scenes']
 
         self.grid_size = 0.25
         self.rotate_angle = dynamics_args['rotate_angle']
