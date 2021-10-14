@@ -41,8 +41,10 @@ args.update(
         'rotate_angle': 45,
         'move_angle': 45,
         'horizon_angle': 30,
-        "chosen_scenes": ['FloorPlan25_physics'],
-        "chosen_targets": {'kitchen': ["Microwave", 'Sink']},
+        "train_scenes": {'kitchen': '25'},
+        "train_targets": {'kitchen': ["Microwave", 'Sink']},
+        "eval_scenes": {'kitchen': '25'},
+        "eval_targets": {'kitchen': ["Microwave", 'Sink']},
     },
     obs_args={
         "obs_dict": {
@@ -80,4 +82,5 @@ args.update(
         exp_length=20,
         buffer_limit=8
     ),
+    evalor='thor_eval'
 )
