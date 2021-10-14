@@ -18,7 +18,6 @@ def basic_eval(
     env_rewards = np.zeros((proc_num))
     false_action_ratio = [[] for _ in range(proc_num)]
     test_scalars = MeanCalcer()
-
     obs = envs.reset()
 
     pbar = tqdm(total=total_epi)

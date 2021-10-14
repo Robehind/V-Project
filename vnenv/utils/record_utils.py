@@ -103,22 +103,23 @@ def thor_data_output(args, test_scalars):
             return 'kitchen'
         return mapping[num[0]]
     total_scalars = LabelMeanCalcer()
-    scene_split = {k: {} for k in args.test_scenes}
-    target_split = {k: {} for k in args.test_scenes}
-    result = test_scalars.pop_and_reset(['epis'])
+    test_scenes = args.dynamics_args['eval_scenes']
+    scene_split = {k: {} for k in test_scenes}
+    target_split = {k: {} for k in test_scenes}
+    result = test_scalars.pop(['epis'])
 
     for k in result:
         k_sp = k.split('/')
         if len(k_sp) == 1:
             s_type = get_type(k_sp[0])
             scene_split[s_type][k] = result[k].copy()
-            total_scalars[s_type].add_scalars(result[k])
-            total_scalars['Total'].add_scalars(result[k])
+            total_scalars[s_type].add(result[k])
+            total_scalars['Total'].add(result[k])
         else:
             target_split[k_sp[0]][k_sp[-1]] = result[k].copy()
-            total_scalars[k_sp[-1]].add_scalars(result[k])
+            total_scalars[k_sp[-1]].add(result[k])
 
-    total_scalars = total_scalars.pop_and_reset(['epis'])
+    total_scalars = total_scalars.pop(['epis'])
 
     for k in scene_split:
         out = dict(Total=total_scalars.pop(k))

@@ -14,20 +14,18 @@ def thor_eval(
     total_epi = args.total_eval_epi
 
     epis = 0
-
     env_steps = np.zeros((proc_num))
     env_rewards = np.zeros((proc_num))
     false_action_ratio = [[] for _ in range(proc_num)]
-    last_done = np.zeros((proc_num))
     test_scalars = LabelMeanCalcer()
     obs = env.reset()
 
     pbar = tqdm(total=total_epi)
     while epis < total_epi:
-        agent.clear_mems()
-        action, _ = agent.action(obs, last_done)
+        action = agent.action(obs)
         obs_new, r, done, info = env.step(action)
-        obs, last_done = obs_new, done
+        agent.reset_rct(done == 1)
+        obs = obs_new
         env_rewards += r
         env_steps += 1
         for i in range(proc_num):
@@ -40,11 +38,14 @@ def thor_eval(
             if done[i] and epis < total_epi:
                 epis += 1
                 pbar.update(1)
-                spl = 0
-                if t_info['success']:
-                    assert t_info['best_len'] <= env_steps[i],\
-                        f"{t_info['best_len']}>{env_steps[i]}"
-                    spl = t_info['best_len']/env_steps[i]
+                if args.calc_spl:
+                    if t_info['success']:
+                        assert t_info['min_len'] <= env_steps[i],\
+                            f"{t_info['min_len']}>{env_steps[i]}"
+                        # TODO spl计算问题。0？done？
+                        spl = t_info['min_len']/env_steps[i]
+                    else:
+                        spl = 0
                 data = {
                     'ep_length:': env_steps[i],
                     'SR:': t_info['success'],
@@ -56,7 +57,7 @@ def thor_eval(
                 target_str = \
                     get_type(t_info['scene_id'])+'/'+t_info['target']
                 for k in [t_info['scene_id'], target_str]:
-                    test_scalars[k].add_scalars(data)
+                    test_scalars[k].add(data)
                 env_steps[i] = 0
                 env_rewards[i] = 0
                 false_action_ratio[i] = []
