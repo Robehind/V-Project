@@ -21,17 +21,6 @@ def cross_cmp(a, b):
     return True
 
 
-class TESTcl:
-    def __init__(self) -> None:
-        pass
-
-    def next_sche(self, *args, **kwargs):
-        pass
-
-    def init_sche(self, *args, **kwargs):
-        pass
-
-
 class TESTenv:
     def __init__(self) -> None:
         self.env_num = 4
@@ -84,13 +73,11 @@ class TESTagent:
 
 @pytest.mark.parametrize('rct_on', [True, False])
 def test_sampler(rct_on):
-    cl = TESTcl()
     Venv = TESTenv()
     agent = TESTagent(rct_on)
     sampler = BaseSampler(
         Venv,
         agent,
-        cl,
         batch_size=20,
         exp_length=4,
         buffer_limit=4

@@ -7,8 +7,7 @@ import numpy as np
 def thor_eval(
     args,
     agent,
-    env,
-    cl_scher
+    env
 ):
     agent.model.eval()
     proc_num = args.proc_num

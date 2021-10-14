@@ -103,7 +103,7 @@ args_dict = dict(
     sampler_args=dict(
         batch_size=20,
     ),
-    CLscher='BaseCL',
+    CLscher='AbsCL',
     CLscher_args={},
 
     # train or eval funcs

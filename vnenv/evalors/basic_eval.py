@@ -2,27 +2,16 @@ from tqdm import tqdm
 import numpy as np
 from vnenv.utils.record_utils import MeanCalcer, data_output
 from vnenv.environments import VecEnv
-from vnenv.curriculums import BaseCL
 
 
 def basic_eval(
     args,
     agent,
-    envs: VecEnv,
-    cl_scher: BaseCL
+    envs: VecEnv
 ):
     agent.model.eval()
     proc_num = args.proc_num
     total_epi = args.total_eval_epi
-
-    # 测试阶段可以一次性设置好所有用于测试的sche
-    sche = cl_scher.init_sche()
-    if sche is not None and len(sche) != total_epi:
-        print("Warning: lengths of curriculums doesn't match the \
-               total eval epi number. Eval for the smaller number")
-        total_epi = min(total_epi, len(sche))
-        sche = sche[:total_epi]
-    envs.sche_update(sche)
 
     epis = 0
     env_steps = np.zeros((proc_num))

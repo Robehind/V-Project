@@ -37,10 +37,6 @@ def main():
     cl_cls = getattr(curriculums, args.CLscher)
     eval_func = getattr(evalors, args.evalor)
 
-    # TODO params management
-    # init CLscher
-    clscher = cl_cls(**args.CLscher_args)
-
     # 生成多进程环境，每个进程环境初始化参数可能不一样
     # TODO 不同的进程加载不同的环境这种操作还是以后再弄吧
     env_args_list = env_cls.args_maker(args.env_args, args.proc_num)
@@ -48,10 +44,19 @@ def main():
 
     # TODO 在使用随机测试时，环境自动随机初始状态，sche为空时需要继续操作
     # 当指定测试序列时，sche为空时进程需要等待退出
-    no_op = True
-    if clscher.__class__.__name__ == 'BaseCL':
-        no_op = False
+    no_op = False if args.CLscher == 'AbsCL' else True
     Venv = VecEnv(env_fns, min_len=args.calc_spl, no_sche_no_op=no_op)
+
+    # init CLscher
+    if args.CLscher != 'AbsCL':
+        clscher = cl_cls(Venv, **args.CLscher_args)
+        sche = clscher.sche
+        if sche is not None and len(sche) != args.total_eval_epi:
+            print("Warning: lengths of curriculums doesn't match the \
+                  total eval epi number. Eval for the smaller number")
+            args.total_eval_epi = min(args.total_eval_epi, len(sche))
+            sche = sche[:args.total_eval_epi]
+        Venv.sche_update(sche)
 
     # 环境返回关于观察与动作的信息，方便初始化模型
     obs_info = Venv.shapes
@@ -70,7 +75,7 @@ def main():
     # make exp directory
     make_exp_dir(args, 'TEST')
     # training
-    eval_func(args, agent, Venv, clscher)
+    eval_func(args, agent, Venv)
 
 
 if __name__ == "__main__":

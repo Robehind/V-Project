@@ -3,7 +3,6 @@ import numpy as np
 from .base_buffer import BaseBuffer
 from vnenv.environments import VecEnv
 from vnenv.agents import AbsAgent
-from vnenv.curriculums import BaseCL
 from vnenv.utils.record_utils import MeanCalcer
 
 
@@ -14,7 +13,6 @@ class BaseSampler:
         self,
         Venv: VecEnv,
         Vagent: AbsAgent,
-        CLscher: BaseCL,
         batch_size: int,
         exp_length: int,
         buffer_limit: int,
@@ -29,7 +27,6 @@ class BaseSampler:
 
         self.Venv = Venv
         self.Vagent = Vagent
-        self.cl = CLscher
 
         self.env_num = Venv.env_num
         self.exp_length = exp_length
@@ -43,9 +40,6 @@ class BaseSampler:
 
         self.rounds = buffer_update // self.env_num + \
             int(buffer_update % self.env_num != 0)
-
-        # init curriculum
-        CLscher.init_sche(sampler=self)
 
         # init buffer
         self.buffer = BaseBuffer(
@@ -71,9 +65,7 @@ class BaseSampler:
 
     def sample(self) -> Dict:
         for _ in range(self.rounds):
-            dones = self.run()
-            # updating curriculum
-            self.cl.next_sche(dones, self)
+            self.run()
         return self.buffer.sample()
 
     def run(self) -> np.ndarray:
@@ -105,6 +97,9 @@ class BaseSampler:
                     self.env_steps[i] = 0
                     self.env_reward[i] = 0
         return dones
+
+    def report(self) -> Dict:
+        return self.mean_calc.report()
 
     def pop_records(self) -> Dict:
         """will reset all records and reset"""

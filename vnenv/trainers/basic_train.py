@@ -3,12 +3,14 @@ from tensorboardX import SummaryWriter
 from utils.record_utils import MeanCalcer
 from learners.abs_learner import AbsLearner
 from samplers.base_sampler import BaseSampler
+from curriculums.abs_cl import AbsCL
 
 
 def basic_train(
     args,
     sampler: BaseSampler,
     learner: AbsLearner,
+    clscher: AbsCL,
     tx_writer: SummaryWriter
 ):
     steps = 0
@@ -24,6 +26,8 @@ def basic_train(
 
         batched_exp = sampler.sample()
         obj_salars = learner.learn(batched_exp)
+        clscher.next_sche(update_steps, sampler.report())
+
         pbar.update(update_steps)
         steps += update_steps
 

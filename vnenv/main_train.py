@@ -48,7 +48,7 @@ def main():
 
     # TODO params management
     # init CLscher
-    clscher = cl_cls(**args.CLscher_args)
+    clscher = cl_cls(Venv, **args.CLscher_args)
 
     # 环境返回关于观察与动作的信息，方便初始化模型
     obs_info = Venv.shapes
@@ -75,7 +75,7 @@ def main():
     # init agent
     agent = agent_cls(model, Venv, args.gpu_ids, **args.agent_args)
     # init sampler
-    sampler = sampler_cls(Venv, agent, clscher, **args.sampler_args)
+    sampler = sampler_cls(Venv, agent, **args.sampler_args)
     # init learner
     learner = learner_cls(model, optim, **args.learner_args)
     # make exp directory
@@ -83,7 +83,7 @@ def main():
     # init tensorboardx
     tx_writer = SummaryWriter(log_dir=args.exp_dir)
     # training
-    train_func(args, sampler, learner, tx_writer)
+    train_func(args, sampler, learner, clscher, tx_writer)
 
 
 if __name__ == "__main__":
