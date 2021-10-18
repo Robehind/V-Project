@@ -17,7 +17,7 @@ args.update(
     model_save_freq=200000,  # 每进行n个episode，就保存一次模型参数
 
     # eval proc params
-    total_eval_epi=100,  # 指定测试时测试多少个episode
+    total_eval_epi=1000,  # 指定测试时测试多少个episode
 
     # task params
     env='DiscreteEnvironment',
