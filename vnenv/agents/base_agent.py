@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 import torch
 import torch.nn as nn
 import numpy as np
@@ -45,8 +45,12 @@ class BaseAgent(AbsAgent):
 
     def action(
         self,
-        obs: Dict[str, np.ndarray]
-    ) -> List[int]:
+        obs: Dict[str, np.ndarray],
+        last_done: np.ndarray
+    ) -> Tuple[List[int], Dict[str, np.ndarray]]:
+        # reset rct
+        self._reset_rct(last_done == 1)
+        last_rct = self.get_rct()
         # no grad when sampling actions
         with torch.no_grad():
             # TODO copy?
@@ -59,14 +63,14 @@ class BaseAgent(AbsAgent):
             del self.rct
             self.rct = out['rct']
         # action selection
-        return self.select(out, *self.select_params)
+        return self.select(out, *self.select_params), last_rct
 
-    def reset_rct(self, idx: np.ndarray):
+    def _reset_rct(self, idx: np.ndarray):
         # reset recurrent data specified by idx to 0
         # TODO learnable init state?
         assert not isinstance(idx, bool)
         for v in self.rct.values():
             v[idx] = 0
 
-    def get_rct(self):
+    def get_rct(self) -> Dict[str, np.ndarray]:
         return dict2numpy(self.rct)

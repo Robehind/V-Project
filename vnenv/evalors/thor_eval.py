@@ -18,13 +18,14 @@ def thor_eval(
     env_rewards = np.zeros((proc_num))
     false_action_ratio = [[] for _ in range(proc_num)]
     test_scalars = LabelMeanCalcer()
+
     obs = env.reset()
+    done = np.zeros((env.env_num))
 
     pbar = tqdm(total=total_epi)
     while epis < total_epi:
-        action = agent.action(obs)
+        action, _ = agent.action(obs, done)
         obs_new, r, done, info = env.step(action)
-        agent.reset_rct(done == 1)
         obs = obs_new
         env_rewards += r
         env_steps += 1

@@ -23,7 +23,7 @@ class AbsAgent:
     def sync_params(self, model):
         return NotImplementedError
 
-    def reset_rct(self, idx):
+    def _reset_rct(self, idx):
         pass
 
     def close(self):

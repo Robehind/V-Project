@@ -24,4 +24,4 @@ class RandomAgent(AbsAgent):
     ) -> Tuple[List[str], np.ndarray]:
         a_ids = list(range(self.action_sz))
         a_idx = np.array([random.choice(a_ids) for _ in range(self.proc_num)])
-        return a_idx
+        return a_idx, {}
