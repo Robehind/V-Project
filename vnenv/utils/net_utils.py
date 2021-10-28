@@ -50,6 +50,6 @@ def save_model(model, path_to_save, title):
 
 def optim2cuda(optim, gpu_id):
     for state in optim.state.values():
-        for _, v in state.items():
+        for k, v in state.items():
             if torch.is_tensor(v):
-                v = v.cuda(gpu_id)
+                state[k] = v.cuda(gpu_id)
