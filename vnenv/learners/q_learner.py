@@ -18,7 +18,7 @@ class QLearner(RCTLearner):
         optimizer: torch.optim,
         gamma: float,
         nsteps: int,
-        target_model: bool = False,  # TODO double learning
+        target_model: bool = False,
         sync_freq: int = 100,
         est_type: str = 'q_learning'  # TODO 'sarsa' 'e_sarsa' 'tree_backup'
     ) -> None:

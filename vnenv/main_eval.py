@@ -42,8 +42,6 @@ def main():
     env_args_list = env_cls.args_maker(args.env_args(False), args.proc_num)
     env_fns = [make_envs(e, env_cls) for e in env_args_list]
 
-    # TODO 在使用随机测试时，环境自动随机初始状态，sche为空时需要继续操作
-    # 当指定测试序列时，sche为空时进程需要等待退出
     no_op = False if args.CLscher == 'AbsCL' else True
     Venv = VecEnv(env_fns, min_len=args.calc_spl, no_sche_no_op=no_op)
 
