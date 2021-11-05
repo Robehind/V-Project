@@ -44,23 +44,17 @@ class VecEnv:
         self,
         env_fns: List[callable],
         context: str = 'spawn',
-        min_len: bool = False,
-        no_sche_no_op: bool = False
+        min_len: bool = False
     ):
         """
         多线程环境。对env的一个封装，输入的是环境的构造函数.min_len=True下会及算最短路，很慢
         """
         ctx = mp.get_context(context)
         self.env_num = len(env_fns)
-        # 随便初始化一个环境，获得关于字段名、数据size和type信息
-        env = env_fns[0]()
-        self.keys, self.shapes, self.dtypes = env.data_info()
-        self.action_sz = env.action_sz
-        env.close()
-        del env
-        # 所有环境共享同一个sche
-        self.sche = mp.Manager().list()
-        # 按字段构造数据缓存区
+        # an env for "copy" properties
+        self.prop_env = env_fns[0]()
+        self.keys, self.shapes, self.dtypes = self.prop_env.data_info()
+        # build buff by keys
         self.data_bufs = [
             {
                 k: ctx.Array(
@@ -70,7 +64,7 @@ class VecEnv:
             }
             for _ in env_fns
         ]
-        # 生成环境进程
+        # procs for child env
         self.parent_pipes = []
         self.procs = []
         for env_fn, data_buf in zip(env_fns, self.data_bufs):
@@ -85,9 +79,7 @@ class VecEnv:
                     data_buf,
                     self.shapes,
                     self.dtypes,
-                    min_len,
-                    self.sche,
-                    no_sche_no_op
+                    min_len
                 )
             )
             proc.daemon = True
@@ -97,14 +89,20 @@ class VecEnv:
             child_pipe.close()
         self.waiting_step = False
 
-    def sche_update(self, sche, clear=False):
-        if sche == [] or sche is None:
+    def __getattr__(self, name):
+        return getattr(self.prop_env, name)
+
+    def update_settings(self, settings: Dict):
+        if settings in [[], {}, None]:
             return
         if self.waiting_step:
             self.step_wait()
-        if clear:
-            self.sche.clear()
-        self.sche.extend(sche)
+        # TODO 暂时只支持所有进程环境用同一套设定
+        self.prop_env.update_settings(settings)
+        settings = [settings.copy() for _ in range(self.env_num)]
+        for pipe, s in zip(self.parent_pipes, settings):
+            pipe.send(('update_settings', s))
+        [pipe.recv() for pipe in self.parent_pipes]
 
     def reset(self):
         if self.waiting_step:
@@ -171,9 +169,7 @@ def _subproc_worker(
     bufs,
     obs_shapes,
     obs_dtypes,
-    min_len,
-    sche,
-    no_op=False  # 在sche为空时，如果为true，则会无任何操作
+    min_len,  # whether to calc min length of episode
 ):
     """
     Control a single environment instance using IPC and
@@ -194,32 +190,21 @@ def _subproc_worker(
     try:
         while True:
             cmd, data = pipe.recv()
+            ss = {}
             if waiting and cmd != 'close':
                 pipe.send((None, 0, 0, None))
                 continue
             if cmd == 'reset':
-                try:
-                    ss = sche.pop(0)
-                    obs = env.reset(
-                        **ss, min_len=min_len
-                    )
-                except IndexError:
-                    obs = env.reset(min_len=min_len)
-                    waiting = no_op
+                obs = env.reset(min_len=min_len)
                 pipe.send((_write_bufs(obs)))
             elif cmd == 'step':
                 obs, reward, done, info = env.step(data)
                 if done:
-                    if len(sche) == 0:
-                        obs = env.reset(min_len=min_len)
-                        waiting = no_op
-                    else:
-                        obs = env.reset(
-                            **sche.pop(0), min_len=min_len
-                        )
+                    obs = env.reset(**ss, min_len=min_len)
                 pipe.send((_write_bufs(obs), reward, done, info))
-            elif cmd == 'render':
-                pipe.send(env.render())
+            elif cmd == 'update_settings':
+                env.update_settings(data)
+                pipe.send(None)
             elif cmd == 'close':
                 pipe.send(None)
                 break
