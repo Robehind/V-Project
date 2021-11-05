@@ -29,34 +29,18 @@ class DiscreteEnvironment(AbsEnv):
         train: bool = True,
         min_len_file: Optional[str] = None,
     ):
+        # settings can't change during training
         random.seed(seed)
-
         self.min_len_file = min_len_file
-
         action_dict = dynamics_args['action_dict']
         self.actions = list(action_dict.keys())
         self.action_sz = len(self.actions)
         self.action_dict = action_dict
-        self.reward_dict = event_args['reward_dict']
         self.offline_data_dir = dynamics_args['offline_data_dir']
-        self.max_steps = event_args['max_steps']
-
-        if train:
-            self.chosen_scenes = \
-                get_scene_names(dynamics_args['train_scenes'])
-            self.chosen_targets = dynamics_args['train_targets']
-        else:
-            self.chosen_scenes = \
-                get_scene_names(dynamics_args['eval_scenes'])
-            self.chosen_targets = dynamics_args['eval_targets']
-
-        self.intersect_targets = None
-
         self.grid_size = 0.25
         self.rotate_angle = dynamics_args['rotate_angle']
         self.move_angle = dynamics_args['move_angle']
         self.horizon_angle = dynamics_args['horizon_angle']
-
         # 根据不同的绝对移动角度，x和z坐标的变化符合以下表格规律
         # 智能体面向z轴正方向，右手为x轴正方向时，角度为0度。向右转为正角度。
         self.move_list = [0, 1, 1, 1, 0, -1, -1, -1]
@@ -69,97 +53,8 @@ class DiscreteEnvironment(AbsEnv):
         self.move_angles = [
             x*self.move_angle for x in range(0, 360//self.move_angle)
         ]
-        # Allowed horizons.
+        # Allowed horizons
         self.horizons = [0, 30]
-
-        # 判断环境是否需要自动为智能体停止模拟
-        self.auto_done = True
-        if 'Done' in self.actions:
-            self.auto_done = False
-
-        # 可变变量
-        self.scene_id = None
-        self.done = False
-        self.reward = 0
-        self.steps = 0
-
-        # self.agent_state的数据格式沿用AgentPoseState
-        self.agent_state = None
-        self.start_state = None
-        # self.last_agent_state = None
-        self.last_action = None
-        self.last_opt = None
-        self.last_opt_success = True
-
-        self.obs_dict = obs_args['obs_dict']
-        self.obs_loader = {k: None for k in self.obs_dict}
-
-        self.target_str = None
-        self.target_type = list(obs_args['target_dict'].keys())
-        self.target_dict = obs_args['target_dict']
-        self.info = {}
-
-        # Reading and gernerating meta data
-        self.all_objects = None  # 房间支持可以找的所有物体str
-        self.all_objects_id = None  # 房间支持可以找的所有物体以及其坐标，in str
-        self.all_agent_states = None  # 智能体所有的可能的位姿状态，str
-        self.all_visible_states = None  # 智能体在哪些位置可以看到当前目标， in str
-
-        # 预先计算chosen_scenes中所有房间可以找到目标
-        self.all_s_objects = {}  # 所有房间支持可以找的所有物体str
-        self.all_s_objects_id = {}  # 所有房间支持可以找的所有物体以及其坐标，in str
-        self.intersect_s_targets = {}  # 被指定且可以找到的物体，in str
-        for s in self.chosen_scenes:
-            s_path = os.path.join(self.offline_data_dir, s)
-            with open(
-                os.path.join(s_path, self.visible_file_name), "r",
-            ) as f:
-                visible_data = json.load(f)
-            self.all_s_objects_id[s] = visible_data.keys()
-            self.all_s_objects[s] = \
-                set([x.split('|')[0] for x in self.all_s_objects_id[s]])
-            self.all_s_objects[s] = list(self.all_s_objects[s])
-            if self.chosen_targets is None:
-                self.intersect_s_targets[s] = self.all_s_objects[s]
-            else:
-                self.intersect_s_targets[s] = list(
-                    set(self.chosen_targets[get_type(s)]) &
-                    set(self.all_s_objects[s])
-                )
-                self.intersect_s_targets[s].sort()
-                if self.intersect_s_targets[s] == []:
-                    raise Exception(f'In scene {s}')
-        # TODO不同的目标表示可能会导致在每次重置环境时读取新的状态表示文件,未来再改善，应该写到reset里
-        self.target_repre_info = {}
-        self.tLoader = None
-        for str_ in self.target_type:
-            if str_ in ['glove', 'fasttext', 'onehot']:
-                self.tLoader = h5py.File(self.target_dict[str_], "r",)
-                tmp = self.tLoader[str_][list(self.tLoader[str_].keys())[0]][:]
-                self.target_repre_info.update({str_: (tmp.shape, tmp.dtype)})
-
-        # 随机读一个房间的数据，生成状态的信息，在并行化环境的时候用得上
-        self.his_states = []  # in str
-        self.his_len = 0
-        scene_id = random.choice(self.chosen_scenes)
-        self.obs_info = {}
-        for type_, name_ in self.obs_dict.items():
-            loader = h5py.File(
-                os.path.join(self.offline_data_dir, scene_id, name_), "r",
-            )
-            tmp = loader[list(loader.keys())[0]][:]
-            if '|' in type_:
-                shape = (int(type_.split('|')[1]), *tmp.shape)
-                self.his_len = max(self.his_len, int(type_.split('|')[1]))
-            else:
-                shape = tmp.shape
-            self.obs_info.update({type_: (shape, tmp.dtype)})
-            loader.close()
-
-        self._data_info = {}
-        self._data_info.update(self.target_repre_info)
-        self._data_info.update(self.obs_info)
-
         # action check
         need_pitch = False
         min_rotate = 999
@@ -183,6 +78,120 @@ class DiscreteEnvironment(AbsEnv):
             self.horizons = [0]
         if min_rotate > self.rotate_angle:
             print("Warning: min rotate angle is bigger than rotate_angle")
+        # Done settings
+        self.auto_done = True
+        if 'Done' in self.actions:
+            self.auto_done = False
+        # get target repre info
+        # TODO tLoader should be reloaded in reset function in some cases
+        # e.g. image representation
+        self.target_type = list(obs_args['target_dict'].keys())
+        self.target_dict = obs_args['target_dict']
+        self.target_repre_info = {}
+        self.tLoader = None
+        for str_ in self.target_type:
+            if str_ in ['glove', 'fasttext', 'onehot']:
+                self.tLoader = h5py.File(self.target_dict[str_], "r",)
+                tmp = self.tLoader[str_][list(self.tLoader[str_].keys())[0]][:]
+                self.target_repre_info.update({str_: (tmp.shape, tmp.dtype)})
+        # Read a random room for data info of obs
+        if train:
+            chosen_scenes = \
+                get_scene_names(dynamics_args['train_scenes'])
+            chosen_targets = dynamics_args['train_targets']
+        else:
+            chosen_scenes = \
+                get_scene_names(dynamics_args['eval_scenes'])
+            chosen_targets = dynamics_args['eval_targets']
+        self.obs_dict = obs_args['obs_dict']
+        self.his_len = 0
+        scene_id = random.choice(chosen_scenes)
+        self.obs_info = {}
+        for type_, name_ in self.obs_dict.items():
+            loader = h5py.File(
+                os.path.join(self.offline_data_dir, scene_id, name_), "r",
+            )
+            tmp = loader[list(loader.keys())[0]][:]
+            if '|' in type_:
+                shape = (int(type_.split('|')[1]), *tmp.shape)
+                self.his_len = max(self.his_len, int(type_.split('|')[1]))
+            else:
+                shape = tmp.shape
+            self.obs_info.update({type_: (shape, tmp.dtype)})
+            loader.close()
+        self._data_info = {}
+        self._data_info.update(self.target_repre_info)
+        self._data_info.update(self.obs_info)
+
+        # Running properties
+        self.scene_id = None
+        self.done = False
+        self.reward = 0
+        self.steps = 0
+
+        self.agent_state = None  # in AgentPoseState
+        self.start_state = None
+        self.his_states = []  # in str
+        self.last_action = None
+        self.last_opt = None
+        self.last_opt_success = True
+
+        self.obs_loader = {k: None for k in self.obs_dict}
+
+        self.target_str = None
+        self.info = {}
+
+        self.all_s_objects = {}  # 所有房间支持可以找的所有物体str
+        self.all_s_objects_id = {}  # 所有房间支持可以找的所有物体以及其坐标，in str
+        self.intersect_s_targets = {}  # 所有房间被指定且可以找到的物体，in str
+        self.all_objects = None  # 房间支持可以找的所有物体str
+        self.all_objects_id = None  # 房间支持可以找的所有物体以及其坐标，in str
+        self.all_agent_states = None  # 智能体所有的可能的位姿状态，str
+        self.all_visible_states = None  # 智能体在哪些位置可以看到当前目标， in str
+        self.intersect_targets = None
+
+        # settings can change
+        settings = dict(
+            reward_dict=event_args['reward_dict'],
+            max_steps=event_args['max_steps'],
+            chosen_scenes=chosen_scenes,
+            chosen_targets=chosen_targets
+        )
+        self.update_settings(settings)
+
+    def update_settings(self, settings):
+        change_strs = ['chosen_scenes', 'chosen_targets',
+                       'reward_dict', 'max_steps']  # TODO distance
+        for k, v in settings.items():
+            if k in change_strs:
+                setattr(self, k, copy.deepcopy(v))
+            else:
+                print(f"Warning: Unrecognize settings '{k}'")
+        self.collect_legal_tgt()
+
+    def collect_legal_tgt(self):
+        # TODO if chosen_targets didn't change, we don't need to change
+        for s in self.chosen_scenes:
+            if s not in self.all_s_objects:
+                s_path = os.path.join(self.offline_data_dir, s)
+                with open(
+                    os.path.join(s_path, self.visible_file_name), "r",
+                ) as f:
+                    visible_data = json.load(f)
+                self.all_s_objects_id[s] = visible_data.keys()
+                self.all_s_objects[s] = \
+                    set([x.split('|')[0] for x in self.all_s_objects_id[s]])
+                self.all_s_objects[s] = list(self.all_s_objects[s])
+            if self.chosen_targets is None:
+                self.intersect_s_targets[s] = self.all_s_objects[s]
+            else:
+                self.intersect_s_targets[s] = list(
+                    set(self.chosen_targets[get_type(s)]) &
+                    set(self.all_s_objects[s])
+                )
+                self.intersect_s_targets[s].sort()
+                if self.intersect_s_targets[s] == []:
+                    raise Exception(f'In scene {s}')
 
     def data_info(self) -> Tuple[list, dict, dict]:
         keys = list(self._data_info.keys())
@@ -268,7 +277,8 @@ class DiscreteEnvironment(AbsEnv):
             self.info.update(dict(min_len=self.best_path_len()[1]))
         _target_repre = self.get_target_repre(self.target_str)
         _obs = self.get_obs()
-        _obs.update(_target_repre)
+        if not allow_no_target:
+            _obs.update(_target_repre)
         return _obs
 
     def set_agent_state(self, agent_state=None):
@@ -380,7 +390,6 @@ class DiscreteEnvironment(AbsEnv):
 
         self.action_interpret(self.action_dict[action])
         self.his_states = [str(self.agent_state)] + self.his_states[1:]
-        # self.last_agent_state = copy.deepcopy(self.agent_state)
         self.steps += 1
         self.last_action = action
         # 分析events，给reward
