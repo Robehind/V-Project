@@ -55,13 +55,17 @@ class BaseSampler:
 
         # init Mean Calcer
         self.mean_calc = MeanCalcer()
+        self.reset()
 
+    def reset(self):
+        self.buffer.clear()
+        self.mean_calc.pop()
         # log rewards and steps for each env
         self.env_reward = np.zeros((self.env_num))
         self.env_steps = np.zeros((self.env_num))
 
         self.last_obs = self.Venv.reset()
-        self.last_done = np.zeros((self.env_num))
+        self.last_done = np.ones((self.env_num))
 
     def sample(self) -> Dict:
         for _ in range(self.rounds):

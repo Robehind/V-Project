@@ -62,6 +62,9 @@ class BaseBuffer(Buff):
         self.env_num = env_num
         self.sample_num = sample_num
 
+        self.clear()
+
+    def clear(self):
         # pointer to control the write in position
         self.step_p = 0
         self.exp_p = 0
