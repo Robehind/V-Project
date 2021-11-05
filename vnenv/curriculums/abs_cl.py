@@ -1,9 +1,6 @@
 class AbsCL:
-    def __init__(self, env) -> None:
-        self.sche_count = 0
-
-    def sche_create(self):
-        return list()
-
-    def next_sche(self, update_steps, *args, **kwargs):
+    def __init__(self, env, *args, **kwargs) -> None:
         pass
+
+    def next_task(self, update_steps, *args, **kwargs):
+        return False

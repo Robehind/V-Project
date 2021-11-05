@@ -26,7 +26,8 @@ def basic_train(
 
         batched_exp = sampler.sample()
         obj_salars = learner.learn(batched_exp)
-        clscher.next_sche(update_steps, sampler.report())
+        if clscher.next_task(update_steps, sampler.report()):
+            sampler.reset()
 
         pbar.update(update_steps)
         steps += update_steps

@@ -42,19 +42,9 @@ def main():
     env_args_list = env_cls.args_maker(args.env_args(False), args.proc_num)
     env_fns = [make_envs(e, env_cls) for e in env_args_list]
 
-    no_op = False if args.CLscher == 'AbsCL' else True
-    Venv = VecEnv(env_fns, min_len=args.calc_spl, no_sche_no_op=no_op)
+    Venv = VecEnv(env_fns, min_len=args.calc_spl)
 
-    # init CLscher
-    if args.CLscher != 'AbsCL':
-        clscher = cl_cls(Venv, **args.CLscher_args)
-        sche = clscher.sche
-        if sche is not None and len(sche) != args.total_eval_epi:
-            print("Warning: lengths of curriculums doesn't match the \
-                  total eval epi number. Eval for the smaller number")
-            args.total_eval_epi = min(args.total_eval_epi, len(sche))
-            sche = sche[:args.total_eval_epi]
-        Venv.sche_update(sche)
+    # TODO init CLscher
 
     # 环境返回关于观察与动作的信息，方便初始化模型
     obs_info = Venv.shapes
@@ -72,7 +62,7 @@ def main():
     agent = agent_cls(model, Venv, args.gpu_ids, **args.agent_args)
     # make exp directory
     make_exp_dir(args, 'TEST')
-    # training
+    # evaluating
     eval_func(args, agent, Venv)
 
 

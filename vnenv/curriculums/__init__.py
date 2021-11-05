@@ -1,4 +1,4 @@
 from .abs_cl import AbsCL
-from .static_cl import StaticCL
+from .base_cls import SceneCL
 
-__all__ = ['AbsCL', 'StaticCL']
+__all__ = ['AbsCL', 'SceneCL']
