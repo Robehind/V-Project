@@ -61,7 +61,7 @@ def main():
     # init agent
     agent = agent_cls(model, Venv, args.gpu_ids, **args.agent_args)
     # make exp directory
-    make_exp_dir(args, 'TEST')
+    make_exp_dir(args, 'Eval-')
     # evaluating
     eval_func(args, agent, Venv)
 
