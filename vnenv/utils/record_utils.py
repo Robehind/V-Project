@@ -1,6 +1,5 @@
-import os
 from typing import Union, List, Dict
-import json
+from tensorboardX import SummaryWriter
 
 
 class MeanCalcer(object):
@@ -92,58 +91,22 @@ class LabelMeanCalcer(object):
         return out
 
 
-def thor_data_output(args, test_scalars):
-    """整理数据并输出到json。输入的这个是一个dict，键有房间名称，
-    以及前缀一个场景类型的目标字符串(为了告诉函数这个目标是在哪个房间找的)"""
-    def get_type(scene_name):
-        """根据房间名称返回该房间属于哪个类型"""
-        mapping = {'2': 'living_room', '3': 'bedroom', '4': 'bathroom'}
-        num = scene_name.split('_')[0].split('n')[-1]
-        if len(num) < 3:
-            return 'kitchen'
-        return mapping[num[0]]
-    total_scalars = LabelMeanCalcer()
-    test_scenes = args.dynamics_args['eval_scenes']
-    scene_split = {k: {} for k in test_scenes}
-    target_split = {k: {} for k in test_scenes}
-    result = test_scalars.pop(['epis'])
-
-    for k in result:
-        k_sp = k.split('/')
-        if len(k_sp) == 1:
-            s_type = get_type(k_sp[0])
-            scene_split[s_type][k] = result[k].copy()
-            total_scalars[s_type].add(result[k])
-            total_scalars['Total'].add(result[k])
+def add_eval_data(writer: SummaryWriter, data: Dict, prefix: str = ''):
+    """add data organized in Dict to TensoboardX"""
+    result_str = ''
+    for k, v in data.items():
+        if isinstance(v, dict):
+            if prefix != '':
+                raise Exception("data dict too deep(Can't Dict[Dict[Dict]])")
+            else:
+                add_eval_data(writer, v, k)
+        elif isinstance(v, list):
+            for x, y in v:
+                if prefix == '':
+                    writer.add_scalar(k, y, x)
+                else:
+                    writer.add_scalars(prefix, {k: y}, x)
         else:
-            target_split[k_sp[0]][k_sp[-1]] = result[k].copy()
-            total_scalars[k_sp[-1]].add(result[k])
-
-    total_scalars = total_scalars.pop(['epis'])
-
-    for k in scene_split:
-        out = dict(Total=total_scalars.pop(k))
-        for i in sorted(scene_split[k]):
-            scene_split[k][i].pop('false_action_ratio')
-            out[i] = scene_split[k][i]
-        for i in sorted(target_split[k]):
-            target_split[k][i].pop('false_action_ratio')
-            out[i] = target_split[k][i]
-        result_path = os.path.join(args.exp_dir, k+'_'+args.results_json)
-        with open(result_path, "w") as fp:
-            json.dump(out, fp, indent=4)
-
-    out = dict(Total=total_scalars.pop('Total'))
-    for i in sorted(total_scalars):
-        total_scalars[i].pop('false_action_ratio')
-        out[i] = total_scalars[i]
-    result_path = os.path.join(args.exp_dir, 'Total_'+args.results_json)
-    with open(result_path, "w") as fp:
-        json.dump(out, fp, indent=4)
-
-
-def data_output(path: str, filename: str, test_scalars: MeanCalcer):
-    result = test_scalars.pop(['epis'])
-    result_path = os.path.join(path, 'Total_'+filename)
-    with open(result_path, "w") as fp:
-        json.dump(result, fp, indent=4)
+            result_str += f'{k}: {v}<br>'
+    tag = 'result' if prefix == '' else prefix+'/result'
+    writer.add_text(tag, result_str[:-4])

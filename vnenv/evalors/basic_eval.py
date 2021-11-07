@@ -1,14 +1,17 @@
 from tqdm import tqdm
+from typing import Dict
 import numpy as np
-from vnenv.utils.record_utils import MeanCalcer, data_output
+from vnenv.utils.record_utils import MeanCalcer
 from vnenv.environments import VecEnv
 
 
 def basic_eval(
     args,
     agent,
-    envs: VecEnv
-):
+    envs: VecEnv,
+    bar_leave: bool = True,
+    bar_desc: str = ''
+) -> Dict[float, list]:
     agent.model.eval()
     proc_num = args.proc_num
     total_epi = args.total_eval_epi
@@ -20,9 +23,9 @@ def basic_eval(
     test_scalars = MeanCalcer()
 
     obs = envs.reset()
-    done = np.zeros((envs.env_num))
+    done = np.ones((envs.env_num))
 
-    pbar = tqdm(total=total_epi)
+    pbar = tqdm(total=total_epi, desc=bar_desc, leave=bar_leave)
     while epis < total_epi:
         action, _ = agent.action(obs, done)
         obs_new, r, done, info = envs.step(action)
@@ -48,10 +51,10 @@ def basic_eval(
                     else:
                         spl = 0
                 data = {
-                    'ep_length:': env_steps[i],
-                    'SR:': t_info['success'],
-                    'SPL:': spl,
-                    'total_reward:': env_rewards[i],
+                    'ep_length': env_steps[i],
+                    'SR': t_info['success'],
+                    'SPL': spl,
+                    'total_reward': env_rewards[i],
                     'epis': 1,
                     'false_action_ratio': false_action_ratio[i]
                 }
@@ -60,6 +63,8 @@ def basic_eval(
                 env_rewards[i] = 0
                 false_action_ratio[i] = []
 
-    envs.close()
     pbar.close()
-    data_output(args.exp_dir, args.results_json, test_scalars)
+    out = test_scalars.pop(['epis'])
+    tmp = list(enumerate(out['false_action_ratio'], 1))
+    out['false_action_ratio'] = tmp
+    return out

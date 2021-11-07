@@ -6,6 +6,7 @@ import models
 import agents
 import curriculums
 import environments as envs
+from tensorboardX import SummaryWriter
 from environments.env_wrapper import make_envs, VecEnv
 from utils.init_func import (
     get_args,
@@ -13,6 +14,7 @@ from utils.init_func import (
     set_seed,
     load_or_find_model
 )
+from vnenv.utils.record_utils import add_eval_data
 os.environ["OMP_NUM_THREADS"] = '1'
 
 
@@ -42,7 +44,8 @@ def main():
     env_args_list = env_cls.args_maker(args.env_args(False), args.proc_num)
     env_fns = [make_envs(e, env_cls) for e in env_args_list]
 
-    Venv = VecEnv(env_fns, min_len=args.calc_spl)
+    Venv = VecEnv(env_fns)
+    Venv.calc_shortest(True)
 
     # TODO init CLscher
 
@@ -62,8 +65,13 @@ def main():
     agent = agent_cls(model, Venv, args.gpu_ids, **args.agent_args)
     # make exp directory
     make_exp_dir(args, 'Eval-')
+    # tx writer
+    writer = SummaryWriter(args.exp_dir)
     # evaluating
-    eval_func(args, agent, Venv)
+    eval_data = eval_func(args, agent, Venv)
+    Venv.close()
+    # output
+    add_eval_data(writer, eval_data)
 
 
 if __name__ == "__main__":
