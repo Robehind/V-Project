@@ -43,8 +43,7 @@ class VecEnv:
     def __init__(
         self,
         env_fns: List[callable],
-        context: str = 'spawn',
-        min_len: bool = False
+        context: str = 'spawn'
     ):
         """
         多线程环境。对env的一个封装，输入的是环境的构造函数.min_len=True下会及算最短路，很慢
@@ -78,8 +77,7 @@ class VecEnv:
                     env_fn,
                     data_buf,
                     self.shapes,
-                    self.dtypes,
-                    min_len
+                    self.dtypes
                 )
             )
             proc.daemon = True
@@ -91,6 +89,20 @@ class VecEnv:
 
     def __getattr__(self, name):
         return getattr(self.prop_env, name)
+
+    def calc_shortest(self, switch: bool):
+        if self.waiting_step:
+            self.step_wait()
+        for pipe in self.parent_pipes:
+            pipe.send(('calc_shortest', switch))
+        [pipe.recv() for pipe in self.parent_pipes]
+
+    def re_seed(self, seed):
+        if self.waiting_step:
+            self.step_wait()
+        for i, pipe in enumerate(self.parent_pipes):
+            pipe.send(('re_seed', seed + i))
+        [pipe.recv() for pipe in self.parent_pipes]
 
     def update_settings(self, settings: Dict):
         if settings in [[], {}, None]:
@@ -168,14 +180,12 @@ def _subproc_worker(
     env_fn,
     bufs,
     obs_shapes,
-    obs_dtypes,
-    min_len,  # whether to calc min length of episode
+    obs_dtypes
 ):
     """
     Control a single environment instance using IPC and
     shared memory.
     """
-
     def _write_bufs(dict_data):
         # TODO 未改变的数据(例如目标的数据)可以不写入
         for k in dict_data:
@@ -187,6 +197,7 @@ def _subproc_worker(
     env = env_fn.x()
     parent_pipe.close()
     waiting = False
+    min_len = False
     try:
         while True:
             cmd, data = pipe.recv()
@@ -204,6 +215,12 @@ def _subproc_worker(
                 pipe.send((_write_bufs(obs), reward, done, info))
             elif cmd == 'update_settings':
                 env.update_settings(data)
+                pipe.send(None)
+            elif cmd == 're_seed':
+                env.re_seed(data)
+                pipe.send(None)
+            elif cmd == 'calc_shortest':
+                min_len = data
                 pipe.send(None)
             elif cmd == 'close':
                 pipe.send(None)

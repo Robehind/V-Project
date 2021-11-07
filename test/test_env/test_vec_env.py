@@ -125,7 +125,8 @@ def test_vec_env():
 
     env_args_list = FakeEnv.args_maker(env_args, 4)
     env_fns = [make_envs(e, FakeEnv) for e in env_args_list]
-    Venv = VecEnv(env_fns, min_len=True)
+    Venv = VecEnv(env_fns)
+    Venv.calc_shortest(True)
     assert np.allclose(obss[0]['rela'], Venv.reset()['rela'])
     for i, a in enumerate(actions):
         obs, r, d, info = Venv.step(np.array(a))

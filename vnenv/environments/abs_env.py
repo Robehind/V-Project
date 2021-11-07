@@ -263,6 +263,10 @@ class AbsEnv:
                 e['seed'] += i
         return out
 
+    def re_seed(self, seed):
+        # warning: use it when env has its own proc
+        random.seed(seed)
+
     def update_settings(self, settings):
         raise NotImplementedError
 
