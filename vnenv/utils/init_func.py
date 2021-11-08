@@ -13,7 +13,39 @@ def set_seed(seed):
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
     # optional
-    # torch.backends.cudnn.deterministic = TRue
+    # torch.backends.cudnn.deterministic = True
+
+
+def get_all_models(args):
+    """get all models path in exp dir"""
+    if args.eval_all_dir != '':
+        exp_path = args.eval_all_dir
+    else:
+        exps_dir = args.exps_dir
+        exp_name = args.exp_name
+        _, dirs, _ = next(os.walk(exps_dir))
+        dd = []
+        for d in dirs:
+            sp = d.split('_')
+            if sp[0] == exp_name:
+                dd.append(d)
+        if dd == []:
+            raise Exception(f"can't find exp dir that \
+                              name start with {exp_name}")
+        dd.sort()
+        exp_path = os.path.join(exps_dir, dd[-1])
+    out = []
+    print(f"Getting models in {exp_path}")
+    _, _, files = next(os.walk(exp_path))
+    for f in files:
+        if f.split('.')[-1] == 'dat':
+            a = os.path.join(exp_path, f)
+            f = int(f.split('_')[1])
+            out.append([a, f])
+    if out == []:
+        raise Exception(f"can't find models in {exp_path}")
+    out.sort(key=lambda x: x[1])
+    return out
 
 
 def search_newest_model(exps_dir, exp_name):
