@@ -85,7 +85,7 @@ def main():
     # make exp directory
     make_exp_dir(args)
     # init tensorboardx
-    tx_writer = SummaryWriter(log_dir=args.exp_dir)
+    tx_writer = SummaryWriter(log_dir=os.path.join(args.exp_dir, 'tblog'))
     # training
     train_func(args, sampler, learner, clscher, tx_writer, val_func)
 

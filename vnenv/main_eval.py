@@ -67,7 +67,7 @@ def main():
     # make exp directory
     make_exp_dir(args, 'Eval-')
     # tx writer
-    writer = SummaryWriter(args.exp_dir)
+    writer = SummaryWriter(log_dir=os.path.join(args.exp_dir, 'tblog'))
     # evaluating
     eval_data = eval_func(agent, Venv, args.eval_epi)
     Venv.close()
