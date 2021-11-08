@@ -41,11 +41,12 @@ def main():
 
     # 生成多进程环境，每个进程环境初始化参数可能不一样
     # TODO 不同的进程加载不同的环境这种操作还是以后再弄吧
-    env_args_list = env_cls.args_maker(args.env_args(False), args.proc_num)
+    env_args_list = env_cls.args_maker(args.env_args, args.proc_num)
     env_fns = [make_envs(e, env_cls) for e in env_args_list]
 
     Venv = VecEnv(env_fns)
-    Venv.calc_shortest(True)
+    Venv.update_settings(args.eval_task)
+    Venv.calc_shortest(args.calc_spl)
 
     # TODO init CLscher
 
@@ -68,7 +69,7 @@ def main():
     # tx writer
     writer = SummaryWriter(args.exp_dir)
     # evaluating
-    eval_data = eval_func(args, agent, Venv)
+    eval_data = eval_func(agent, Venv, args.eval_epi)
     Venv.close()
     # output
     add_eval_data(writer, eval_data)

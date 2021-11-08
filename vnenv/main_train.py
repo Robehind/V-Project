@@ -3,6 +3,7 @@ import random
 import torch
 from tensorboardX import SummaryWriter
 import trainers
+import evalors
 import models
 import agents
 import samplers
@@ -16,7 +17,7 @@ os.environ["OMP_NUM_THREADS"] = '1'
 
 
 def main():
-    # 读取参数
+    # 读取、预处理参数
     args = get_args(os.path.basename(__file__))
     # 随机数设定
     if args.seed == 1114:
@@ -39,12 +40,14 @@ def main():
     learner_cls = getattr(learners, args.learner)
     cl_cls = getattr(curriculums, args.CLscher)
     train_func = getattr(trainers, args.trainer)
+    val_func = getattr(evalors, args.validater)
 
     # 生成多进程环境，每个进程环境初始化参数可能不一样
     # TODO 不同的进程加载不同的环境这种操作还是以后再弄吧
-    env_args_list = env_cls.args_maker(args.env_args(), args.proc_num)
+    env_args_list = env_cls.args_maker(args.env_args, args.proc_num)
     env_fns = [make_envs(e, env_cls) for e in env_args_list]
     Venv = VecEnv(env_fns)
+    Venv.update_settings(args.train_task)
 
     # TODO params management
     # init CLscher
@@ -62,6 +65,7 @@ def main():
     if args.load_model_dir != '':
         print("load %s" % args.load_model_dir)
         model.load_state_dict(torch.load(args.load_model_dir))
+    model.train()
 
     # init optimizer and load params
     optim = optim_cls(model.parameters(), **args.optim_args)
@@ -83,7 +87,7 @@ def main():
     # init tensorboardx
     tx_writer = SummaryWriter(log_dir=args.exp_dir)
     # training
-    train_func(args, sampler, learner, clscher, tx_writer)
+    train_func(args, sampler, learner, clscher, tx_writer, val_func)
 
 
 if __name__ == "__main__":

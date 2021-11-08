@@ -1,3 +1,4 @@
+from typing import Callable
 from tqdm import tqdm
 from tensorboardX import SummaryWriter
 from utils.record_utils import MeanCalcer
@@ -11,7 +12,8 @@ def basic_train(
     sampler: BaseSampler,
     learner: AbsLearner,
     clscher: AbsCL,
-    tx_writer: SummaryWriter
+    tx_writer: SummaryWriter,
+    val_func: Callable
 ):
     steps = 0
     update_steps = sampler.batch_size
@@ -21,8 +23,8 @@ def basic_train(
     print_gate_steps = print_freq
     save_gate_steps = save_freq
     obj_traker = MeanCalcer()
-    pbar = tqdm(total=args.total_train_steps)
-    while steps < args.total_train_steps:
+    pbar = tqdm(total=args.train_steps, unit='step')
+    while steps < args.train_steps:
 
         batched_exp = sampler.sample()
         obj_salars = learner.learn(batched_exp)
@@ -31,6 +33,35 @@ def basic_train(
 
         pbar.update(update_steps)
         steps += update_steps
+
+        # saving and validating
+        if steps >= save_gate_steps:
+            save_gate_steps += save_freq
+            learner.checkpoint(args.exp_dir, steps)
+            # validating
+            if args.val_mode:
+                # save train settings
+                o_settings = sampler.Venv.export_settings()
+                # load validate settings
+                sampler.Venv.update_settings(args.val_task)
+                sampler.reset()
+                sampler.Venv.calc_shortest(args.calc_spl)
+                # validate process
+                val_data = val_func(
+                    sampler.Vagent, sampler.Venv, args.val_epi,
+                    bar_leave=False, bar_desc='Validating')
+                # resume train settings
+                sampler.Venv.update_settings(o_settings)
+                sampler.reset()
+                sampler.Venv.calc_shortest(False)
+                learner.model.train()
+                # log
+                for k, v in val_data.items():
+                    if isinstance(v, list):
+                        for x, y in v:
+                            tx_writer.add_scalars('Val '+k, {str(steps): y}, x)
+                    else:
+                        tx_writer.add_scalar('Val '+k, v, steps)
 
         # logging
         for k, v in obj_salars.items():
@@ -45,11 +76,6 @@ def basic_train(
                 tx_writer.add_scalar(k, v, steps)
             for k, v in obj_traker.pop().items():
                 tx_writer.add_scalar(k, v, steps)
-
-        # saving
-        if steps >= save_gate_steps:
-            save_gate_steps += save_freq
-            learner.checkpoint(args.exp_dir, steps)
 
     sampler.close()
     tx_writer.close()

@@ -6,15 +6,14 @@ from vnenv.environments import VecEnv
 
 
 def basic_eval(
-    args,
     agent,
     envs: VecEnv,
+    total_epi: int,
     bar_leave: bool = True,
     bar_desc: str = ''
 ) -> Dict[float, list]:
     agent.model.eval()
-    proc_num = args.proc_num
-    total_epi = args.total_eval_epi
+    proc_num = envs.env_num
 
     epis = 0
     env_steps = np.zeros((proc_num))
@@ -25,7 +24,7 @@ def basic_eval(
     obs = envs.reset()
     done = np.ones((envs.env_num))
 
-    pbar = tqdm(total=total_epi, desc=bar_desc, leave=bar_leave)
+    pbar = tqdm(total=total_epi, desc=bar_desc, leave=bar_leave, unit='epi')
     while epis < total_epi:
         action, _ = agent.action(obs, done)
         obs_new, r, done, info = envs.step(action)
@@ -42,7 +41,15 @@ def basic_eval(
             if done[i] and epis < total_epi:
                 epis += 1
                 pbar.update(1)
-                if args.calc_spl:
+                data = {
+                    'ep_length': env_steps[i],
+                    'SR': t_info['success'],
+                    'total_reward': env_rewards[i],
+                    'epis': 1,
+                    'false_action_ratio': false_action_ratio[i]
+                }
+                # 只要环境反馈了最短路信息，那么就算一下SPL
+                if 'min_len' in t_info:
                     if t_info['success']:
                         assert t_info['min_len'] <= env_steps[i],\
                             f"{t_info['min_len']}>{env_steps[i]}"
@@ -50,14 +57,7 @@ def basic_eval(
                         spl = t_info['min_len']/env_steps[i]
                     else:
                         spl = 0
-                data = {
-                    'ep_length': env_steps[i],
-                    'SR': t_info['success'],
-                    'SPL': spl,
-                    'total_reward': env_rewards[i],
-                    'epis': 1,
-                    'false_action_ratio': false_action_ratio[i]
-                }
+                    data.update(dict(SPL=spl))
                 test_scalars.add(data)
                 env_steps[i] = 0
                 env_rewards[i] = 0
