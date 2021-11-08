@@ -64,7 +64,4 @@ def basic_eval(
                 false_action_ratio[i] = []
 
     pbar.close()
-    out = test_scalars.pop(['epis'])
-    tmp = list(enumerate(out['false_action_ratio'], 1))
-    out['false_action_ratio'] = tmp
-    return out
+    return test_scalars.pop(['epis'])

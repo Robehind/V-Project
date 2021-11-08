@@ -15,6 +15,7 @@ from utils.init_func import (
     set_seed,
     get_all_models
 )
+from vnenv.utils.record_utils import add_eval_data_seq
 os.environ["OMP_NUM_THREADS"] = '1'
 
 
@@ -63,12 +64,11 @@ def main():
     # make exp directory
     make_exp_dir(args, 'EvalAll-')
 
-    tx_writer = SummaryWriter(logdir=args.exp_dir)
+    tx_writer = SummaryWriter(log_dir=os.path.join(args.exp_dir, 'tblog'))
     paths_f = get_all_models(args)
     pbar = tqdm(total=len(paths_f), desc='Models')
 
     for p, model_id in paths_f:
-        pbar.update(1)
         # TODO 重置环境的随机情况，可能不好？
         set_seed(args.seed)
         Venv.re_seed(args.seed)
@@ -76,12 +76,8 @@ def main():
         model.load_state_dict(torch.load(p))
         eval_data = eval_func(agent, Venv, args.eval_epi, bar_leave=False)
         # log
-        for k, v in eval_data.items():
-            if isinstance(v, list):
-                for x, y in v:
-                    tx_writer.add_scalars(k, {str(model_id): y}, x)
-            else:
-                tx_writer.add_scalar(k, v, model_id)
+        add_eval_data_seq(tx_writer, eval_data, model_id)
+        pbar.update(1)
 
     Venv.close()
     tx_writer.close()
