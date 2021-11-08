@@ -52,7 +52,6 @@ class VecEnv:
         self.env_num = len(env_fns)
         # an env for "copy" properties
         self.prop_env = env_fns[0]()
-        self.keys, self.shapes, self.dtypes = self.prop_env.data_info()
         # build buff by keys
         self.data_bufs = [
             {

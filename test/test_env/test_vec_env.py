@@ -78,6 +78,9 @@ class FakeEnv(AbsEnv):
     ) -> None:
         self.id = seed
         self.cnt = -1
+        self.keys = ['rela']
+        self.shapes = {'rela': (2,)}
+        self.dtypes = {'rela': np.dtype(np.int32)}
 
     def reset(self, *args, **kwargs):
         return dict(rela=obss[self.cnt+1]['rela'][self.id])
@@ -87,16 +90,6 @@ class FakeEnv(AbsEnv):
         return dict(rela=obss[self.cnt+1]['rela'][self.id]), \
             rs[self.cnt][self.id], \
             ds[self.cnt][self.id], infos[self.cnt][self.id]
-
-    def data_info(self):
-        keys = ['rela']
-        shapes = {
-            'rela': (2,)
-        }
-        dtypes = {
-            'rela': np.dtype(np.int32)
-        }
-        return keys, shapes, dtypes
 
 
 def test_vec_env():

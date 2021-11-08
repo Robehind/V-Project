@@ -9,7 +9,7 @@ import importlib
 from .agent_pose_state import AgentPoseState
 from .thordata_utils import get_type, get_scene_names
 from ..abs_env import AbsEnv
-from typing import Optional, Tuple
+from typing import Optional
 
 
 class DiscreteEnvironment(AbsEnv):
@@ -26,7 +26,6 @@ class DiscreteEnvironment(AbsEnv):
         obs_args,
         event_args,
         seed: int = 1114,
-        train: bool = True,
         min_len_file: Optional[str] = None,
     ):
         # settings can't change during training
@@ -87,26 +86,18 @@ class DiscreteEnvironment(AbsEnv):
         # e.g. image representation
         self.target_type = list(obs_args['target_dict'].keys())
         self.target_dict = obs_args['target_dict']
-        self.target_repre_info = {}
+        target_repre_info = {}
         self.tLoader = None
         for str_ in self.target_type:
             if str_ in ['glove', 'fasttext', 'onehot']:
                 self.tLoader = h5py.File(self.target_dict[str_], "r",)
                 tmp = self.tLoader[str_][list(self.tLoader[str_].keys())[0]][:]
-                self.target_repre_info.update({str_: (tmp.shape, tmp.dtype)})
-        # Read a random room for data info of obs
-        if train:
-            chosen_scenes = \
-                get_scene_names(dynamics_args['train_scenes'])
-            chosen_targets = dynamics_args['train_targets']
-        else:
-            chosen_scenes = \
-                get_scene_names(dynamics_args['eval_scenes'])
-            chosen_targets = dynamics_args['eval_targets']
+                target_repre_info.update({str_: (tmp.shape, tmp.dtype)})
         self.obs_dict = obs_args['obs_dict']
         self.his_len = 0
-        scene_id = random.choice(chosen_scenes)
-        self.obs_info = {}
+        # get obs info
+        scene_id = obs_args['info_scene']
+        obs_info = {}
         for type_, name_ in self.obs_dict.items():
             loader = h5py.File(
                 os.path.join(self.offline_data_dir, scene_id, name_), "r",
@@ -117,11 +108,13 @@ class DiscreteEnvironment(AbsEnv):
                 self.his_len = max(self.his_len, int(type_.split('|')[1]))
             else:
                 shape = tmp.shape
-            self.obs_info.update({type_: (shape, tmp.dtype)})
+            obs_info.update({type_: (shape, tmp.dtype)})
             loader.close()
-        self._data_info = {}
-        self._data_info.update(self.target_repre_info)
-        self._data_info.update(self.obs_info)
+
+        obs_info.update(target_repre_info)
+        self.keys = list(obs_info.keys())
+        self.shapes = {k: v[0] for k, v in obs_info.items()}
+        self.dtypes = {k: v[1] for k, v in obs_info.items()}
 
         # Running properties
         self.scene_id = None
@@ -153,9 +146,7 @@ class DiscreteEnvironment(AbsEnv):
         # settings can change
         settings = dict(
             reward_dict=event_args['reward_dict'],
-            max_steps=event_args['max_steps'],
-            chosen_scenes=chosen_scenes,
-            chosen_targets=chosen_targets
+            max_steps=event_args['max_steps']
         )
         self.update_settings(settings)
 
@@ -164,13 +155,27 @@ class DiscreteEnvironment(AbsEnv):
                        'reward_dict', 'max_steps']  # TODO distance
         for k, v in settings.items():
             if k in change_strs:
+                if k == 'chosen_scenes':
+                    # 是字典的时候是人类用简记方法传入的
+                    # 是list的时候是课程学习传入的
+                    if isinstance(v, dict):
+                        v = get_scene_names(v)
                 setattr(self, k, copy.deepcopy(v))
             else:
                 print(f"Warning: Unrecognize settings '{k}'")
         self.collect_legal_tgt()
 
+    def export_settings(self):
+        settings = {}
+        change_strs = ['chosen_scenes', 'chosen_targets',
+                       'reward_dict', 'max_steps']
+        for k in change_strs:
+            settings[k] = copy.deepcopy(getattr(self, k))
+        return settings
+
     def collect_legal_tgt(self):
-        # TODO if chosen_targets didn't change, we don't need to change
+        if not hasattr(self, 'chosen_scenes'):
+            return
         for s in self.chosen_scenes:
             if s not in self.all_s_objects:
                 s_path = os.path.join(self.offline_data_dir, s)
@@ -192,18 +197,6 @@ class DiscreteEnvironment(AbsEnv):
                 self.intersect_s_targets[s].sort()
                 if self.intersect_s_targets[s] == []:
                     raise Exception(f'In scene {s}')
-
-    def data_info(self) -> Tuple[list, dict, dict]:
-        keys = list(self._data_info.keys())
-        shapes = {
-            k: v[0]
-            for k, v in self._data_info.items()
-        }
-        dtypes = {
-            k: v[1]
-            for k, v in self._data_info.items()
-        }
-        return keys, shapes, dtypes
 
     def close(self):
         pass

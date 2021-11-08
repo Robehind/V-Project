@@ -270,6 +270,9 @@ class AbsEnv:
     def update_settings(self, settings):
         raise NotImplementedError
 
+    def export_settings(self):
+        raise NotImplementedError
+
     def init_scene(self, scene_id=None):
         # 加载某一场景的资源和信息，不涉及任何智能体的初始化
         if scene_id != self.scene_id or self.scene_id is None:
