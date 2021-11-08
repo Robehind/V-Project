@@ -12,12 +12,25 @@ args.update(
     proc_num=8,  # 进程数
 
     # train proc params
-    total_train_steps=200000,  # 指定训练多少frames
+    train_steps=200000,  # 指定训练多少frames
     print_freq=1000,  # 每进行n个frames，就向tensorboardx输出一次训练信息
-    model_save_freq=200000,  # 每进行n个episode，就保存一次模型参数
+    model_save_freq=50000,  # 每进行n个episode，就保存一次模型参数
+    train_task={
+        "chosen_scenes": {'kitchen': '25'},
+        "chosen_targets": {'kitchen': ["Microwave", 'Sink']},
+    },
+    val_task={
+        "chosen_scenes": {'kitchen': '25'},
+        "chosen_targets": {'kitchen': ["Microwave", 'Sink']},
+    },
+    val_epi=1000,
 
     # eval proc params
-    total_eval_epi=1000,  # 指定测试时测试多少个episode
+    eval_epi=1000,  # 指定测试时测试多少个episode
+    eval_task={
+        "chosen_scenes": {'kitchen': '25'},
+        "chosen_targets": {'kitchen': ["Microwave", 'Sink']},
+    },
 
     # task params
     env='DiscreteEnvironment',
@@ -25,7 +38,7 @@ args.update(
         "reward_dict": {
             "collision": -0.1,
             "step": -0.01,
-            "success": 10.0,
+            "success": 5,
             "fail": 0,
         },
         'max_steps': 100,
@@ -41,10 +54,6 @@ args.update(
         'rotate_angle': 45,
         'move_angle': 45,
         'horizon_angle': 30,
-        "train_scenes": {'kitchen': '25'},
-        "train_targets": {'kitchen': ["Microwave", 'Sink']},
-        "eval_scenes": {'kitchen': '25'},
-        "eval_targets": {'kitchen': ["Microwave", 'Sink']},
     },
     obs_args={
         "obs_dict": {
@@ -53,6 +62,7 @@ args.update(
         'target_dict': {
             'glove': '../thordata/word_embedding/word_embedding.hdf5',
         },
+        'info_scene': 'FloorPlan1_physics'
     },
 
     # algo params
@@ -82,5 +92,4 @@ args.update(
         exp_length=20,
         buffer_limit=8
     ),
-    evalor='thor_eval'
 )
