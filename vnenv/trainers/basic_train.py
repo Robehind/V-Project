@@ -1,7 +1,8 @@
 from typing import Callable
+import os
 from tqdm import tqdm
 from tensorboardX import SummaryWriter
-from utils.record_utils import MeanCalcer
+from utils.record_utils import MeanCalcer, add_eval_data_seq
 from learners.abs_learner import AbsLearner
 from samplers.base_sampler import BaseSampler
 from curriculums.abs_cl import AbsCL
@@ -24,6 +25,9 @@ def basic_train(
     save_gate_steps = save_freq
     obj_traker = MeanCalcer()
     pbar = tqdm(total=args.train_steps, unit='step')
+
+    if args.val_mode:
+        val_writer = SummaryWriter(os.path.join(args.exp_dir, 'tblog/val'))
     while steps < args.train_steps:
 
         batched_exp = sampler.sample()
@@ -56,12 +60,7 @@ def basic_train(
                 sampler.Venv.calc_shortest(False)
                 learner.model.train()
                 # log
-                for k, v in val_data.items():
-                    if isinstance(v, list):
-                        for x, y in v:
-                            tx_writer.add_scalars('Val '+k, {str(steps): y}, x)
-                    else:
-                        tx_writer.add_scalar('Val '+k, v, steps)
+                add_eval_data_seq(val_writer, val_data, steps)
 
         # logging
         for k, v in obj_salars.items():
