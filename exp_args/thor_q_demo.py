@@ -92,4 +92,5 @@ args.update(
         exp_length=20,
         buffer_limit=8
     ),
+    evalor='thor_eval'
 )
