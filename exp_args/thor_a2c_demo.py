@@ -19,6 +19,8 @@ args.update(
         "chosen_scenes": {'kitchen': '25'},
         "chosen_targets": {'kitchen': ["Microwave", 'Sink']},
     },
+
+    # validate params
     val_task={
         "chosen_scenes": {'kitchen': '25'},
         "chosen_targets": {'kitchen': ["Microwave", 'Sink']},
@@ -31,7 +33,6 @@ args.update(
         "chosen_scenes": {'kitchen': '25'},
         "chosen_targets": {'kitchen': ["Microwave", 'Sink']},
     },
-
 
     # task params
     env='DiscreteEnvironment',
