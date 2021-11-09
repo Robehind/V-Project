@@ -51,11 +51,11 @@ args_dict = dict(
     model_save_freq=10000,  # 每进行n个episode，就保存一次模型参数
     train_task={},  # 训练环境设置
 
-    # validate params
+    # validate params 验证频率和模型保存频率是一样的
     val_mode=True,  # 是否在训练过程中展开验证集测试
     val_task={},  # 验证环境设置
-    val_epi=100,
-    validater='basic_eval',
+    val_epi=100,  # 验证的次数
+    validater='basic_eval',  # 用哪个评估函数来验证
 
     # eval proc params
     eval_epi=1000,  # 指定测试时测试多少个episode
