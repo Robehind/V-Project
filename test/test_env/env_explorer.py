@@ -23,10 +23,6 @@ params = dict(
         'rotate_angle': 45,
         'move_angle': 45,
         'horizon_angle': 30,
-        "train_scenes": {'kitchen': '1-5'},
-        "train_targets": {'kitchen': ["Microwave", 'Sink']},
-        "eval_scenes": {'kitchen': '1-5'},
-        "eval_targets": {'kitchen': ["Microwave", 'Sink']},
     },
     obs_args={
         "obs_dict": {
@@ -36,10 +32,12 @@ params = dict(
         'target_dict': {
             'glove': '../thordata/word_embedding/word_embedding.hdf5',
         },
+        'info_scene': "FloorPlan1_physics"
     },
 )
 # -0.25|-0.50|90|0 and 0.50|-0.75|270|0.
 env = DiscreteEnvironment(**params)
+env.update_settings(dict(chosen_scenes={'kitchen': '5'}))
 env.init_scene()
 print(env.all_objects)
 t = input('Choose a target:(no input to free explore)')
