@@ -29,11 +29,11 @@ class SceneCL(AbsCL):
         self.env.update_settings(settings)
 
     def next_task(self, update_steps: int, report: Dict):
-        if 'success_rate' not in report:
+        if 'SR' not in report:
             return False
         if self.crt_ed == len(self.all_scenes):
             return False
-        if report['success_rate'] >= self.sr_gate:
+        if report['SR'] >= self.sr_gate:
             self.epi_cnt -= report['epis']
             if self.epi_cnt <= 0:
                 self.epi_cnt = self.epis_gate
