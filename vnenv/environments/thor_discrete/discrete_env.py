@@ -5,9 +5,8 @@ import random
 import h5py
 import os
 import json
-import importlib
 from .agent_pose_state import AgentPoseState
-from .thordata_utils import get_type, get_scene_names
+from .thordata_utils import get_type, get_scene_names, bfs_shortest
 from ..abs_env import AbsEnv
 from typing import Optional
 
@@ -142,6 +141,7 @@ class DiscreteEnvironment(AbsEnv):
         self.all_agent_states = None  # 智能体所有的可能的位姿状态，str
         self.all_visible_states = None  # 智能体在哪些位置可以看到当前目标， in str
         self.intersect_targets = None
+        self.chosen_targets = None
 
         # settings can change
         settings = dict(
@@ -267,7 +267,7 @@ class DiscreteEnvironment(AbsEnv):
             false_action=0,
             )
         if min_len:
-            self.info.update(dict(min_len=self.best_path_len()[1]))
+            self.info.update(dict(min_len=self.best_path_len()))
         _target_repre = self.get_target_repre(self.target_str)
         _obs = self.get_obs()
         if not allow_no_target:
@@ -483,36 +483,18 @@ class DiscreteEnvironment(AbsEnv):
         """算最短路，用于计算spl.当最短路数据存在时直接读取，可以加快速度，但不再返回最佳路径的细节"""
         if self.min_len_file is not None:
             return [], self.read_shortest()
-        # file loader
-        nx = importlib.import_module("networkx")
-        json_graph_loader = importlib.import_module("networkx.readwrite")
-        with open(os.path.join(self.scene_path, 'graph.json'), 'r') as f:
-            graph_json = json.load(f)
-        graph = json_graph_loader.node_link_graph(graph_json).to_directed()
-        start_state = self.start_state
-        best_path_len = 9999
-        best_path = None
-        legal_states = list(graph.nodes())
-        self.all_visible_states = [
-            x for x in self.all_visible_states if x in legal_states
-        ]
-
-        for k in self.all_visible_states:
-            try:
-                path = nx.shortest_path(graph, str(start_state), k)
-            except nx.exception.NetworkXNoPath:
-                print(self.scene_id)
-                path = nx.shortest_path(graph, str(start_state), k)
-            except nx.NodeNotFound:
-                print(self.scene_id)
-                path = nx.shortest_path(graph, str(start_state), k)
-            path_len = len(path) - 1
-            # path_len = len(path)
-            if path_len < best_path_len:
-                best_path = path
-                best_path_len = path_len
-
-        return best_path, best_path_len
+        length = bfs_shortest(
+            str(self.start_state),
+            self.all_visible_states,
+            list(self.action_dict.values()),
+            self.trans_data,
+            self.rotations,
+            self.horizons
+        )
+        assert length != -1, \
+               f"can't reach {self.target_str} from {self.start_state}"
+        # TODO
+        return length + 1
 
     def render(self):
         """实验性的功能"""
