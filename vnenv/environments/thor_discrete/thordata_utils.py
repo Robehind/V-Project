@@ -1,5 +1,68 @@
 import random
 import os
+from collections import defaultdict
+from .agent_pose_state import AgentPoseState
+
+
+def sp_action(str_state, act_list, trans_data, rotations, horizons):
+    state = AgentPoseState(pose_str=str_state)
+    move_list = [0, 0.25, 0.25, 0.25, 0, -0.25, -0.25, -0.25]
+    for act in act_list:
+        if act[0] == 'm':
+            angle = int(act[1:])
+            abs_angle = (angle + state.rotation + 360) % 360
+            tmp_rotation = state.rotation
+            state.rotation = abs_angle
+            if trans_data[str(state)]:
+                state.x += move_list[(abs_angle//45) % 8]
+                state.z += move_list[(abs_angle//45+2) % 8]
+                state.rotation = tmp_rotation
+            else:
+                return -1
+        elif act[0] == 'r':
+            angle = int(act[1:])
+            angle = (angle + state.rotation + 360) % 360
+            state.rotation = angle
+            if angle in rotations:
+                state.rotation = angle
+            else:
+                return -1
+        elif act[0] == 'p':
+            angle = int(act[1:])
+            angle = (angle + state.horizon + 360) % 360
+            if angle in horizons:
+                state.horizon = angle
+            else:
+                return -1
+    return str(state)
+
+
+def bfs_shortest(start, ends, actions, trans_data, rotations, horizons):
+
+    if start in ends:
+        return 0
+    c_nodes = []
+    n_nodes = [start]
+    mark = defaultdict(int)
+    mark[start] = 1
+    length = 0
+    while n_nodes:
+        c_nodes = n_nodes
+        n_nodes = []
+        length += 1
+        for nn in c_nodes:
+            for act in actions:
+                if act is None:
+                    continue
+                new_n = sp_action(nn, act, trans_data, rotations, horizons)
+                if new_n == -1:
+                    continue
+                if new_n in ends:
+                    return length
+                if mark[new_n] == 0:
+                    n_nodes.append(new_n)
+                    mark[new_n] = 1
+    return -1
 
 
 def get_scene_names(train_scenes):
