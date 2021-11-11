@@ -40,6 +40,7 @@ args_dict = dict(
     load_model_dir='',  # 要读取的模型参数的完整路径，包括文件名
     load_optim_dir='',  # 要读取的优化其参数的完整路径，包括文件名
     eval_all_dir='',  # 对某个文件夹下的所有模型进行评估的路径
+    vis_dir='',  # 可视化json所在路径
     exps_dir='../EXPS',  # 保存所有实验文件夹的路径
     exp_name='demo_exp',  # 将用于生成本次实验的实验文件夹的文件名，因此尽量不要包含特殊符号
     exp_dir='',  # 单次实验的完整路径，会根据时间自动生成
@@ -62,6 +63,7 @@ args_dict = dict(
     best_a=False,  # 测试阶段是否取概率最高的动作，如果为false，那么就还是随机取
     calc_spl=True,  # 是否计算SPL，需要环境提供最短路信息
     eval_task={},  # 测试环境设置
+    record_traj=False,  # 是否记录动作轨迹用于可视化
 
     # task params
     env='AbsEnv',

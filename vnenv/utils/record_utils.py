@@ -104,6 +104,8 @@ def add_eval_data_seq(
     prefix: str = ''
 ):
     for k, v in data.items():
+        if k == 'trajs':  # TODO trajs pop out to store in json
+            continue
         if isinstance(v, dict):
             if prefix != '':
                 raise Exception("data dict too deep(Can't Dict[Dict[Dict]])")
@@ -126,6 +128,8 @@ def add_eval_data(writer: SummaryWriter, data: Dict, prefix: str = ''):
     """add data organized in Dict to TensoboardX"""
     result_str = ''
     for k, v in data.items():
+        if k == 'trajs':  # TODO trajs pop out to store in json
+            continue
         if isinstance(v, dict):
             if prefix != '':
                 raise Exception("data dict too deep(Can't Dict[Dict[Dict]])")

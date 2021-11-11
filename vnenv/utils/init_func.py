@@ -16,6 +16,31 @@ def set_seed(seed):
     # torch.backends.cudnn.deterministic = True
 
 
+def get_trajs_path(args):
+    if args.vis_dir != '':
+        exp_path = args.vis_dir
+    else:
+        exps_dir = args.exps_dir
+        exp_name = 'Eval-'+args.exp_name
+        _, dirs, _ = next(os.walk(exps_dir))
+        dd = []
+        for d in dirs:
+            sp = d.split('_')
+            if sp[0] == exp_name:
+                dd.append(d)
+        if dd == []:
+            raise Exception(f"can't find exp dir that \
+                              name start with {exp_name}")
+        dd.sort()
+        exp_path = os.path.join(exps_dir, dd[-1])
+    print(f"Getting trajs.json in {exp_path}")
+    _, _, files = next(os.walk(exp_path))
+    for f in files:
+        if f == 'trajs.json':
+            return os.path.join(exp_path, f)
+    raise Exception(f"can't find trajs.json in {exp_path}")
+
+
 def get_all_models(args):
     """get all models path in exp dir"""
     if args.eval_all_dir != '':

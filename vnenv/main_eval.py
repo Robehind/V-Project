@@ -1,6 +1,7 @@
 import os
 import random
 import torch
+import json
 import evalors
 import models
 import agents
@@ -69,9 +70,14 @@ def main():
     # tx writer
     writer = SummaryWriter(log_dir=os.path.join(args.exp_dir, 'tblog'))
     # evaluating
-    eval_data = eval_func(agent, Venv, args.eval_epi)
+    eval_data = eval_func(agent, Venv, args.eval_epi,
+                          record_traj=args.record_traj)
     Venv.close()
     # output
+    if args.record_traj:
+        trajs = eval_data.pop('trajs')
+        with open(os.path.join(args.exp_dir, 'trajs.json'), "w") as fp:
+            json.dump(trajs, fp, indent=4)
     add_eval_data(writer, eval_data)
 
 
