@@ -86,7 +86,8 @@ def main():
                 if k not in sj:
                     print("key error")
                 else:
-                    new_pool = [x for x in pool if x[k] in [int(v), v]]
+                    v = [float(v), v] if v.isdigit() else [v]
+                    new_pool = [x for x in pool if x[k] in v]
                     sorted(new_pool, key=lambda x: x[k])
                     if new_pool == []:
                         print("nothing left here. Something wrong?")
