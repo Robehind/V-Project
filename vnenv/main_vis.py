@@ -73,7 +73,7 @@ def main():
                     if idx > ed or idx < st:
                         print(f"Traj {idx} isn't in current page.")
                     else:
-                        replay_traj = pool[idx-1]
+                        replay_traj = copy.deepcopy(pool[idx-1])
                         break
                 else:
                     if ipt[0] not in sj:
@@ -116,6 +116,7 @@ def main():
             if p_key == 27:
                 print('Early stop by ESC')
                 break
+            print(Venv.actions[action])
             obs, _, done, _ = Venv.step([action])
             if done[0]:
                 print('Replay finished')
