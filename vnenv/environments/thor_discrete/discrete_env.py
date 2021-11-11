@@ -265,6 +265,7 @@ class DiscreteEnvironment(AbsEnv):
             target=self.target_str,
             agent_done=False,
             false_action=0,
+            start_at=str(self.start_state)
             )
         if min_len:
             self.info.update(dict(min_len=self.best_path_len()))

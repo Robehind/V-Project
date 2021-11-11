@@ -115,11 +115,12 @@ class VecEnv:
             pipe.send(('update_settings', s))
         [pipe.recv() for pipe in self.parent_pipes]
 
-    def reset(self):
+    def reset(self, **kwargs):
+        # TODO 有kwargs时暂时只支持所有进程同一套参数
         if self.waiting_step:
             self.step_wait()
         for pipe in self.parent_pipes:
-            pipe.send(('reset', None))
+            pipe.send(('reset', kwargs))
         [pipe.recv() for pipe in self.parent_pipes]
         return self.get_obs()
 
@@ -205,7 +206,7 @@ def _subproc_worker(
                 pipe.send((None, 0, 0, None))
                 continue
             if cmd == 'reset':
-                obs = env.reset(min_len=min_len)
+                obs = env.reset(**data, min_len=min_len)
                 pipe.send((_write_bufs(obs)))
             elif cmd == 'step':
                 obs, reward, done, info = env.step(data)
