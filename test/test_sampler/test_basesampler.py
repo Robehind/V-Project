@@ -91,9 +91,9 @@ def test_sampler(rct_on):
         assert cross_cmp(out['rct']['lstm'], agent.rcts)
     records = sampler.pop_records()
     assert records['epis'] == 3
-    assert records['success_rate'] == 2/3
+    assert records['SR'] == 2/3
     assert np.allclose(records['total_reward'], 9.79/3)
-    assert records['total_steps'] == 5
+    assert records['ep_length'] == 5
     sampler.close()
 
 
