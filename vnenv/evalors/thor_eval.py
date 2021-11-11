@@ -46,7 +46,7 @@ def thor_eval(
                 data = {
                     'ep_length': env_steps[i],
                     'SR': t_info['success'],
-                    'total_reward': env_rewards[i],
+                    'return': env_rewards[i],
                     'epis': 1,
                     'false_action_ratio': false_action_ratio[i].copy()
                 }

@@ -92,7 +92,7 @@ def test_sampler(rct_on):
     records = sampler.pop_records()
     assert records['epis'] == 3
     assert records['SR'] == 2/3
-    assert np.allclose(records['total_reward'], 9.79/3)
+    assert np.allclose(records['return'], 9.79/3)
     assert records['ep_length'] == 5
     sampler.close()
 

@@ -10,7 +10,8 @@ def basic_eval(
     envs: VecEnv,
     total_epi: int,
     bar_leave: bool = True,
-    bar_desc: str = ''
+    bar_desc: str = '',
+    record_traj: bool = False
 ) -> Dict[float, list]:
     agent.model.eval()
     proc_num = envs.env_num
@@ -20,6 +21,9 @@ def basic_eval(
     env_rewards = np.zeros((proc_num))
     false_action_ratio = [[] for _ in range(proc_num)]
     test_scalars = MeanCalcer()
+    if record_traj:
+        acts_rec = [[] for _ in range(proc_num)]
+        trajs = []
 
     obs = envs.reset()
     done = np.ones((envs.env_num))
@@ -32,6 +36,8 @@ def basic_eval(
         env_rewards += r
         env_steps += 1
         for i in range(proc_num):
+            if record_traj:
+                acts_rec[i].append(int(action[i]))
             t_info = info[i]
             if t_info is None:  # info is None means this proc does nothing
                 continue
@@ -44,7 +50,7 @@ def basic_eval(
                 data = {
                     'ep_length': env_steps[i],
                     'SR': t_info['success'],
-                    'total_reward': env_rewards[i],
+                    'return': env_rewards[i],
                     'epis': 1,
                     'false_action_ratio': false_action_ratio[i]
                 }
@@ -58,10 +64,24 @@ def basic_eval(
                     else:
                         spl = 0
                     data.update(dict(SPL=spl))
+                if record_traj:
+                    trajs.append({
+                        'scene_id': t_info['scene_id'],
+                        'target': t_info['target'],
+                        'start_at': t_info['start_at'],
+                        'success': int(t_info['success']),
+                        'return': env_rewards[i],
+                        'ep_length': env_steps[i],
+                        'actions': acts_rec[i].copy()
+                    })
+                    acts_rec[i] = []
                 test_scalars.add(data)
                 env_steps[i] = 0
                 env_rewards[i] = 0
                 false_action_ratio[i] = []
 
     pbar.close()
-    return test_scalars.pop(['epis'])
+    out = test_scalars.pop(['epis'])
+    if record_traj:
+        out.update(trajs=trajs)
+    return out
