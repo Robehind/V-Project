@@ -2,7 +2,7 @@ from vnenv.utils.default_args import args
 
 args.update(
     # general params
-    seed=9606,  # 随机数生成种子
+    seed=4395,  # 随机数生成种子
     gpu_ids=[0],  # 指定要使用的显卡，为-1时使用cpu。gpu_ids = [0,1,2,3]
     load_model_dir='',  # 要读取的模型参数的完整路径，包括文件名
     load_optim_dir='',  # 要读取的优化其参数的完整路径，包括文件名
@@ -30,9 +30,11 @@ args.update(
     # eval proc params
     eval_epi=1000,  # 指定测试时测试多少个episode
     eval_task={
-        "chosen_scenes": {'kitchen': '25'},
+        "chosen_scenes": {'kitchen': '1, 25'},
         "chosen_targets": {'kitchen': ["Microwave", 'Sink']},
     },
+    record_traj=True,
+    evalor='basic_eval',
 
     # task params
     env='DiscreteEnvironment',
@@ -46,7 +48,7 @@ args.update(
         'max_steps': 100,
     },
     dynamics_args={
-        'offline_data_dir': '../thordata/mixed_offline_data',
+        'offline_data_dir': '../vdata/thordata',
         'action_dict': {
             'MoveAhead': ['m0'],
             'TurnLeft': ['r-45'],
@@ -59,12 +61,12 @@ args.update(
     },
     obs_args={
         "obs_dict": {
-            "fc": "resnet50_fc_new.hdf5",
+            "fc": "resnet50fc_no_norm.hdf5",
         },
         'target_dict': {
-            'glove': '../thordata/word_embedding/word_embedding.hdf5',
+            'glove': '../vdata/word_embedding/word_embedding.hdf5',
         },
-        'info_scene': 'FloorPlan1_physics'
+        'info_scene': 'FloorPlan25_physics'
     },
 
     # algo params
@@ -93,5 +95,4 @@ args.update(
         exp_length=10,
         buffer_limit=8
     ),
-    evalor='basic_eval'
 )

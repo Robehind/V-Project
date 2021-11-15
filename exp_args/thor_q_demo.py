@@ -31,20 +31,22 @@ args.update(
         "chosen_scenes": {'kitchen': '25'},
         "chosen_targets": {'kitchen': ["Microwave", 'Sink']},
     },
+    evalor='thor_eval',
+    record_traj=True,
 
     # task params
     env='DiscreteEnvironment',
     event_args={
         "reward_dict": {
-            "collision": -0.1,
-            "step": -0.01,
-            "success": 5,
+            "collision": 0,
+            "step": 0,
+            "success": 1,
             "fail": 0,
         },
         'max_steps': 100,
     },
     dynamics_args={
-        'offline_data_dir': '../thordata/mixed_offline_data',
+        'offline_data_dir': '../vdata/thordata',
         'action_dict': {
             'MoveAhead': ['m0'],
             'TurnLeft': ['r-45'],
@@ -57,20 +59,20 @@ args.update(
     },
     obs_args={
         "obs_dict": {
-            "fc": "resnet50_fc_new.hdf5",
+            "fc": "resnet50fc_no_norm.hdf5",
         },
         'target_dict': {
-            'glove': '../thordata/word_embedding/word_embedding.hdf5',
+            'glove': '../vdata/word_embedding/word_embedding.hdf5',
         },
-        'info_scene': 'FloorPlan1_physics'
+        'info_scene': 'FloorPlan25_physics'
     },
 
     # algo params
     learner='QLearner',
     learner_args=dict(
         gamma=0.99,
-        nsteps=1,
-        target_model=True,
+        nsteps=float("inf"),
+        target_model=False,
         sync_freq=30
     ),
     model='FcLstmModel',
@@ -78,7 +80,7 @@ args.update(
     agent='BaseAgent',
     agent_args=dict(
         select_func='epsilon_select',
-        select_params=[0.08]
+        select_params=[0.085]
     ),
     optim='Adam',
     optim_args=dict(
@@ -92,5 +94,4 @@ args.update(
         exp_length=20,
         buffer_limit=8
     ),
-    evalor='thor_eval'
 )

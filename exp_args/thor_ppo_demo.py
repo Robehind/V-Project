@@ -46,7 +46,7 @@ args.update(
         'max_steps': 100,
     },
     dynamics_args={
-        'offline_data_dir': '../thordata/mixed_offline_data',
+        'offline_data_dir': '../vdata/thordata',
         'action_dict': {
             'MoveAhead': ['m0'],
             'TurnLeft': ['r-45'],
@@ -59,12 +59,12 @@ args.update(
     },
     obs_args={
         "obs_dict": {
-            "fc": "resnet50_fc_new.hdf5",
+            "fc": "resnet50fc_no_norm.hdf5",
         },
         'target_dict': {
-            'glove': '../thordata/word_embedding/word_embedding.hdf5',
+            'glove': '../vdata/word_embedding/word_embedding.hdf5',
         },
-        'info_scene': 'FloorPlan1_physics'
+        'info_scene': 'FloorPlan25_physics'
     },
 
     # algo params

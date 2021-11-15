@@ -46,7 +46,7 @@ args.update(
         'max_steps': 100,
     },
     dynamics_args={
-        'offline_data_dir': '../thordata/mixed_offline_data',
+        'offline_data_dir': '../thordata/pub_data',
         'action_dict': {
             'MoveAhead': ['m0'],
             'TurnLeft': ['r-45'],
@@ -59,7 +59,7 @@ args.update(
     },
     obs_args={
         "obs_dict": {
-            "fc": "resnet50_fc_new.hdf5",
+            "fc": "resnet50fc_no_norm.hdf5",
         },
         'target_dict': {
             'glove': '../thordata/word_embedding/word_embedding.hdf5',
@@ -73,7 +73,7 @@ args.update(
         gamma=0.99,
         gae_lbd=1,
         vf_nsteps=float("inf"),
-        vf_param=0.8,
+        vf_param=0.5,
         ent_param=0,
     ),
     model='FcLstmModel',
