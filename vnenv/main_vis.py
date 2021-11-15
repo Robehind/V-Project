@@ -21,6 +21,7 @@ def main():
     args.env_args['obs_args']["obs_dict"] = {"image": "images.hdf5"}
     env_fns = [make_envs(args.env_args, env_cls)]
     Venv = VecEnv(env_fns)
+    Venv.calc_shortest(args.calc_spl)
     Venv.update_settings(args.eval_task)
 
     # load visualize file
@@ -118,10 +119,13 @@ def main():
                 print('Early stop by ESC')
                 break
             print(Venv.actions[action])
-            obs, _, done, _ = Venv.step([action])
+            obs, _, done, info = Venv.step([action])
             if done[0]:
                 print('Replay finished')
-        cv2.waitKey(1500)
+                if args.calc_spl:
+                    print(f"shortest:{info[0]['min_len']} " +
+                          f"agent:{replay_traj['ep_length']}")
+        cv2.waitKey(0)
         cv2.destroyWindow("Vis")
 
 
