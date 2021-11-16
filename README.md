@@ -71,7 +71,7 @@ Replace the config script in commands above to run the other two demos.
 
 The documentation introduces modules' functions and presents tutorials about how to implement new instances of a module, which is the key to develop new algorithms in this platform.
 
-![framework](.\pics\framework.jpg)
+![framework](pics/framework.jpg)
 
 - **Teamwork development notes**
 
