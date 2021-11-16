@@ -30,7 +30,7 @@ args.update(
     # eval proc params
     eval_epi=1000,  # 指定测试时测试多少个episode
     eval_task={
-        "chosen_scenes": {'kitchen': '1, 25'},
+        "chosen_scenes": {'kitchen': '25'},
         "chosen_targets": {'kitchen': ["Microwave", 'Sink']},
     },
     record_traj=True,
