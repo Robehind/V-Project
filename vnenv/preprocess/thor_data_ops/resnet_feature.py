@@ -10,10 +10,10 @@ import torch
 """生成新的fc和fc score文件"""
 
 scenes = {
-        'kitchen': '1',
-        # 'living_room': '1-10',
-        # 'bedroom': '1-10',
-        # 'bathroom': '1-10',
+        'kitchen': '25',
+        # 'living_room': '1-30',
+        # 'bedroom': '1-30',
+        # 'bathroom': '1-30',
     }
 image_name = 'images.hdf5'
 datadir = '../vdata/thordata/'
