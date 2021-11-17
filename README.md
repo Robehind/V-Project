@@ -11,7 +11,7 @@ Temporarily named **vnenv**，short for **V**isual **N**avigation **ENV**ironmen
 
 ## Installation
 
-- Clone the `V-PROJECT` repository and download [vdata]() in the same directory where you clone this repository.
+- Clone the `V-PROJECT` repository and download [vdata](https://pan.baidu.com/s/1VfE2Mtn4vwwjGmCDIOglyQ) in the same directory where you clone this repository.
 - Install the required packages by `cd V-PROJECT && pip install -r requirements.txt`.
 - Add `V-PROJECT` to your `PYTHONPATH`. Here are some [instructions](https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#macos-and-linux) about how to do it in a conda environment.
 - Run `pytest`. If there is no error and test is passed, then the installation is successful.
@@ -20,7 +20,7 @@ Temporarily named **vnenv**，short for **V**isual **N**avigation **ENV**ironmen
 
 V-PROJECT uses **config scripts** to manage and control modules and train/validate/test process of an algorithm. In `demo_args` folder, we have presented some simple demo to illustrate the basics.
 
-- **Preprocess**
+- **Preprocess**:
 
 The demos use resnet50 features in FloorPlan25. So run the preprocess scripts first to generate the feature file for this scene:
 
@@ -28,9 +28,9 @@ The demos use resnet50 features in FloorPlan25. So run the preprocess scripts fi
 python vnenv/preprocess/thor_data_ops/resnet_feature.py
 ```
 
-Take the demo using A2C algorithm and a LSTM model to navigate to Microwave/Sink in FloorPlan25. Open the `demo_args/thor_a2c_demo.py` for more details about it. What are those arguments mean can be found in `utils/default_args.py`.
+Take the demo using A2C algorithm and a LSTM model to navigate to Microwave/Sink in FloorPlan25. Open the `demo_args/thor_a2c_demo.py` for more details. What are those arguments mean can be found in `utils/default_args.py`.
 
-Once we have a config script, we can use the entry scripts to load these configurations and carry out an train/validate/test process.
+Once we have a config script, we can use the entry scripts to load these configurations and carry out a train/validate/test process.
 
 - **Training**:
 
