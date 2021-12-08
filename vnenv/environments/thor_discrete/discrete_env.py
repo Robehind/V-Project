@@ -92,6 +92,15 @@ class DiscreteEnvironment(AbsEnv):
                 self.tLoader = h5py.File(self.target_dict[str_], "r",)
                 tmp = self.tLoader[str_][list(self.tLoader[str_].keys())[0]][:]
                 target_repre_info.update({str_: (tmp.shape, tmp.dtype)})
+            else:
+                loader = h5py.File(
+                    os.path.join(
+                        self.offline_data_dir,
+                        obs_args['info_scene'],
+                        self.target_dict[str_]), "r",
+                )
+                tmp = loader[list(loader.keys())[0]][:]
+                target_repre_info.update({str_: (tmp.shape, tmp.dtype)})
         self.obs_dict = obs_args['obs_dict']
         self.his_len = 0
         # get obs info
@@ -271,7 +280,7 @@ class DiscreteEnvironment(AbsEnv):
             self.info.update(dict(min_len=self.best_path_len()))
         _target_repre = self.get_target_repre(self.target_str)
         _obs = self.get_obs()
-        if not allow_no_target:
+        if not allow_no_target or self.target_str is not None:
             _obs.update(_target_repre)
         return _obs
 
@@ -438,31 +447,21 @@ class DiscreteEnvironment(AbsEnv):
                 repre[str_] = self.tLoader[str_][target_str][:]
             else:
                 repre[str_] = \
-                    self.get_data_of_obj(target_str, self.target_dict[str_])
+                    self.get_data_of_obj(self.target_dict[str_])
         return repre
 
     def get_data_of_obj(
         self,
-        target_str,
         file_name,
-        target_json='target.json'
     ):
         '''获取一个目标的相关数据。通过检索能‘看见’这个目标的位置，来透过这个位置读取
         hdf5文件，获取这个位置的‘状态’来作为目标的表示。用file-name来指定是哪种‘状态’
         '''
-        all_objID = [
-            k for k in self.all_objects_id
-            if k.split("|")[0] == target_str
-        ]
-        objID = random.choice(all_objID)
+        vstate = random.choice(self.all_visible_states)
         tmp_loader = h5py.File(
             os.path.join(self.scene_path, file_name), "r",
         )
-        with open(
-            os.path.join(self.scene_path, target_json), "r",
-        ) as f:
-            state_str = json.load(f)
-        data = tmp_loader[state_str[objID]][:]
+        data = tmp_loader[vstate][:]
         tmp_loader.close()
         return data
 
