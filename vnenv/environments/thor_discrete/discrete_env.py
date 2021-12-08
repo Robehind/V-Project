@@ -267,7 +267,7 @@ class DiscreteEnvironment(AbsEnv):
             false_action=0,
             start_at=str(self.start_state)
             )
-        if min_len:
+        if min_len and self.target_str is not None:
             self.info.update(dict(min_len=self.best_path_len()))
         _target_repre = self.get_target_repre(self.target_str)
         _obs = self.get_obs()

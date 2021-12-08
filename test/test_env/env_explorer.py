@@ -11,7 +11,7 @@ params = dict(
         'max_steps': 100,
     },
     dynamics_args={
-        'offline_data_dir': '../thordata/mixed_offline_data',
+        'offline_data_dir': '../vdata/thordata',
         'action_dict': {
             'MoveAhead': ['m0'],
             'TurnLeft': ['r-45'],
@@ -26,24 +26,24 @@ params = dict(
     },
     obs_args={
         "obs_dict": {
-            "fc": "resnet50_fc_new.hdf5",
+            "fc": "resnet50fc_no_norm.hdf5",
             "RGB": "images.hdf5",
         },
         'target_dict': {
-            'glove': '../thordata/word_embedding/word_embedding.hdf5',
+            'glove': '../vdata/word_embedding/word_embedding.hdf5',
         },
         'info_scene': "FloorPlan1_physics"
     },
 )
 # -0.25|-0.50|90|0 and 0.50|-0.75|270|0.
 env = DiscreteEnvironment(**params)
-env.update_settings(dict(chosen_scenes={'kitchen': '5'}))
+env.update_settings(dict(chosen_scenes={'kitchen': '9'}))
 env.init_scene()
 print(env.all_objects)
 t = input('Choose a target:(no input to free explore)')
 t = None if t == '' else t
 state = env.reset(
-    agent_state=None,
+    agent_state='-1.25|-0.75|45|0',
     target_str=t,
     allow_no_target=True,
     min_len=True
