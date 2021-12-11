@@ -63,8 +63,7 @@ def basic_train(
                 add_eval_data_seq(val_writer, val_data, steps)
 
         # logging
-        for k, v in obj_salars.items():
-            obj_traker.add({k: v})
+        obj_traker.add(obj_salars)
 
         if steps >= print_gate_steps:
             print_gate_steps += print_freq

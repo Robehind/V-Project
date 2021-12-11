@@ -31,6 +31,7 @@ params = dict(
         },
         'target_dict': {
             'glove': '../vdata/word_embedding/word_embedding.hdf5',
+            'img': 'images.hdf5'
         },
         'info_scene': "FloorPlan1_physics"
     },
@@ -62,6 +63,8 @@ command_dict = {
 }
 reward_sum = 0
 step = 0
+t_img = state['img'][:, :, ::-1]
+cv2.imshow("tgt", t_img)
 while True:
     pic = state['RGB'][:]
     print(env.agent_state)
@@ -94,6 +97,8 @@ while True:
             state = env.reset(
                 target_str=t, allow_no_target=True, min_len=True
             )
+            t_img = state['img'][:, :, ::-1]
+            cv2.imshow("tgt", t_img)
     elif press_key == 27:
         break
     elif press_key == 116:
