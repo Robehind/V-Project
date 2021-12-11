@@ -93,7 +93,8 @@ class BaseSampler:
                 if done[i]:
                     self.mean_calc.add({'return': self.env_reward[i]})
                     self.mean_calc.add(dict(ep_length=self.env_steps[i]))
-                    self.mean_calc.add(dict(SR=int(info[i]['success'])))
+                    if 'success' in info[i]:
+                        self.mean_calc.add(dict(SR=int(info[i]['success'])))
                     self.env_steps[i] = 0
                     self.env_reward[i] = 0
         return dones
