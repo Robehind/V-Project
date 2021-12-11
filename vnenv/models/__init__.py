@@ -1,4 +1,7 @@
 from .demo_model import DemoModel
 from .basic.simple_model import FcLinearModel, FcLstmModel
+from .basic.model4gym import CartModel
+from .classic import Zhu2017, SavnBase
 
-__all__ = ['DemoModel', 'FcLinearModel', 'FcLstmModel']
+__all__ = ['DemoModel', 'FcLinearModel', 'FcLstmModel', 'Zhu2017',
+           'SavnBase', 'CartModel']
