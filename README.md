@@ -2,8 +2,6 @@
 
 Temporarily named **vnenv**，short for **V**isual **N**avigation **ENV**ironment.
 
-**IMPORTANT: Don't Push to master branch.**
-
 - [V-Project](#v-project)
   - [Installation](#installation)
   - [Quick Start](#quick-start)
@@ -78,5 +76,5 @@ The documentation introduces modules' functions and presents tutorials about how
 
 - **Teamwork development notes**
 
-Need to [learn the usage of Git](https://learngitbranching.js.org/?locale=zh_CN) first(especially about Branch, Pull & Push). Then create a new branch to code. You can push your own branch or merge the master branch anytime. But **DON'T** push to the master branch, any unexpected changes in master will be withdrawed.
+Need to [learn the usage of Git](https://learngitbranching.js.org/?locale=zh_CN) first(especially about Branch, Pull & Push).
 
