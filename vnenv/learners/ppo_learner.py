@@ -64,8 +64,9 @@ class PPOLearner(A2CLearner):
         for _ in range(self.repeat):
             model_out = self.model_forward(obs, rct, m)
             pi = F.softmax(model_out['policy'][:-exp_num], dim=1)
-            pi_a = pi.gather(1, toTensor(a, self.dev))
-            ratio = torch.exp(torch.log(pi_a) - ologpi_a)
+            log_pi = F.log_softmax(model_out['policy'][:-exp_num], dim=1)
+            log_pi_a = log_pi.gather(1, toTensor(a, self.dev))
+            ratio = torch.exp(log_pi_a - ologpi_a)
             cliped = ratio.clamp(1-self.pi_eps, 1+self.pi_eps)
             v_array = toNumpy(model_out['value']).reshape(-1, exp_num)
             if adv is None or self.recalc_adv:
@@ -84,7 +85,7 @@ class PPOLearner(A2CLearner):
             else:
                 v_loss = F.smooth_l1_loss(
                     model_out['value'][:-exp_num], toTensor(returns, self.dev))
-            ent_loss = (- torch.log(pi) * pi).sum(1).mean()
+            ent_loss = (- log_pi * pi).sum(1).mean()
             obj_func = \
                 pi_loss + self.vf_param * v_loss - self.ent_param * ent_loss
             self.optimizer.zero_grad()

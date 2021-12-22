@@ -2,6 +2,7 @@ from typing import Dict
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.nn.utils import clip_grad_norm_
 import numpy as np
 from .rct_learner import RCTLearner
 from .returns_calc import _basic_return, _GAE
@@ -51,14 +52,16 @@ class A2CLearner(RCTLearner):
         )
         v_loss = F.smooth_l1_loss(
             model_out['value'][:-exp_num], toTensor(returns, self.dev))
+        log_pi = F.log_softmax(model_out['policy'][:-exp_num], dim=1)
         pi = F.softmax(model_out['policy'][:-exp_num], dim=1)
-        ent_loss = (- torch.log(pi) * pi).sum(1).mean()
-        pi_a = pi.gather(1, toTensor(a, self.dev))
-        pi_loss = (-torch.log(pi_a) * toTensor(adv, dev=self.dev)).mean()
+        ent_loss = (- pi * log_pi).sum(1).mean()
+        log_pi_a = log_pi.gather(1, toTensor(a, self.dev))
+        pi_loss = (-log_pi_a * toTensor(adv, dev=self.dev)).mean()
         obj_func = \
             pi_loss + self.vf_param * v_loss - self.ent_param * ent_loss
         self.optimizer.zero_grad()
         obj_func.backward()
+        # clip_grad_norm_(self.model.parameters(), 50.0)
         self.optimizer.step()
         return dict(
             obj_func=obj_func.item(),
