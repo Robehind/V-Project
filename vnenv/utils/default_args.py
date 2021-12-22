@@ -45,6 +45,7 @@ args_dict = dict(
     exp_name='demo_exp',  # 将用于生成本次实验的实验文件夹的文件名，因此尽量不要包含特殊符号
     exp_dir='',  # 单次实验的完整路径，会根据时间自动生成
     proc_num=1,  # 进程数
+    debug=False,  # set detection anomaly True or False
 
     # train proc params
     train_steps=6e3,  # 指定训练多少frames

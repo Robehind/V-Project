@@ -87,7 +87,9 @@ def main():
     # init tensorboardx
     tx_writer = SummaryWriter(log_dir=os.path.join(args.exp_dir, 'tblog'))
     # training
-    train_func(args, sampler, learner, clscher, tx_writer, val_func)
+    print('Set detect anomaly:', args.debug)
+    with torch.autograd.set_detect_anomaly(args.debug):
+        train_func(args, sampler, learner, clscher, tx_writer, val_func)
 
 
 if __name__ == "__main__":
