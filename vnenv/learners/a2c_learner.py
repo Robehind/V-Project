@@ -47,16 +47,20 @@ class A2CLearner(RCTLearner):
         r, m = batched_exp['r'][:-1], batched_exp['m'][:-1]
         a = batched_exp['a'][:-1].reshape(-1, 1)
         exp_num = r.shape[1]
+        exp_length = r.shape[0]
         # all data in model_out should be in (batch_size, *)
         model_out = self.model_forward(obs, rct, m)
         # reshape value to (exp_length+1, exp_num)
         v_array = toNumpy(model_out['value']).reshape(-1, exp_num)
-        adv = _GAE(v_array, r, m, self.gamma, self.gae_lbd)
         returns = _basic_return(
             v_array, r, m,
             self.gamma,
             self.vf_nsteps
         )
+        if self.gae_lbd == 1.0 and exp_length <= self.vf_nsteps:
+            adv = returns - v_array[:-1].reshape(-1, 1)
+        else:
+            adv = _GAE(v_array, r, m, self.gamma, self.gae_lbd)
         v_loss = self.vf_loss(
             model_out['value'][:-exp_num], toTensor(returns, self.dev),
             reduction=self.reduction)
