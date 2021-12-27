@@ -1,12 +1,12 @@
 from typing import Dict
 from .abs_cl import AbsCL
-from random import shuffle
 from vnenv.environments import VecEnv
+import random
 
 
-# TODO 暂时是按照thor环境的接口来的
-# 成功率达到一定地步就新增房间
 class SceneCL(AbsCL):
+    # TODO 暂时是按照thor环境的接口来的
+    # 成功率达到一定地步就新增房间
     def __init__(
         self,
         env: VecEnv,
@@ -21,7 +21,7 @@ class SceneCL(AbsCL):
         self.incre_num = incre_num
 
         self.all_scenes = env.chosen_scenes.copy()
-        shuffle(self.all_scenes)
+        random.shuffle(self.all_scenes)
         self.crt_ed = init_num
         self.epi_cnt = epis_gate
         # init task
@@ -46,3 +46,31 @@ class SceneCL(AbsCL):
         else:
             self.epi_cnt = self.epis_gate
             return False
+
+
+class UniSceneCL(AbsCL):
+    # 为不同的进程设定不同房间集合
+    def __init__(
+        self,
+        env: VecEnv,
+        shuffle: bool = True
+    ) -> None:
+        n = env.env_num
+        scenes = env.chosen_scenes.copy()
+        assert n <= len(scenes)
+        if shuffle:
+            random.shuffle(scenes)
+        self.settings = []
+        step = len(scenes)//n
+        mod = len(scenes) % n
+        for i in range(0, n*step, step):
+            self.settings.append(scenes[i:i + step])
+        for i in range(0, mod):
+            self.settings[i].append(scenes[-(i+1)])
+        # init task
+        for i in range(n):
+            settings = dict(chosen_scenes=self.settings[i])
+            env.update_settings_proc(i, settings)
+
+    def next_task(self, update_steps: int, report: Dict):
+        return False

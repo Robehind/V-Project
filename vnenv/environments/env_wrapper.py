@@ -103,12 +103,21 @@ class VecEnv:
             pipe.send(('re_seed', seed + i))
         [pipe.recv() for pipe in self.parent_pipes]
 
-    def update_settings(self, settings: Dict):
+    def update_settings_proc(self, proc_id: int, settings: Dict):
+        # 具体的某个进程更新设定
         if settings in [[], {}, None]:
             return
         if self.waiting_step:
             self.step_wait()
-        # TODO 暂时只支持所有进程环境用同一套设定
+        self.parent_pipes[proc_id].send(('update_settings', settings))
+        self.parent_pipes[proc_id].recv()
+
+    def update_settings(self, settings: Dict):
+        # 所有进程环境用同一套设定
+        if settings in [[], {}, None]:
+            return
+        if self.waiting_step:
+            self.step_wait()
         self.prop_env.update_settings(settings)
         settings = [settings.copy() for _ in range(self.env_num)]
         for pipe, s in zip(self.parent_pipes, settings):
