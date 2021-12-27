@@ -32,7 +32,7 @@ class PPOLearner(A2CLearner):
             gae_lbd,
             vf_nsteps,
             vf_param,
-            ent_param,
+            ent_param=ent_param,
         )
         self.pi_eps = pi_eps
         self.repeat = repeat
