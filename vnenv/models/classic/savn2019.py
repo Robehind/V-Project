@@ -39,7 +39,6 @@ class SavnBase(torch.nn.Module):
         num_outputs = act_sz
         self.critic_linear = nn.Linear(hidden_state_sz, 1)
         self.actor_linear = nn.Linear(hidden_state_sz, num_outputs)
-        self.action_predict_linear = nn.Linear(2 * lstm_input_sz, act_sz)
 
         self.apply(weights_init)
         relu_gain = nn.init.calculate_gain("relu")
@@ -97,6 +96,6 @@ class SavnBase(torch.nn.Module):
             rct=dict(
                 hx=hx,
                 cx=cx,
-                action_probs=F.softmax(actor_out, dim=1).detach()
+                action_probs=F.softmax(actor_out, dim=1)  # .detach()
             )
         )
