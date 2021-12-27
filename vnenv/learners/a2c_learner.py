@@ -20,7 +20,10 @@ class A2CLearner(RCTLearner):
         gae_lbd: float,
         vf_nsteps: int,
         vf_param: float = 0.5,
-        ent_param: float = 0
+        vf_loss: str = 'mse_loss',
+        ent_param: float = 0,
+        grad_norm_max: float = 100.0,
+        batch_loss_mean: bool = False
     ) -> None:
         self.model = model
         self.dev = next(model.parameters()).device
@@ -29,8 +32,12 @@ class A2CLearner(RCTLearner):
         self.vf_nsteps = vf_nsteps
         self.gae_lbd = gae_lbd
         self.vf_param = vf_param
+        self.vf_loss = getattr(F, vf_loss)
         self.gamma = gamma
         self.ent_param = ent_param
+        self.grad_norm_max = grad_norm_max
+        self.batch_loss_mean = batch_loss_mean
+        self.reduction = 'mean' if batch_loss_mean else 'sum'
 
     def learn(
         self,
@@ -40,7 +47,7 @@ class A2CLearner(RCTLearner):
         r, m = batched_exp['r'][:-1], batched_exp['m'][:-1]
         a = batched_exp['a'][:-1].reshape(-1, 1)
         exp_num = r.shape[1]
-        # all data in model_out should in (batch_size, *)
+        # all data in model_out should be in (batch_size, *)
         model_out = self.model_forward(obs, rct, m)
         # reshape value to (exp_length+1, exp_num)
         v_array = toNumpy(model_out['value']).reshape(-1, exp_num)
@@ -50,22 +57,30 @@ class A2CLearner(RCTLearner):
             self.gamma,
             self.vf_nsteps
         )
-        v_loss = F.smooth_l1_loss(
-            model_out['value'][:-exp_num], toTensor(returns, self.dev))
+        v_loss = self.vf_loss(
+            model_out['value'][:-exp_num], toTensor(returns, self.dev),
+            reduction=self.reduction)
         log_pi = F.log_softmax(model_out['policy'][:-exp_num], dim=1)
         pi = F.softmax(model_out['policy'][:-exp_num], dim=1)
-        ent_loss = (- pi * log_pi).sum(1).mean()
+        ent_loss = (- pi * log_pi).sum(1)
         log_pi_a = log_pi.gather(1, toTensor(a, self.dev))
-        pi_loss = (-log_pi_a * toTensor(adv, dev=self.dev)).mean()
+        pi_loss = (-log_pi_a * toTensor(adv, dev=self.dev))
+        if self.batch_loss_mean:
+            ent_loss = ent_loss.mean()
+            pi_loss = pi_loss.mean()
+        else:
+            ent_loss = ent_loss.sum()
+            pi_loss = pi_loss.sum()
+        # backward and optimize
         obj_func = \
             pi_loss + self.vf_param * v_loss - self.ent_param * ent_loss
         self.optimizer.zero_grad()
         obj_func.backward()
-        # clip_grad_norm_(self.model.parameters(), 50.0)
+        clip_grad_norm_(self.model.parameters(), self.grad_norm_max)
         self.optimizer.step()
         return dict(
             obj_func=obj_func.item(),
             pi_loss=pi_loss.item(),
             v_loss=v_loss.item(),
-            ent_loss=ent_loss.item()
+            ent_loss=ent_loss.item(),
         )
