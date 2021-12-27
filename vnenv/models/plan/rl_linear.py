@@ -44,8 +44,8 @@ class AClinear(torch.nn.Module):
         self.critic_linear.bias.data.fill_(0)
 
     def forward(self, x, rct=None):
-
+        x = F.relu(x)
         return dict(
-            policy=self.actor_linear(F.relu(x)),
-            value=self.critic_linear(F.relu(x))
+            policy=self.actor_linear(x),
+            value=self.critic_linear(x)
         )

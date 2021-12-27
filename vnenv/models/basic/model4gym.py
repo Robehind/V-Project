@@ -4,9 +4,7 @@ import torch.nn.functional as F
 
 class CartModel(nn.Module):
     def __init__(
-        self,
-        obs_shapes,
-        act_sz
+        self, *args, **kwargs
     ):
         super(CartModel, self).__init__()
         self.fc1 = nn.Linear(4, 256)
@@ -19,14 +17,3 @@ class CartModel(nn.Module):
             policy=self.fc_pi(x),
             value=self.fc_v(x)
         )
-
-    # def pi(self, x):
-    #     x = F.relu(self.fc1(x))
-    #     x = self.fc_pi(x)
-    #     # prob = F.softmax(x, dim=softmax_dim)
-    #     return x
-
-    # def v(self, x):
-    #     x = F.relu(self.fc1(x))
-    #     v = self.fc_v(x)
-    #     return v
