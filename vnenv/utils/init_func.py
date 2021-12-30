@@ -141,7 +141,7 @@ def load_or_find_model(args):
         else:
             raise Exception(f'{args.load_model_dir} is not exists.')
     else:
-        print('Didn\'t specify a trained model. Searching for a newest one')
+        print('Didn\'t specify a trained model. Searching for the newest one')
         find_path = search_newest_model(args.exps_dir, args.exp_name)
         if find_path is not None:
             print("Searched the newest model: %s" % find_path)
