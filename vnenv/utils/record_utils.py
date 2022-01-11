@@ -76,7 +76,7 @@ class LabelMeanCalcer(object):
     def __init__(self):
         self.trackers = {}
 
-    def __getitem__(self, key):
+    def __getitem__(self, key) -> MeanCalcer:
         if key in self.trackers:
             return self.trackers[key]
         else:
