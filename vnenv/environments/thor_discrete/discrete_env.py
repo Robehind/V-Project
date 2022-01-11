@@ -6,7 +6,8 @@ import h5py
 import os
 import json
 from .agent_pose_state import AgentPoseState
-from .thordata_utils import get_type, get_scene_names, bfs_shortest
+from .thordata_utils import \
+    get_type, get_scene_names, bfs_shortest, bfs_all_shortest
 from ..abs_env import AbsEnv
 from typing import Optional
 
@@ -27,8 +28,8 @@ class DiscreteEnvironment(AbsEnv):
         seed: int = 1114,
         min_len_file: Optional[str] = None,
     ):
-        # settings can't change during training
         random.seed(seed)
+        self.calc_shortest = False
         self.min_len_file = min_len_file
         action_dict = dynamics_args['action_dict']
         self.actions = list(action_dict.keys())
@@ -159,6 +160,9 @@ class DiscreteEnvironment(AbsEnv):
         )
         self.update_settings(settings)
 
+    def add_extra_info(self, switch: bool = False):
+        self.calc_shortest = switch
+
     def update_settings(self, settings):
         change_strs = ['chosen_scenes', 'chosen_targets',
                        'reward_dict', 'max_steps']  # TODO distance
@@ -244,8 +248,7 @@ class DiscreteEnvironment(AbsEnv):
         scene_id: Optional[str] = None,
         target_str: Optional[str] = None,
         agent_state: Optional[str] = None,
-        allow_no_target: bool = False,
-        min_len: bool = False
+        allow_no_target: bool = False
     ):
         """重置环境.前三个参数如果保持为None，就会随机取。allow_no_target是是否允许在没有
         设定目标的情况下运行环境。一般是不允许的。calc_best_len也是暂时保留的参数，选择是否需要
@@ -273,11 +276,11 @@ class DiscreteEnvironment(AbsEnv):
             scene_id=self.scene_id,
             target=self.target_str,
             agent_done=False,
-            false_action=0,
-            start_at=str(self.start_state)
+            start_at=str(self.start_state),
+            pose=str(self.start_state)
             )
-        if min_len and self.target_str is not None:
-            self.info.update(dict(min_len=self.best_path_len()))
+        if self.calc_shortest and self.target_str is not None:
+            self.info.update(dict(min_acts=self.min_actions()))
         _target_repre = self.get_target_repre(self.target_str)
         _obs = self.get_obs()
         if not allow_no_target or self.target_str is not None:
@@ -399,8 +402,7 @@ class DiscreteEnvironment(AbsEnv):
         event, self.done = self.judge(action)
         self.reward = self.reward_dict[event]
         self.info['event'] = event
-        if event == 'collision':
-            self.info['false_action'] += 1
+        self.info['pose'] = str(self.agent_state)
         # 可以配置更多的额外环境信息在info里
 
         return self.get_obs(), self.reward, self.done, self.info
@@ -411,8 +413,10 @@ class DiscreteEnvironment(AbsEnv):
         done = False
         event = 'step'
         if not self.last_opt_success:
-            if self.last_opt in ['move', 'look_up_down']:
+            if self.last_opt in ['move']:
                 event = 'collision'
+            # TODO if self.last_opt == 'look_up_down':
+            #     event = 'camera_limit'
         if self.auto_done:
             if self.target_visiable():
                 event = 'success'
@@ -479,7 +483,15 @@ class DiscreteEnvironment(AbsEnv):
         # 这里直接返回理论最小值，和具体找到哪个实例不相关。
         return min(min_list)+1
 
-    def best_path_len(self):
+    def all_min_actions(self):
+        return bfs_all_shortest(
+            self.all_visible_states,
+            list(self.action_dict.values()),
+            self.trans_data,
+            self.rotations,
+            self.horizons)
+
+    def min_actions(self):
         """算最短路，用于计算spl.当最短路数据存在时直接读取，可以加快速度，但不再返回最佳路径的细节"""
         if self.min_len_file is not None:
             return [], self.read_shortest()

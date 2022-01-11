@@ -37,6 +37,30 @@ def sp_action(str_state, act_list, trans_data, rotations, horizons):
     return str(state)
 
 
+def bfs_all_shortest(ends, actions, trans_data, rotations, horizons):
+    out = defaultdict(lambda: -1)
+    c_nodes = []
+    n_nodes = ends
+    length = 0
+    for e in ends:
+        out[e] = 0
+    while n_nodes:
+        c_nodes = n_nodes
+        n_nodes = []
+        length += 1
+        for nn in c_nodes:
+            for act in actions:
+                if act is None:
+                    continue
+                new_n = sp_action(nn, act, trans_data, rotations, horizons)
+                if new_n == -1:
+                    continue
+                if out[new_n] == -1:
+                    n_nodes.append(new_n)
+                    out[new_n] = length
+    return dict(out)
+
+
 def bfs_shortest(start, ends, actions, trans_data, rotations, horizons):
 
     if start in ends:
