@@ -105,6 +105,7 @@ class Plotter:
         self.ax.cla()
         if hasattr(self, 'ax2'):
             self.ax2.cla()
+            self.ax2.set_yticks([])
             self.ax2.relim()
             self.ax2.autoscale_view()
         if self.X_axis == 'steps':
@@ -132,9 +133,10 @@ class Plotter:
         # 样本数量
         sample_nums = tracker._counts[y_axis].copy()
         Y = tracker.pop()[y_axis]
-        self.ax.plot(range(len(Y)), Y)
-        self.ax2 = self.ax.twinx()
-        self.ax2.bar(range(len(Y)), sample_nums)
+        self.ax.plot(range(1, len(Y)+1), Y)
+        if not hasattr(self, 'ax2'):
+            self.ax2 = self.ax.twinx()
+        self.ax2.bar(range(1, len(Y)+1), sample_nums)
         self.ax2.set_ylabel('sample nums')
 
     def DarwMinActsCurve(self, epis):
@@ -147,8 +149,8 @@ class Plotter:
             data = [e[y_axis]]*int(label)
             tracker.add({y_axis: data})
         Y = tracker.pop()[y_axis]
-        self.ax.plot(range(len(Y)), Y)
-        self.ax.set_xticks(range(len(Y)), rotation=0)
+        self.ax.plot(range(1, len(Y)+1), Y)
+        self.ax.set_xticks(range(1, len(Y)+1), rotation=0)
 
     def DrawNormalCurve(self, epis):
         x_axis, y_axis = self.X_axis, self.Y_axis
@@ -167,7 +169,7 @@ class Plotter:
             rot = 30
         elif x_axis == 'model':
             X = sorted(data.keys(), key=lambda x: int(x.split('_')[-1]))
-            rot = 0
+            rot = 30
         else:
             X = sorted(data.keys())
             rot = 30
