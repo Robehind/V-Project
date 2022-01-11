@@ -102,13 +102,17 @@ class Plotter:
             return
         epis = self.data.get_episodes(self.regular_dict)
         # 会先全部清除然后重画
-        self.ax.clf()
+        self.ax.cla()
         if hasattr(self, 'ax2'):
             self.ax2.cla()
+            self.ax2.relim()
+            self.ax2.autoscale_view()
         if self.X_axis == 'steps':
             self.DrawStepsCurve(epis)
+        elif self.X_axis == 'min_acts':
+            self.DarwMinActsCurve(epis)
         else:
-            self.NormalCurveData(epis)
+            self.DrawNormalCurve(epis)
         self.ax.set_xlabel(self.X_axis)
         self.ax.set_ylabel(self.Y_axis)
         self.last_X_axis = self.x_choose.value_selected
@@ -133,7 +137,20 @@ class Plotter:
         self.ax2.bar(range(len(Y)), sample_nums)
         self.ax2.set_ylabel('sample nums')
 
-    def NormalCurveData(self, epis):
+    def DarwMinActsCurve(self, epis):
+        x_axis, y_axis = self.X_axis, self.Y_axis
+        assert x_axis in x_label
+        tracker = MeanCalcer()
+        assert y_axis in metrics1
+        for e in epis:
+            label = e[x_axis]
+            data = [e[y_axis]]*int(label)
+            tracker.add({y_axis: data})
+        Y = tracker.pop()[y_axis]
+        self.ax.plot(range(len(Y)), Y)
+        self.ax.set_xticks(range(len(Y)), rotation=0)
+
+    def DrawNormalCurve(self, epis):
         x_axis, y_axis = self.X_axis, self.Y_axis
         assert x_axis in x_label
         tracker = LabelMeanCalcer()
@@ -143,9 +160,23 @@ class Plotter:
             data = e[y_axis]
             tracker[str(label)].add({y_axis: data})
         data = tracker.pop()
-        X = sorted(data)
+        if x_axis == 'scene':
+            X = sorted(
+                data.keys(),
+                key=lambda x: int(x.split("_")[0].split('n')[-1]))
+            rot = 30
+        elif x_axis == 'model':
+            X = sorted(data.keys(), key=lambda x: int(x.split('_')[-1]))
+            rot = 0
+        else:
+            X = sorted(data.keys())
+            rot = 30
         Y = [data[x][y_axis] for x in X]
         self.ax.plot(range(len(X)), Y)
+        # TODO
+        if x_axis == 'scene':
+            X = [x.split("_")[0] for x in X]
+        self.ax.set_xticks(range(len(X)), X, rotation=rot)
 
 
 if __name__ == '__main__':

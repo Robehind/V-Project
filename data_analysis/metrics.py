@@ -11,7 +11,11 @@ def measure_epi(
     epi: Dict
 ):
     # SPL
-    SPL = epi['min_acts'] / len(epi['actions'])
+    if epi['success']:
+        SPL = epi['min_acts'] / len(epi['actions'])
+    else:
+        SPL = 0
+    assert SPL <= 1
     # Et, ERt
     Et, ERt = Explore(epi)
     # Ct, CRt

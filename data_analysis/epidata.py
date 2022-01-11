@@ -11,11 +11,11 @@ class EpisodeData:
         self,
         json_path
     ) -> None:
-        self.scenes = set()
-        self.targets = set()
-        self.models = set()
-        self.steps = set()
-        self.min_actses = set()
+        self.scene = set()
+        self.target = set()
+        self.model = set()
+        self.step = set()
+        self.min_acts = set()
         self.episodes = []
         with open(json_path, 'r') as f:
             ori_epis = json.load(f)
@@ -28,9 +28,10 @@ class EpisodeData:
     ) -> None:
         scene = epi['scene']
         target = epi['target']
-        self.scenes.add(scene)
-        self.targets.add(target)
-        self.models.add(epi['model'])
+        self.scene.add(scene)
+        self.target.add(target)
+        self.model.add(epi['model'])
+        self.min_acts.add(epi['min_acts'])
         _epi = measure_epi(epi)
         self.episodes.append(_epi)
 
