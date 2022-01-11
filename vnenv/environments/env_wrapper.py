@@ -87,13 +87,15 @@ class VecEnv:
         self.waiting_step = False
 
     def __getattr__(self, name):
+        # TODO safe?
         return getattr(self.prop_env, name)
 
-    def calc_shortest(self, switch: bool):
+    def add_extra_info(self, switch: bool):
+        # TODO 暂时所有进程统一控制
         if self.waiting_step:
             self.step_wait()
         for pipe in self.parent_pipes:
-            pipe.send(('calc_shortest', switch))
+            pipe.send(('add_extra_info', switch))
         [pipe.recv() for pipe in self.parent_pipes]
 
     def re_seed(self, seed):
@@ -206,21 +208,19 @@ def _subproc_worker(
     env = env_fn.x()
     parent_pipe.close()
     waiting = False
-    min_len = False
     try:
         while True:
             cmd, data = pipe.recv()
-            ss = {}
             if waiting and cmd != 'close':
                 pipe.send((None, 0, 0, None))
                 continue
             if cmd == 'reset':
-                obs = env.reset(**data, min_len=min_len)
+                obs = env.reset(**data)
                 pipe.send((_write_bufs(obs)))
             elif cmd == 'step':
                 obs, reward, done, info = env.step(data)
                 if done:
-                    obs = env.reset(**ss, min_len=min_len)
+                    obs = env.reset()
                 pipe.send((_write_bufs(obs), reward, done, info))
             elif cmd == 'update_settings':
                 env.update_settings(data)
@@ -228,8 +228,8 @@ def _subproc_worker(
             elif cmd == 're_seed':
                 env.re_seed(data)
                 pipe.send(None)
-            elif cmd == 'calc_shortest':
-                min_len = data
+            elif cmd == 'add_extra_info':
+                env.add_extra_info(data)
                 pipe.send(None)
             elif cmd == 'close':
                 pipe.send(None)

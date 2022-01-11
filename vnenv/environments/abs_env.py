@@ -273,6 +273,10 @@ class AbsEnv:
     def export_settings(self):
         raise NotImplementedError
 
+    def add_extra_info(self, switch: bool = False):
+        """是否要在info中增加额外的信息，例如最短路等。在训练过程中关闭以提升速度。"""
+        print('Warning: add_extra_info not implemented')
+
     def init_scene(self, scene_id=None):
         # 加载某一场景的资源和信息，不涉及任何智能体的初始化
         if scene_id != self.scene_id or self.scene_id is None:
