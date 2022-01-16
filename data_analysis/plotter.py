@@ -24,6 +24,7 @@ class Plotter:
         fig, self.ax = plt.subplots()
         self.fig = fig
         fig.subplots_adjust(left=0.3, bottom=0.3)
+        self.ax2 = self.ax.twinx()
         # 指定筛选项目筛选框
         text_axes = [
             fig.add_axes([0.1 + x*0.3, 0.135, 0.2, 0.075])
@@ -103,12 +104,12 @@ class Plotter:
         epis = self.data.get_episodes(self.regular_dict)
         # 会先全部清除然后重画
         self.ax.cla()
-        if hasattr(self, 'ax2'):
-            self.ax2.cla()
-            self.ax2.set_yticks([])
-            self.ax2.relim()
-            self.ax2.autoscale_view()
+        self.ax2.cla()
+        self.ax2.relim()
+        self.ax2.autoscale_view()
+        self.ax2.set_visible(False)
         if self.X_axis == 'steps':
+            self.ax2.set_visible(True)
             self.DrawStepsCurve(epis)
         elif self.X_axis == 'min_acts':
             self.DarwMinActsCurve(epis)
@@ -134,8 +135,6 @@ class Plotter:
         sample_nums = tracker._counts[y_axis].copy()
         Y = tracker.pop()[y_axis]
         self.ax.plot(range(1, len(Y)+1), Y)
-        if not hasattr(self, 'ax2'):
-            self.ax2 = self.ax.twinx()
         self.ax2.bar(range(1, len(Y)+1), sample_nums)
         self.ax2.set_ylabel('sample nums')
 
