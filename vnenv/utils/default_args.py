@@ -64,7 +64,6 @@ args_dict = dict(
     best_a=False,  # 测试阶段是否取概率最高的动作，如果为false，那么就还是随机取
     calc_spl=True,  # 是否计算SPL，需要环境提供最短路信息
     eval_task={},  # 测试环境设置
-    record_traj=False,  # 是否记录动作轨迹用于可视化
 
     # task params
     env='AbsEnv',

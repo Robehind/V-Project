@@ -6,8 +6,8 @@ import agents
 import curriculums
 import evalors
 import environments as envs
+import json
 from tqdm import tqdm
-from tensorboardX import SummaryWriter
 from environments.env_wrapper import make_envs, VecEnv
 from utils.init_func import (
     get_args,
@@ -15,7 +15,6 @@ from utils.init_func import (
     set_seed,
     get_all_models
 )
-from vnenv.utils.record_utils import add_eval_data_seq
 os.environ["OMP_NUM_THREADS"] = '1'
 
 
@@ -46,7 +45,7 @@ def main():
     env_fns = [make_envs(e, env_cls) for e in env_args_list]
     Venv = VecEnv(env_fns)
     Venv.update_settings(args.eval_task)
-    Venv.calc_shortest(args.calc_spl)
+    Venv.add_extra_info(args.calc_spl)
 
     # TODO init CLscher
 
@@ -64,23 +63,25 @@ def main():
     # make exp directory
     make_exp_dir(args, 'EvalAll-')
 
-    tx_writer = SummaryWriter(log_dir=os.path.join(args.exp_dir, 'tblog'))
+    # tx_writer = SummaryWriter(log_dir=os.path.join(args.exp_dir, 'tblog'))
     paths_f = get_all_models(args)
     pbar = tqdm(total=len(paths_f), desc='Models')
 
+    all_trajs = []
     for p, model_id in paths_f:
         # TODO 重置环境的随机情况，可能不好？
         set_seed(args.seed)
         Venv.re_seed(args.seed)
 
         model.load_state_dict(torch.load(p))
-        eval_data = eval_func(agent, Venv, args.eval_epi, bar_leave=False)
-        # log
-        add_eval_data_seq(tx_writer, eval_data, model_id)
+        eval_trajs = eval_func(agent, Venv, args.eval_epi,
+                               model_id=args.model+"_"+str(model_id),
+                               bar_leave=False)
+        all_trajs += eval_trajs
         pbar.update(1)
-
+    with open(os.path.join(args.exp_dir, 'trajs.json'), "w") as fp:
+        json.dump(all_trajs, fp)
     Venv.close()
-    tx_writer.close()
     pbar.close()
 
 

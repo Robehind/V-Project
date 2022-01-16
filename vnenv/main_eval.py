@@ -7,7 +7,6 @@ import models
 import agents
 import curriculums
 import environments as envs
-from tensorboardX import SummaryWriter
 from environments.env_wrapper import make_envs, VecEnv
 from utils.init_func import (
     get_args,
@@ -15,7 +14,6 @@ from utils.init_func import (
     set_seed,
     load_or_find_model
 )
-from vnenv.utils.record_utils import add_eval_data
 os.environ["OMP_NUM_THREADS"] = '1'
 
 
@@ -41,13 +39,12 @@ def main():
     eval_func = getattr(evalors, args.evalor)
 
     # 生成多进程环境，每个进程环境初始化参数可能不一样
-    # TODO 不同的进程加载不同的环境这种操作还是以后再弄吧
     env_args_list = env_cls.args_maker(args.env_args, args.proc_num)
     env_fns = [make_envs(e, env_cls) for e in env_args_list]
 
     Venv = VecEnv(env_fns)
     Venv.update_settings(args.eval_task)
-    Venv.calc_shortest(args.calc_spl)
+    Venv.add_extra_info(args.calc_spl)
 
     # TODO init CLscher
 
@@ -62,23 +59,24 @@ def main():
     load_dir = load_or_find_model(args)
     if load_dir != '':
         model.load_state_dict(torch.load(load_dir))
+    model_id = os.path.split(load_dir)[-1].split('_')[:-1]
+    model_id = '_'.join(model_id)
     model.eval()
     # init agent
     agent = agent_cls(model, Venv, args.gpu_ids, **args.agent_args)
     # make exp directory
     make_exp_dir(args, 'Eval-')
-    # tx writer
-    writer = SummaryWriter(log_dir=os.path.join(args.exp_dir, 'tblog'))
     # evaluating
-    eval_data = eval_func(agent, Venv, args.eval_epi,
-                          record_traj=args.record_traj)
+    eval_trajs = eval_func(agent, Venv, args.eval_epi, model_id=model_id)
     Venv.close()
+    with open(os.path.join(args.exp_dir, 'trajs.json'), "w") as fp:
+        json.dump(eval_trajs, fp, indent=4)
     # output
-    if args.record_traj:
-        trajs = eval_data.pop('trajs')
-        with open(os.path.join(args.exp_dir, 'trajs.json'), "w") as fp:
-            json.dump(trajs, fp, indent=4)
-    add_eval_data(writer, eval_data)
+    # if args.record_traj:
+    #     trajs = eval_data.pop('trajs')
+    #     with open(os.path.join(args.exp_dir, 'trajs.json'), "w") as fp:
+    #         json.dump(trajs, fp, indent=4)
+    # add_eval_data(writer, eval_data)
 
 
 if __name__ == "__main__":
