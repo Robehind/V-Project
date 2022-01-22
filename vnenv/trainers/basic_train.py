@@ -49,15 +49,14 @@ def basic_train(
                 # load validate settings
                 sampler.Venv.update_settings(args.val_task)
                 sampler.reset()
-                sampler.Venv.calc_shortest(args.calc_spl)
+                sampler.Venv.add_extra_info(args.calc_spl)
                 # validate process
                 val_data = val_func(
-                    sampler.Vagent, sampler.Venv, args.val_epi,
-                    bar_leave=False, bar_desc='Validating')
+                    sampler.Vagent, sampler.Venv, args.val_epi)
                 # resume train settings
                 sampler.Venv.update_settings(o_settings)
                 sampler.reset()
-                sampler.Venv.calc_shortest(False)
+                sampler.Venv.add_extra_info(False)
                 learner.model.train()
                 # log
                 add_eval_data_seq(val_writer, val_data, steps)
