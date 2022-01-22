@@ -57,7 +57,7 @@ args_dict = dict(
     val_mode=True,  # 是否在训练过程中展开验证集测试
     val_task={},  # 验证环境设置
     val_epi=100,  # 验证的次数
-    validater='basic_eval',  # 用哪个评估函数来验证
+    validater='validate',  # 用哪个评估函数来验证
 
     # eval proc params
     eval_epi=1000,  # 指定测试时测试多少个episode
