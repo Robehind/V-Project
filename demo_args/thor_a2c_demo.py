@@ -33,7 +33,6 @@ args.update(
         "chosen_scenes": {'kitchen': '25'},
         "chosen_targets": {'kitchen': ["Microwave", 'Sink']},
     },
-    record_traj=True,
     evalor='basic_eval',
 
     # task params
