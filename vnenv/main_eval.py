@@ -1,13 +1,13 @@
 import os
 import random
 import torch
+import gym
+from gym.spaces import Dict as dict_spc
 import json
 import evalors
 import models
 import agents
-import curriculums
-import environments as envs
-from environments.env_wrapper import make_envs, VecEnv
+import taskers
 from utils.init_func import (
     get_args,
     make_exp_dir,
@@ -33,27 +33,27 @@ def main():
 
     # 加载具体类
     model_cls = getattr(models, args.model)
-    env_cls = getattr(envs, args.env)
     agent_cls = getattr(agents, args.agent)
-    cl_cls = getattr(curriculums, args.CLscher)
+    # TODO 测试和训练用的tasker可能不一样...
+    tasker_cls = getattr(taskers, args.tasker)
     eval_func = getattr(evalors, args.evalor)
 
-    # 生成多进程环境，每个进程环境初始化参数可能不一样
-    env_args_list = env_cls.args_maker(args.env_args, args.proc_num)
-    env_fns = [make_envs(e, env_cls) for e in env_args_list]
-
-    Venv = VecEnv(env_fns)
-    Venv.update_settings(args.eval_task)
-    Venv.add_extra_info(args.calc_spl)
-
-    # TODO init CLscher
-
+    # gym 多进程化
+    # 此时不对task space进行初始化
+    Venv = gym.vector.make(
+        args.env_id, num_envs=args.proc_num, **args.env_args)
     # 环境返回关于观察与动作的信息，方便初始化模型
-    obs_info = Venv.shapes
-    act_sz = Venv.action_sz
+    obs_spc = Venv.single_observation_space
+    act_spc = Venv.single_action_space
+    # 如果obs没有以dict形式组织，那么以关键字‘OBS’包装一下，且不改变obs_space
+    if not isinstance(obs_spc, dict_spc):
+        Venv = gym.wrappers.TransformObservation(Venv, lambda x: {'OBS': x})
+
+    # init tasker 此时通过调用Venv的call方法修改各个进程的task space
+    _ = tasker_cls(Venv, args.eval_task, **args.tasker_args)
 
     # init model and load params
-    model = model_cls(obs_info, act_sz, **args.model_args)
+    model = model_cls(obs_spc, act_spc, **args.model_args)
     if model is not None:
         print(model)
     load_dir = load_or_find_model(args)

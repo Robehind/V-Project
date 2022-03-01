@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 import numpy as np
 from .abs_agent import AbsAgent
-from vnenv.environments import VecEnv
+from gym.vector import VectorEnv
 from vnenv.utils.convert import dict2tensor, dict2numpy
 import vnenv.agents.select_funcs as sfcs
 
@@ -15,14 +15,14 @@ class BaseAgent(AbsAgent):
     def __init__(
         self,
         model: nn.Module,
-        Venv: VecEnv,  # 传环境进来只是为了获取一些参数
+        Venv: VectorEnv,  # 传环境进来只是为了获取一些参数
         gpu_ids: Optional[List[int]],
         select_func: str,
         select_params: List[Any] = [],  # TODO 暂时只有epsilon需要传,可以是generator
     ):
         self.gpu_ids = gpu_ids
         self.model = model
-        self.proc_num = Venv.env_num
+        self.proc_num = Venv.num_envs
         # TODO 多gpu训练同一个模型, DataParallel
         if gpu_ids is not None:
             self.model = self.model.cuda(gpu_ids[0])

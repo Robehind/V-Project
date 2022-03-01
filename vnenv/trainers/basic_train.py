@@ -5,14 +5,14 @@ from tensorboardX import SummaryWriter
 from utils.record_utils import MeanCalcer, add_eval_data_seq
 from learners.abs_learner import AbsLearner
 from samplers.base_sampler import BaseSampler
-from curriculums.abs_cl import AbsCL
+from taskers.base_tasker import Tasker
 
 
 def basic_train(
     args,
     sampler: BaseSampler,
     learner: AbsLearner,
-    clscher: AbsCL,
+    tasker: Tasker,
     tx_writer: SummaryWriter,
     val_func: Callable
 ):
@@ -32,7 +32,7 @@ def basic_train(
 
         batched_exp = sampler.sample()
         obj_salars = learner.learn(batched_exp)
-        if clscher.next_task(update_steps, sampler.report()):
+        if tasker.next_task(update_steps, sampler.report()):
             sampler.reset()
 
         pbar.update(update_steps)
@@ -44,19 +44,19 @@ def basic_train(
             learner.checkpoint(args.exp_dir, steps)
             # validating
             if args.val_mode:
-                # save train settings
-                o_settings = sampler.Venv.export_settings()
-                # load validate settings
-                sampler.Venv.update_settings(args.val_task)
+                # save train task
+                o_tasks = sampler.Venv.call('task_space')
+                # load validate task
+                sampler.Venv.set_attr('task_space', args.val_task)
                 sampler.reset()
-                sampler.Venv.add_extra_info(args.calc_spl)
+                # TODO sampler.Venv.call('add_extra_info', args.calc_spl)
                 # validate process
                 val_data = val_func(
                     sampler.Vagent, sampler.Venv, args.val_epi)
-                # resume train settings
-                sampler.Venv.update_settings(o_settings)
+                # resume train task
+                sampler.Venv.set_attr('task_space', o_tasks)
                 sampler.reset()
-                sampler.Venv.add_extra_info(False)
+                # TODO sampler.Venv.call('add_extra_info', False)
                 learner.model.train()
                 # log
                 add_eval_data_seq(val_writer, val_data, steps)

@@ -1,5 +1,7 @@
 from typing import Dict, Union
 import numpy as np
+import gym
+from gym.spaces import Dict as dict_spc
 from vnenv.utils.convert import dtype2numpy
 
 
@@ -7,16 +9,16 @@ class Buff:
     """"""
     def __init__(
         self,
-        dshapes: Dict[str, tuple],
+        shapes: Dict[str, tuple],
         dtypes: Dict[str, np.dtype],
         bshapes: Dict[str, tuple]
     ) -> None:
-        self.dshapes = dshapes
+        self.shapes = shapes
         self.dtypes = dtypes
         self.bshapes = bshapes
         self.buff = {
             k: np.zeros((*bshapes[k], *v), dtype=dtype2numpy(dtypes[k]))
-            for k, v in dshapes.items()
+            for k, v in shapes.items()
         }
 
 
@@ -24,8 +26,7 @@ class BaseBuffer(Buff):
     """"""
     def __init__(
         self,
-        obs_shapes: Dict[str, tuple],
-        obs_dtypes: Dict[str, np.dtype],
+        obs_space: gym.Space,
         rct_shapes: Dict[str, tuple],
         rct_dtypes: Dict[str, np.dtype],
         exp_length: int,
@@ -35,6 +36,14 @@ class BaseBuffer(Buff):
     ) -> None:
         assert env_num <= max_exp_num
         # buffer for r，a，mask and observation and rcts
+        obs_shapes, obs_dtypes = {}, {}
+        if isinstance(obs_space, dict_spc):
+            for k in obs_space.keys():
+                obs_shapes[k] = obs_space[k].shape
+                obs_dtypes[k] = obs_space[k].dtype
+        else:
+            obs_shapes['OBS'] = obs_space.shape
+            obs_dtypes['OBS'] = obs_space.dtype
         shapes = {
             "r": (),  # TODO if (1, ) can't broadcast (x) to (x, 1)
             "m": (),

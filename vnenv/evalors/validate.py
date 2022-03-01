@@ -2,12 +2,12 @@ from tqdm import tqdm
 from typing import Dict
 import numpy as np
 from vnenv.utils.record_utils import MeanCalcer
-from vnenv.environments import VecEnv
+from gym.vector import VectorEnv
 
 
 def validate(
     agent,
-    envs: VecEnv,
+    envs: VectorEnv,
     total_epi: int
 ) -> Dict[float, list]:
     agent.model.eval()

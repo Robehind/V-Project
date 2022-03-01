@@ -1,12 +1,12 @@
 from tqdm import tqdm
 from typing import Dict
 import numpy as np
-from vnenv.environments import VecEnv
+from gym.vector import VectorEnv
 
 
 def basic_eval(
     agent,
-    envs: VecEnv,
+    envs: VectorEnv,
     total_epi: int,
     model_id: str,
     bar_leave: bool = True,

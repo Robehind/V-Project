@@ -1,7 +1,7 @@
-from typing import Dict
 import numpy as np
+from typing import Dict
 from .base_buffer import BaseBuffer
-from vnenv.environments import VecEnv
+from gym.vector import VectorEnv
 from vnenv.agents import AbsAgent
 from vnenv.utils.record_utils import MeanCalcer
 
@@ -11,7 +11,7 @@ class BaseSampler:
     """
     def __init__(
         self,
-        Venv: VecEnv,
+        Venv: VectorEnv,
         Vagent: AbsAgent,
         batch_size: int,
         exp_length: int,
@@ -28,7 +28,7 @@ class BaseSampler:
         self.Venv = Venv
         self.Vagent = Vagent
 
-        self.env_num = Venv.env_num
+        self.env_num = Venv.num_envs
         self.exp_length = exp_length
         self.batch_size = batch_size
         sample_num = batch_size // exp_length
@@ -43,8 +43,7 @@ class BaseSampler:
 
         # init buffer
         self.buffer = BaseBuffer(
-            Venv.shapes,
-            Venv.dtypes,
+            Venv.single_observation_space,
             Vagent.rct_shapes,
             Vagent.rct_dtypes,
             exp_length + 1,  # sample_length = exp_length + 1

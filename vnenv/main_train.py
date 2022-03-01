@@ -1,6 +1,8 @@
 import os
 import random
 import torch
+import gym
+from gym.spaces import Dict as dict_spc
 from tensorboardX import SummaryWriter
 import trainers
 import evalors
@@ -8,9 +10,7 @@ import models
 import agents
 import samplers
 import learners
-import curriculums
-import environments as envs
-from environments.env_wrapper import make_envs, VecEnv
+import taskers
 from utils.init_func import get_args, make_exp_dir, set_seed
 from utils.net_utils import optim2cuda
 os.environ["OMP_NUM_THREADS"] = '1'
@@ -34,31 +34,30 @@ def main():
     # 加载具体类
     model_cls = getattr(models, args.model)
     optim_cls = getattr(torch.optim, args.optim)  # 直接取torch的
-    env_cls = getattr(envs, args.env)
     agent_cls = getattr(agents, args.agent)
     sampler_cls = getattr(samplers, args.sampler)
     learner_cls = getattr(learners, args.learner)
-    cl_cls = getattr(curriculums, args.CLscher)
+    tasker_cls = getattr(taskers, args.tasker)
     train_func = getattr(trainers, args.trainer)
     val_func = getattr(evalors, args.validater)
 
-    # 生成多进程环境，每个进程环境初始化参数可能不一样
-    # TODO 不同的进程加载不同的环境这种操作还是以后再弄吧
-    env_args_list = env_cls.args_maker(args.env_args, args.proc_num)
-    env_fns = [make_envs(e, env_cls) for e in env_args_list]
-    Venv = VecEnv(env_fns)
-    Venv.update_settings(args.train_task)
+    # gym 多进程化
+    # 此时不对task space进行初始化
+    Venv = gym.vector.make(
+        args.env_id, num_envs=args.proc_num, **args.env_args)
+    # 环境返回关于观察与动作的信息，方便初始化模型
+    obs_spc = Venv.single_observation_space
+    act_spc = Venv.single_action_space
+    # 如果obs没有以dict形式组织，那么以关键字‘OBS’包装一下，且不改变obs_space
+    if not isinstance(obs_spc, dict_spc):
+        Venv = gym.wrappers.TransformObservation(Venv, lambda x: {'OBS': x})
 
     # TODO params management
-    # init CLscher
-    clscher = cl_cls(Venv, **args.CLscher_args)
-
-    # 环境返回关于观察与动作的信息，方便初始化模型
-    obs_info = Venv.shapes
-    act_sz = Venv.action_sz
+    # init tasker 此时通过调用Venv的call方法修改各个进程的task space
+    tasker = tasker_cls(Venv, args.train_task, **args.tasker_args)
 
     # init model and load params
-    model = model_cls(obs_info, act_sz, **args.model_args)
+    model = model_cls(obs_spc, act_spc, **args.model_args)
     if model is not None:
         print(model)
     # TODO 读取存档点，读取最新存档模型的参数到model
@@ -89,7 +88,7 @@ def main():
     # training
     print('Set detect anomaly:', args.debug)
     with torch.autograd.set_detect_anomaly(args.debug):
-        train_func(args, sampler, learner, clscher, tx_writer, val_func)
+        train_func(args, sampler, learner, tasker, tx_writer, val_func)
 
 
 if __name__ == "__main__":

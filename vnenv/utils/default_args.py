@@ -22,15 +22,6 @@ class VNENVargs:
         with open(path, 'w', encoding='utf-8') as f:
             json.dump(self.__dict__, f, indent=4)
 
-    @property
-    def env_args(self):
-        return dict(
-            dynamics_args=self.dynamics_args,
-            obs_args=self.obs_args,
-            event_args=self.event_args,
-            seed=self.seed
-        )
-
 
 args_dict = dict(
     # general params
@@ -66,32 +57,8 @@ args_dict = dict(
     eval_task={},  # 测试环境设置
 
     # task params
-    env='AbsEnv',
-    event_args=dict(
-        max_steps=50,  # 每个episode的最大步长，即agent在episode中的最大行动数
-        reward_func={
-            'collision': -0.1,
-            'step': -0.01,
-            'success': 10,
-            'fail': 0
-        }
-    ),
-    dynamics_args=dict(
-        action_dict={
-            'up': (-1, 0),
-            'down': (1, 0),
-            'left': (0, -1),
-            'right': (0, 1),
-            'Done': None
-        },
-        scene_ids=[0, 1],
-    ),
-    obs_args=dict(
-        obs_dict={
-            'map': 'mat',
-            'rela': 'relapos'
-        },
-    ),
+    env_id='TaskEnv',
+    env_args={},
 
     # algo params
     learner='A2CLearner',
@@ -115,8 +82,8 @@ args_dict = dict(
     sampler_args=dict(
         batch_size=20,
     ),
-    CLscher='AbsCL',
-    CLscher_args={},
+    tasker='Tasker',
+    tasker_args={},
 
     # train or eval funcs
     trainer='basic_train',

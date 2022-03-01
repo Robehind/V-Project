@@ -26,14 +26,10 @@ args.update(
     # eval proc params
     eval_epi=1000,  # 指定测试时测试多少个episode
     eval_task={},
-    record_traj=True,
     # evalor='gym_eval',
 
     # task params
-    env='CartPolev1',
-    dynamics_args={},
-    obs_args={'key': 'obs'},
-    event_args={'r_scale': 100.0},
+    env_id='CartPole-v1',
 
     # algo params
     learner='A2CLearner',
