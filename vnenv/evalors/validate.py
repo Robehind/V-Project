@@ -11,7 +11,7 @@ def validate(
     total_epi: int
 ) -> Dict[float, list]:
     agent.model.eval()
-    proc_num = envs.env_num
+    proc_num = envs.num_envs
 
     epis = 0
     env_steps = np.zeros((proc_num))
@@ -19,7 +19,7 @@ def validate(
     test_scalars = MeanCalcer()
 
     obs = envs.reset()
-    done = np.ones((envs.env_num))
+    done = np.ones((proc_num))
 
     pbar = tqdm(total=total_epi, desc='Validating', leave=False, unit='epi')
     while epis < total_epi:
@@ -44,10 +44,10 @@ def validate(
                 # 只要环境反馈了最短路信息，那么就算一下SPL
                 if 'min_len' in t_info:
                     if t_info['success']:
-                        assert t_info['min_len'] <= env_steps[i],\
-                            f"{t_info['min_len']}>{env_steps[i]}"
+                        assert t_info['min_acts'] <= env_steps[i],\
+                            f"{t_info['min_acts']}>{env_steps[i]}"
                         # TODO spl计算问题。0？done？
-                        spl = t_info['min_len']/env_steps[i]
+                        spl = t_info['min_acts']/env_steps[i]
                     else:
                         spl = 0
                     data.update(dict(SPL=spl))

@@ -13,7 +13,7 @@ def basic_eval(
     bar_desc: str = '',
 ) -> Dict[float, list]:
     agent.model.eval()
-    proc_num = envs.env_num
+    proc_num = envs.num_envs
 
     epis = 0
     env_rewards = np.zeros((proc_num))
@@ -24,7 +24,7 @@ def basic_eval(
     trajs = []
 
     obs = envs.reset()
-    done = np.ones((envs.env_num))
+    done = np.ones((proc_num))
 
     pbar = tqdm(total=total_epi, desc=bar_desc, leave=bar_leave, unit='epi')
     while epis < total_epi:
@@ -44,7 +44,7 @@ def basic_eval(
                 pbar.update(1)
                 poses_rec[i] = [t_info['start_at']] + poses_rec[i]
                 traj = {
-                    'scene': t_info['scene_id'],
+                    'scene': t_info['scene'],
                     'target': t_info['target'],
                     'model': model_id,
                     'success': int(t_info['success']),

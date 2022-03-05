@@ -7,6 +7,7 @@ import taskers
 import evalors
 import json
 import gym
+import environments
 from gym.spaces import Dict as dict_spc
 from tqdm import tqdm
 from utils.init_func import (
@@ -48,6 +49,9 @@ def main():
     # 如果obs没有以dict形式组织，那么以关键字‘OBS’包装一下，且不改变obs_space
     if not isinstance(obs_spc, dict_spc):
         Venv = gym.wrappers.TransformObservation(Venv, lambda x: {'OBS': x})
+    Venv.seed(args.seed)
+    if args.extra_info is not None:
+        Venv.call('add_extra_info', args.extra_info)
 
     # init tasker 此时通过调用Venv的call方法修改各个进程的task space
     _ = tasker_cls(Venv, args.eval_task, **args.tasker_args)
@@ -70,7 +74,7 @@ def main():
     for p, model_id in paths_f:
         # TODO 重置环境的随机情况，可能不好？
         set_seed(args.seed)
-        # Venv.re_seed(args.seed)
+        Venv.seed(args.seed)
 
         model.load_state_dict(torch.load(p))
         eval_trajs = eval_func(agent, Venv, args.eval_epi,

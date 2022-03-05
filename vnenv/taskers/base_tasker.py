@@ -1,12 +1,18 @@
+from gym.vector import VectorEnv
+from typing import Dict, Optional
+
+
 class Tasker:
     def __init__(
         self,
-        env,
-        task_space=None,
+        envs: VectorEnv,
+        tasks: Optional[Dict] = None,
         *args,
         **kwargs
     ) -> None:
-        pass
+        if tasks is None:
+            return
+        envs.call('set_tasks', tasks)
 
     def next_task(
         self,

@@ -11,6 +11,7 @@ import agents
 import samplers
 import learners
 import taskers
+import environments
 from utils.init_func import get_args, make_exp_dir, set_seed
 from utils.net_utils import optim2cuda
 os.environ["OMP_NUM_THREADS"] = '1'
@@ -51,6 +52,9 @@ def main():
     # 如果obs没有以dict形式组织，那么以关键字‘OBS’包装一下，且不改变obs_space
     if not isinstance(obs_spc, dict_spc):
         Venv = gym.wrappers.TransformObservation(Venv, lambda x: {'OBS': x})
+    Venv.seed(args.seed)
+    if args.extra_info is not None:
+        Venv.call('add_extra_info', args.extra_info)
 
     # TODO params management
     # init tasker 此时通过调用Venv的call方法修改各个进程的task space

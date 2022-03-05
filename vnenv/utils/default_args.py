@@ -37,16 +37,19 @@ args_dict = dict(
     exp_dir='',  # 单次实验的完整路径，会根据时间自动生成
     proc_num=1,  # 进程数
     debug=False,  # set detection anomaly True or False
+    extra_info=None,
+    # add extra info by env if None, means no extra info, and don't call
+    # add_extra_info
 
     # train proc params
     train_steps=6e3,  # 指定训练多少frames
     print_freq=1000,  # 每进行n个frames，就向tensorboardx输出一次训练信息
     model_save_freq=10000,  # 每进行n个episode，就保存一次模型参数
-    train_task={},  # 训练环境设置
+    train_task=None,  # 训练环境设置
 
     # validate params 验证频率和模型保存频率是一样的
-    val_mode=True,  # 是否在训练过程中展开验证集测试
-    val_task={},  # 验证环境设置
+    val_mode=False,  # 是否在训练过程中展开验证集测试
+    val_task=None,  # 验证环境设置
     val_epi=100,  # 验证的次数
     validater='validate',  # 用哪个评估函数来验证
 
@@ -54,7 +57,7 @@ args_dict = dict(
     eval_epi=1000,  # 指定测试时测试多少个episode
     best_a=False,  # 测试阶段是否取概率最高的动作，如果为false，那么就还是随机取
     calc_spl=True,  # 是否计算SPL，需要环境提供最短路信息
-    eval_task={},  # 测试环境设置
+    eval_task=None,  # 测试环境设置
 
     # task params
     env_id='TaskEnv',

@@ -15,18 +15,6 @@ args.update(
     train_steps=100000,  # 指定训练多少frames
     print_freq=2000,  # 每进行n个frames，就向tensorboardx输出一次训练信息
     model_save_freq=100000,  # 每进行n个episode，就保存一次模型参数
-    train_task={},
-
-    # validate params
-    val_mode=False,
-    val_task={},
-    val_epi=1000,
-    # validater='gym_eval',
-
-    # eval proc params
-    eval_epi=1000,  # 指定测试时测试多少个episode
-    eval_task={},
-    # evalor='gym_eval',
 
     # task params
     env_id='CartPole-v1',

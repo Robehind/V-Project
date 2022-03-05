@@ -130,15 +130,15 @@ class FcLstmModel(torch.nn.Module):
     """观察都是预处理好的特征向量的lstm模型"""
     def __init__(
         self,
-        obs_shapes,
-        act_sz,
+        obs_spc,
+        act_spc,
         dropout_rate=0,
         q_flag=0
     ):
         super(FcLstmModel, self).__init__()
-        self.net = SimpleMP(act_sz,
-                            np.prod(obs_shapes['fc']),
-                            np.prod(obs_shapes['glove']),
+        self.net = SimpleMP(act_spc.n,
+                            np.prod(obs_spc['fc'].shape),
+                            np.prod(obs_spc['glove'].shape),
                             dropout_rate=dropout_rate,
                             mode=1, q_flag=q_flag)
         self.rct_shapes = self.net.rct_shapes

@@ -1,15 +1,20 @@
+import random
 from gym import Env
 
 
 class TaskEnv(Env):
     """TODO Task Environment"""
-    _task_space = None
+    _tasks = None
 
-    @property
-    def task_space(self):
-        return self._task_space
+    def export_tasks(self):
+        return self._tasks
 
-    @task_space.setter
-    def task_space(self, space):
-        self._task_space = space
+    def set_tasks(self, t):
+        self._tasks = t
         # maybe need more operation when modify task space
+
+    def add_extra_info(self, *args, **kwargs):
+        pass
+
+    def seed(self, sd):
+        random.seed(sd)
