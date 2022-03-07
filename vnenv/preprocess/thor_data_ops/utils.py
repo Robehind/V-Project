@@ -21,10 +21,9 @@ def make_scene_name(scene_type, num):
     mapping = {"kitchen": '', "living_room": '2',
                "bedroom": '3', "bathroom": '4'}
     front = mapping[scene_type]
-    endd = '_physics' if (front == '' or front == '2') else ''
     if num >= 10 or front == '':
-        return "FloorPlan" + front + str(num) + endd
-    return "FloorPlan" + front + "0" + str(num) + endd
+        return "FloorPlan" + front + str(num)
+    return "FloorPlan" + front + "0" + str(num)
 
 
 def states_num(scenes, datadir, preload):

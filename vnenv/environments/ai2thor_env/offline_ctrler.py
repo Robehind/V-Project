@@ -8,7 +8,7 @@ from .agent_pose_state import AgentPoseState
 
 
 class OfflineThorCtrler:
-    visible_file = "visible_object_map.json"
+    visible_file = "visible_map.json"
     trans_file = 'trans.json'
     room_type = ['kitchen', 'bedroom', 'living_room', 'bathroom']
 

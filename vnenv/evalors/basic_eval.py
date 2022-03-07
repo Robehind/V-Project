@@ -52,7 +52,8 @@ def basic_eval(
                     'actions': acts_rec[i].copy(),  # A_0 to A_T-1, total of T
                     'poses': poses_rec[i].copy(),  # S_0 to S_T, total of T + 1
                     'events': events_rec[i].copy(),  # E_1 to E_T, total of T
-                    'agent_done': t_info['agent_done']
+                    'agent_done': t_info['agent_done'],
+                    'ep_length': len(acts_rec[i])
                 }
                 if 'min_acts' in t_info:
                     traj['min_acts'] = t_info['min_acts']

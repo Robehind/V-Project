@@ -11,7 +11,7 @@ import os
 class FCTargetDrivenEnv(BTDTHOR):
     """fc: resnet50 target: glove"""
     resnetFC_path = '../vdata/thordata'
-    resnetFC_name = 'resnet50fc_no_norm.hdf5'
+    resnetFC_name = 'resnet50fc.hdf5'
     glove_path = '../vdata/word_embedding/word_embedding.hdf5'
 
     def __init__(
