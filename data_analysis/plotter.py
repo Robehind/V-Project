@@ -8,6 +8,7 @@ import seaborn
 from taskenvs.ai2thor_env import OriThorForVis
 import numpy as np
 import os
+from mplcursors import cursor
 x_label = ['scene', 'target', 'model', 'steps', 'min_acts']
 all_metrics = metrics1 + metrics2
 GRIDSIZE = 0.25  # TODO
@@ -158,6 +159,8 @@ class Plotter:
         plt.show()
 
     def plot(self, event):
+        if hasattr(self, 'cursor'):
+            self.cursor.remove()
         # 检查坐标选择合法性
         if (self.X_axis == 'steps' and self.Y_axis in metrics1) or \
            (self.X_axis != 'steps' and self.Y_axis in metrics2):
@@ -173,11 +176,13 @@ class Plotter:
         self.ax2.set_visible(False)
         if self.X_axis == 'steps':
             self.ax2.set_visible(True)
-            self.DrawStepsCurve(epis)
+            line = self.DrawStepsCurve(epis)
         elif self.X_axis == 'min_acts':
-            self.DarwMinActsCurve(epis)
+            line = self.DarwMinActsCurve(epis)
         else:
-            self.DrawNormalCurve(epis)
+            line = self.DrawNormalCurve(epis)
+        # 显示数据的鼠标
+        self.cursor = cursor(line, hover=True)
         self.ax.set_xlabel(self.X_axis)
         self.ax.set_ylabel(self.Y_axis)
         self.last_X_axis = self.x_choose.value_selected
@@ -199,7 +204,8 @@ class Plotter:
         Y = tracker.pop()[y_axis]
         self.ax2.bar(range(1, len(Y)+1), sample_nums, color='gray', alpha=.3)
         self.ax2.set_ylabel('sample nums')
-        self.ax.plot(range(1, len(Y)+1), Y, marker='o', markersize=3)
+        line, = self.ax.plot(range(1, len(Y)+1), Y, marker='o', markersize=3)
+        return line
 
     def DarwMinActsCurve(self, epis):
         x_axis, y_axis = self.X_axis, self.Y_axis
@@ -211,8 +217,9 @@ class Plotter:
             data = [e[y_axis]]*int(label)
             tracker.add({y_axis: data})
         Y = tracker.pop()[y_axis]
-        self.ax.plot(range(1, len(Y)+1), Y, marker='o', markersize=3)
+        line, = self.ax.plot(range(1, len(Y)+1), Y, marker='o', markersize=3)
         self.ax.set_xticks(range(1, len(Y)+1), rotation=0)
+        return line
 
     def DrawNormalCurve(self, epis):
         x_axis, y_axis = self.X_axis, self.Y_axis
@@ -236,11 +243,12 @@ class Plotter:
             X = sorted(data.keys())
             rot = 30
         Y = [data[x][y_axis] for x in X]
-        self.ax.plot(range(len(X)), Y, marker='o', markersize=3)
+        line, = self.ax.plot(range(len(X)), Y, marker='o', markersize=3)
         # TODO
         if x_axis == 'scene':
             X = [x.split("_")[0] for x in X]
         self.ax.set_xticks(range(len(X)), X, rotation=rot)
+        return line
 
 
 if __name__ == '__main__':
