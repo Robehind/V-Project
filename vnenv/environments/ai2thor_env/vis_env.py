@@ -35,11 +35,11 @@ class OriThorForVis:
         # move agent out of scene
         self.ctrler.step(
             action="Teleport", position=dict(y=-10), forceAction=True)
+        camera_params = event.metadata['actionReturn']
         event = self.ctrler.step(
-            action='AddThirdPartyCamera', **event.metadata['actionReturn'])
+            action='AddThirdPartyCamera', **camera_params)
         pic = event.third_party_camera_frames[0]
-        cv2.imshow("Topview", pic[:, :, [2, 1, 0]])
-        cv2.waitKey(0)
+        return camera_params, pic[:, :, [2, 1, 0]]
 
     def Animateframe(
         self,

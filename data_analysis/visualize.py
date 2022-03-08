@@ -12,8 +12,8 @@ def init_parser():
     parser.add_argument("--birdView", action='store_true')
     parser.add_argument("--smooth", action='store_true')
     parser.add_argument("--wait", type=float, default=0)
-    parser.add_argument("--width", type=int, default=800)
-    parser.add_argument("--height", type=int, default=800)
+    parser.add_argument("--width", type=int, default=640)
+    parser.add_argument("--height", type=int, default=640)
     args = parser.parse_args()
     return args
 
@@ -31,7 +31,8 @@ def print_details(traj):
 
 
 def main(args):
-    with open(args.path, "r") as fp:
+    trajs_path = os.path.join(args.path, 'trajs.json')
+    with open(trajs_path, "r") as fp:
         trajs = json.load(fp)
 
     trajs_num = len(trajs)
