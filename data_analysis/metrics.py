@@ -1,15 +1,12 @@
 from collections import defaultdict
 from typing import Dict
-
 # 'scene' 'target' 'success' 'model' 'return'
 # 'actions' 'poses' 'events' 'agent_done' 'min_acts
 metrics1 = ['SR', 'SPL', 'ER', 'CR', 'steps', 'Done']
 metrics2 = ['Et', 'Ct', 'ERt', 'CRt']
 
 
-def measure_epi(
-    epi: Dict
-):
+def measure_epi(epi: Dict):
     # SPL
     if epi['success']:
         SPL = epi['min_acts'] / len(epi['actions'])
@@ -24,10 +21,8 @@ def measure_epi(
         scene=epi['scene'], target=epi['target'], model=epi['model'],
         min_acts=epi['min_acts'], SR=epi['success'],
         Et=Et, ERt=ERt, Ct=Ct, CRt=CRt, steps=len(epi['actions']),
-        SPL=SPL, ER=ERt[-1], CR=CRt[-1],
-        Done=int(epi['agent_done']), actions=epi['actions'],
-        start_at=epi['poses'][0]
-    )
+        SPL=SPL, ER=ERt[-1], CR=CRt[-1], poses=epi['poses'],
+        Done=int(epi['agent_done']), actions=epi['actions'])
     return epidata
 
 
@@ -56,7 +51,6 @@ def Collision(epi: Dict):
         Cs += float(e == 'collision')
         CRt.append(Cs / (t+1))
     return Ct, CRt
-
 
 # def CalcSPLt(epi: Dict, minActsCache: Dict):
 #     epi_length = len(epi['actions'])

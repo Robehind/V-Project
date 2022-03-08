@@ -3,8 +3,39 @@ from vnenv.utils.record_utils import LabelMeanCalcer, MeanCalcer
 from epidata import EpisodeData
 from metrics import metrics1, metrics2
 from matplotlib.widgets import TextBox, RadioButtons, Button
+import argparse
+import seaborn
+from vnenv.environments.ai2thor_env import OriThorForVis
+import numpy as np
+import os
 x_label = ['scene', 'target', 'model', 'steps', 'min_acts']
 all_metrics = metrics1 + metrics2
+GRIDSIZE = 0.25  # TODO
+
+
+def init_parser():
+    parser = argparse.ArgumentParser(description="Plot curves and heatmap")
+    parser.add_argument(
+        "--path", type=str, default='/home/zhiyu/',
+        help="Path to the evaluated dir")
+    parser.add_argument(
+        "--width", type=int, default=640,
+        help="Width of top view image. Height will be the same.")
+    args = parser.parse_args()
+    return args
+
+
+def _pose2picXY(cam_params, height, width):
+    # TODO 似乎高和宽必须得是一样的.
+    cam_pos = cam_params['position']
+    orth_size = cam_params['orthographicSize']
+    lower_left = np.array((cam_pos['x'], cam_pos['z'])) - orth_size
+
+    def pose2picXY(x, z):
+        nx, nz = (np.array((x, z)) - lower_left) / (2*orth_size)
+
+        return round(height*(1. - nz)), round(width*nx)
+    return pose2picXY
 
 
 class Plotter:
@@ -50,16 +81,21 @@ class Plotter:
         x_choose.set_active(0)
         self.x_choose = x_choose
         # 纵坐标选择框
-        ax_y = fig.add_axes([0.05, 0.47, 0.15, 0.25])
+        ax_y = fig.add_axes([0.05, 0.48, 0.15, 0.25])
         y_choose = RadioButtons(ax_y, all_metrics)
         y_choose.on_clicked(self.choose_yaxis)
         y_choose.set_active(0)
         self.y_choose = y_choose
-        # 开始绘图按钮
-        ax_start = fig.add_axes([0.05, 0.3, 0.15, 0.15])
-        draw_button = Button(ax_start, 'Draw')
+        # 开始绘画曲线按钮
+        ax_start = fig.add_axes([0.05, 0.39, 0.15, 0.07])
+        draw_button = Button(ax_start, 'Draw Curve')
         draw_button.on_clicked(self.plot)
         self.draw_button = draw_button
+        # 开始绘画热力图按钮
+        ax_start2 = fig.add_axes([0.05, 0.3, 0.15, 0.07])
+        draw_button2 = Button(ax_start2, 'Draw Heatmap')
+        draw_button2.on_clicked(self.plot_heat)
+        self.draw_button2 = draw_button2
         # show
         plt.show()
 
@@ -93,6 +129,34 @@ class Plotter:
     def resume_xy(self):
         self.x_choose.set_active(x_label.index(self.last_X_axis))
         self.y_choose.set_active(all_metrics.index(self.last_Y_axis))
+
+    def plot_heat(self, event):
+        if not hasattr(self, 'ctrler'):
+            self.venv = OriThorForVis(
+                width=args.width, height=args.width,
+                grid_size=GRIDSIZE, rotate_angle=45)
+        hgz = GRIDSIZE / 2.
+        epis = self.data.get_episodes(self.regular_dict)
+        scene = epis[0]['scene']
+        cam_params, pic = self.venv.top_view(scene)
+        tfunc = _pose2picXY(cam_params, pic.shape[0], pic.shape[1])
+        fig, ax = plt.subplots()
+        heatmat = np.zeros((pic.shape[0], pic.shape[1]))
+        for epi in epis:
+            assert scene == epi['scene']
+            for p in epi['poses']:  # TODO Done动作会导致多一个重复的pose
+                x, z, _, _ = [float(x) for x in p.split("|")]
+                # TODO
+                ULx, ULz = tfunc(x - hgz, z + hgz)
+                BRx, BRz = tfunc(x + hgz, z - hgz)
+                heatmat[ULx:BRx, ULz:BRz] += 1
+        ax.imshow(pic[:, :, ::-1])
+        seaborn.heatmap(
+            heatmat,
+            mask=heatmat == 0,
+            cmap=plt.get_cmap('OrRd'),
+            alpha=0.5, robust=True)
+        plt.show()
 
     def plot(self, event):
         # 检查坐标选择合法性
@@ -134,9 +198,9 @@ class Plotter:
         # 样本数量
         sample_nums = tracker._counts[y_axis].copy()
         Y = tracker.pop()[y_axis]
-        self.ax.plot(range(1, len(Y)+1), Y)
-        self.ax2.bar(range(1, len(Y)+1), sample_nums)
+        self.ax2.bar(range(1, len(Y)+1), sample_nums, color='gray', alpha=.3)
         self.ax2.set_ylabel('sample nums')
+        self.ax.plot(range(1, len(Y)+1), Y, marker='o', markersize=3)
 
     def DarwMinActsCurve(self, epis):
         x_axis, y_axis = self.X_axis, self.Y_axis
@@ -148,7 +212,7 @@ class Plotter:
             data = [e[y_axis]]*int(label)
             tracker.add({y_axis: data})
         Y = tracker.pop()[y_axis]
-        self.ax.plot(range(1, len(Y)+1), Y)
+        self.ax.plot(range(1, len(Y)+1), Y, marker='o', markersize=3)
         self.ax.set_xticks(range(1, len(Y)+1), rotation=0)
 
     def DrawNormalCurve(self, epis):
@@ -173,7 +237,7 @@ class Plotter:
             X = sorted(data.keys())
             rot = 30
         Y = [data[x][y_axis] for x in X]
-        self.ax.plot(range(len(X)), Y)
+        self.ax.plot(range(len(X)), Y, marker='o', markersize=3)
         # TODO
         if x_axis == 'scene':
             X = [x.split("_")[0] for x in X]
@@ -181,6 +245,6 @@ class Plotter:
 
 
 if __name__ == '__main__':
-    import sys
-    json_path = sys.argv[1]
-    plter = Plotter(json_path)
+    args = init_parser()
+    trajs_path = os.path.join(args.path, 'trajs.json')
+    plter = Plotter(trajs_path)
