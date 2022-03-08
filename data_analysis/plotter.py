@@ -9,7 +9,7 @@ from taskenvs.ai2thor_env import OriThorForVis
 import numpy as np
 import os
 from mplcursors import cursor
-x_label = ['scene', 'target', 'model', 'steps', 'min_acts']
+x_label = ['scene', 'target', 'model', 'min_acts', 'steps']
 all_metrics = metrics1 + metrics2
 GRIDSIZE = 0.25  # TODO
 
@@ -47,55 +47,49 @@ class Plotter:
         self.data = EpisodeData(trajs_path)
         # 参数
         self.regular_dict = {}
-        self.X_axis = 'scene'
-        self.Y_axis = 'SR'
-        self.last_X_axis = 'scene'
-        self.last_Y_axis = 'SR'
+        self.X_axis, self.last_X_axis = ['scene']*2
+        self.Y_axis, self.last_Y_axis = ['SR']*2
         # 生成画布和相关组建
         fig, self.ax = plt.subplots()
-        self.fig = fig
         fig.subplots_adjust(left=0.3, bottom=0.3)
         self.ax2 = self.ax.twinx()
         # 指定筛选项目筛选框
         text_axes = [
-            fig.add_axes([0.1 + x*0.3, 0.135, 0.2, 0.075])
-            for x in [0, 1, 2]
-        ]
+            fig.add_axes([0.1 + x*0.3, 0.125, 0.2, 0.05])
+            for x in [0, 1, 2]]
         txtboxes = {
             s: TextBox(ax, s, textalignment='center')
-            for ax, s in zip(text_axes, ['scene', 'target', 'model'])
-        }
+            for ax, s in zip(text_axes, ['scene', 'target', 'model'])}
         [v.on_submit(self.creat_submit(k)) for k, v in txtboxes.items()]
         [v.set_val('.') for v in txtboxes.values()]
-        self.txtboxes = txtboxes
         # 自由字典正则筛选框
-        ax_dict = fig.add_axes([0.1, 0.05, 0.8, 0.075])
+        ax_dict = fig.add_axes([0.1, 0.05, 0.8, 0.05])
         txt_other = TextBox(ax_dict, 'Other', textalignment='center')
         txt_other.on_submit(self.other_submit)
         txt_other.set_val("")
-        self.txt_other = txt_other
         # 横坐标选择框
-        ax_x = fig.add_axes([0.05, 0.75, 0.15, 0.15])
+        ax_x = fig.add_axes([0.05, 0.73, 0.08, 0.15])
         x_choose = RadioButtons(ax_x, x_label)
         x_choose.on_clicked(self.choose_xaxis)
         x_choose.set_active(0)
         self.x_choose = x_choose
         # 纵坐标选择框
-        ax_y = fig.add_axes([0.05, 0.48, 0.15, 0.25])
+        ax_y = fig.add_axes([0.14, 0.64, 0.1, 0.24])
         y_choose = RadioButtons(ax_y, all_metrics)
         y_choose.on_clicked(self.choose_yaxis)
         y_choose.set_active(0)
         self.y_choose = y_choose
+        # 表格数据展示
+        self.ax_table = fig.add_axes([0.05, 0.39, 0.19, 0.23])
+        self.draw_table()
         # 开始绘画曲线按钮
-        ax_start = fig.add_axes([0.05, 0.39, 0.15, 0.07])
-        draw_button = Button(ax_start, 'Draw Curve')
+        ax_start = fig.add_axes([0.05, 0.3, 0.09, 0.07])
+        draw_button = Button(ax_start, 'Draw\nCurve')
         draw_button.on_clicked(self.plot)
-        self.draw_button = draw_button
         # 开始绘画热力图按钮
-        ax_start2 = fig.add_axes([0.05, 0.3, 0.15, 0.07])
-        draw_button2 = Button(ax_start2, 'Draw Heatmap')
+        ax_start2 = fig.add_axes([0.15, 0.3, 0.09, 0.07])
+        draw_button2 = Button(ax_start2, 'Draw\nHeatmap')
         draw_button2.on_clicked(self.plot_heat)
-        self.draw_button2 = draw_button2
         # show
         plt.show()
 
@@ -151,12 +145,28 @@ class Plotter:
                 BRx, BRz = tfunc(x + hgz, z - hgz)
                 heatmat[ULx:BRx, ULz:BRz] += 1
         ax.imshow(pic[:, :, ::-1])
+        ax.axis('off')
         seaborn.heatmap(
             heatmat,
             mask=heatmat == 0,
             cmap=plt.get_cmap('OrRd'),
             alpha=0.5, robust=True)
         plt.show()
+
+    def draw_table(self, avedata=[0]*len(metrics1)):
+        half = len(metrics1) // 2
+        table_value = [
+            metrics1[:half], avedata[:half],
+            metrics1[half:], avedata[half:]]
+        if len(metrics1) % 2 != 0:
+            table_value[0].append("")
+            table_value[1].append("")
+        table = self.ax_table.table(
+            cellText=table_value,
+            bbox=[0, 0, 1, 1])
+        table.auto_set_font_size(False)
+        table.set_fontsize(10)
+        self.ax_table.axis('off')
 
     def plot(self, event):
         if hasattr(self, 'cursor'):
@@ -168,6 +178,14 @@ class Plotter:
             self.resume_xy()
             return
         epis = self.data.get_episodes(self.regular_dict)
+        # 重画表格
+        self.ax_table.cla()
+        ave_data = [0.0]*len(metrics1)
+        for ep in epis:
+            for i, x in enumerate(metrics1):
+                ave_data[i] += ep[x]
+        self.draw_table([
+            round(x/len(epis), 4) for x in ave_data])
         # 会先全部清除然后重画
         self.ax.cla()
         self.ax2.cla()
