@@ -19,12 +19,23 @@ horizons = [0, 30]
 
 def init_parser():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--path", type=str)
-    parser.add_argument("--frame", action='store_true')
-    parser.add_argument("--depth", action='store_true')
-    parser.add_argument("--seg_frame", action='store_true')
-    parser.add_argument("--seg_mask", action='store_true')
-    parser.add_argument("--detection", action='store_true')
+    parser.add_argument(
+        "--path", type=str, help="Path to save all scenes")
+    parser.add_argument(
+        "--frame", action='store_true', help="Whether to save RGB data")
+    parser.add_argument(
+        "--depth", action='store_true', help="Whether to save depth data")
+    parser.add_argument(
+        "--seg_frame", action='store_true',
+        help="Whether to save segmentation data" +
+             "(seg frames and color-instance maps)")
+    parser.add_argument(
+        "--seg_mask", action='store_true',
+        help="Whether to save segmentation data" +
+             "(seg masks)")
+    parser.add_argument(
+        "--detection", action='store_true',
+        help="Whether to save detection data")
     parser.add_argument("--rotate_angle", type=int, default=45)
     parser.add_argument("--grid_size", type=float, default=0.25)
     parser.add_argument("--vis_dist", type=float, default=1)
@@ -135,3 +146,13 @@ if __name__ == '__main__':
         visibilityDistance=args.vis_dist, platform=CloudRendering)
     for s in tqdm(iterable=get_scene_names(scenes)):
         dump(s, ctrler, os.path.join(path, s), obs_key, rotate_angle)
+    # save metadata for all scenes
+    metadata = dict(
+        rotate_angle=rotate_angle,
+        grid_size=args.grid_size,
+        visibilityDistance=args.vis_dist,
+        height=args.height,
+        width=args.width,
+        horizons=[0, 30])
+    with open(os.path.join(path, 'metadata.json'), "w") as fp:
+        json.dump(metadata, fp, indent=4)
