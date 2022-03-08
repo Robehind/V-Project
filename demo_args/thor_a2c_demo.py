@@ -37,10 +37,10 @@ args.update(
             'RotateRight', 'Done'
         ],
         "reward_dict": {
-            "collision": 0,
+            "collision": -0.01,
             "step": -0.01,
             "success": 1.0,
-            "fail": 0,
+            "fail": -0.01,
         },
         'rotate_angle': 45,
         'look_angle': 0,
