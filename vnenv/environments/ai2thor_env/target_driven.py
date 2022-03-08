@@ -119,10 +119,10 @@ class BaseTargetDrivenTHOR(TaskEnv):
         return self.get_observation()
 
     def reward_and_done(self):
-        """判断一个应该获得的奖励，以及是否要停止"""
+        """判断一个应该获得的奖励，以及是否要停止，注意事件之间是相互独立，不可以叠加的"""
         done = False
         event = 'step'
-        if not self.last_action_success:
+        if not self.action_success:
             # if 'Move' in self.last_action:
             event = 'collision'
             # TODO if self.last_opt == 'look_up_down':
@@ -151,7 +151,7 @@ class BaseTargetDrivenTHOR(TaskEnv):
     ) -> Tuple:
         assert not self.done
         action = self.actions[action]
-        self.last_action_success = True
+        self.action_success = True
         if action != 'Done':
             self.state, self.action_success = self.ctrler.step(action)
         self.last_action = action
