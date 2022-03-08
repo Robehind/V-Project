@@ -1,3 +1,8 @@
+from tqdm import tqdm
+import h5py
+import os
+
+
 def get_scene_names(scenes):
     """根据参数生成完整的房间的名字"""
     tmp = []
@@ -31,3 +36,17 @@ def make_scene_name(scene_type, num):
     if num >= 10 or front == '':
         return "FloorPlan" + front + str(num)
     return "FloorPlan" + front + "0" + str(num)
+
+
+def states_num(scenes, datadir, preload):
+
+    scene_names = get_scene_names(scenes)
+    count = 0
+    pbar = tqdm(total=len(scene_names), desc='Gathering...', leave=False)
+    for s in scene_names:
+        RGBloader = h5py.File(os.path.join(datadir, s, preload), "r",)
+        num = len(list(RGBloader.keys()))
+        count += num
+        pbar.update(1)
+        RGBloader.close()
+    return count

@@ -2,7 +2,7 @@ from torchvision import transforms as T
 import h5py
 import os
 from tqdm import tqdm
-from utils import get_scene_names, states_num
+from ..thordata_utils import get_scene_names, states_num
 from models import my_resnet50
 import torch
 # 300x300:[0.5265, 0.4560, 0.3682]), 'std': tensor([0.0540, 0.0554, 0.0567]
@@ -15,9 +15,9 @@ scenes = {
         # 'bedroom': '1-30',
         # 'bathroom': '1-30',
     }
-image_name = 'images.hdf5'
+image_name = 'frame.hdf5'
 datadir = '../vdata/thordata/'
-fc_name = 'resnet50fc_no_norm.hdf5'
+fc_name = 'resnet50fc.hdf5'
 score_name = 'resnet50score.hdf5'
 batch_sz = 64
 norm = T.Normalize(mean=[0.5265, 0.4560, 0.3682],
@@ -32,7 +32,7 @@ for scene_name in scene_names:
     scene_path = os.path.join(datadir, scene_name)
 
     fc_writer = h5py.File(os.path.join(scene_path, fc_name), 'w')
-    # score_writer = h5py.File(os.path.join(scene_path, score_name), 'w')
+    score_writer = h5py.File(os.path.join(scene_path, score_name), 'w')
     RGBloader = h5py.File(os.path.join(scene_path, image_name), "r",)
     keys, x = [], []
     frames = len(RGBloader.keys())
@@ -43,19 +43,18 @@ for scene_name in scene_names:
 
         if len(keys) == batch_sz or f == frames-1:
             x = torch.stack(x)
-            # x = norm(x)
+            x = norm(x)
             x = x.cuda()
             out = resmodel(x)
 
             resnet_fc = out['fc'].cpu().numpy()
-            # resnet_s = out['s'].cpu().numpy()
-            # print(resnet_score.shape)
+            resnet_s = out['s'].cpu().numpy()
             for i, sk in enumerate(keys):
                 fc_writer.create_dataset(sk, data=resnet_fc[i])
-                # score_writer.create_dataset(sk, data=resnet_s[i])
+                score_writer.create_dataset(sk, data=resnet_s[i])
             pbar.update(len(keys))
             keys = []
             x = []
     RGBloader.close()
     fc_writer.close()
-    # score_writer.close()
+    score_writer.close()

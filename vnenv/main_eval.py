@@ -8,7 +8,7 @@ import evalors
 import models
 import agents
 import taskers
-import environments
+import taskenvs
 from utils.init_func import (
     get_args,
     make_exp_dir,

@@ -1,4 +1,4 @@
-from vnenv.environments.ai2thor_env import OriThorForVis
+from taskenvs.ai2thor_env import OriThorForVis
 import json
 import copy
 import argparse

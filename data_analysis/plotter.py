@@ -5,7 +5,7 @@ from metrics import metrics1, metrics2
 from matplotlib.widgets import TextBox, RadioButtons, Button
 import argparse
 import seaborn
-from vnenv.environments.ai2thor_env import OriThorForVis
+from taskenvs.ai2thor_env import OriThorForVis
 import numpy as np
 import os
 x_label = ['scene', 'target', 'model', 'steps', 'min_acts']
@@ -33,7 +33,6 @@ def _pose2picXY(cam_params, height, width):
 
     def pose2picXY(x, z):
         nx, nz = (np.array((x, z)) - lower_left) / (2*orth_size)
-
         return round(height*(1. - nz)), round(width*nx)
     return pose2picXY
 

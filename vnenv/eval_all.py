@@ -7,7 +7,7 @@ import taskers
 import evalors
 import json
 import gym
-import environments
+import taskenvs
 from gym.spaces import Dict as dict_spc
 from tqdm import tqdm
 from utils.init_func import (

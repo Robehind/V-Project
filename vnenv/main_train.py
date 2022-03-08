@@ -11,7 +11,7 @@ import agents
 import samplers
 import learners
 import taskers
-import environments
+import taskenvs
 from utils.init_func import get_args, make_exp_dir, set_seed
 from utils.net_utils import optim2cuda
 os.environ["OMP_NUM_THREADS"] = '1'
