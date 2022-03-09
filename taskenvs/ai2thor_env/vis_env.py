@@ -8,7 +8,6 @@ import os
 FPS = 25.
 ACT_FRAME = 13
 PAUSE_FRAME = 13
-SAFE_Y = 0.91
 
 
 class OriThorForVis:
@@ -48,15 +47,14 @@ class OriThorForVis:
         birdView: bool,
         smooth: bool = False,
     ):
+        # get Y
         if not smooth:
             evt = self.ctrler.step(
                 action="Teleport",
                 position=pos2.position(),
                 rotation=dict(x=0, y=pos2.rotation, z=0),
-                horizon=pos2.horizon
-            )
-            assert evt.metadata['lastActionSuccess'],\
-                evt.metadata['errorMessage']
+                horizon=pos2.horizon,
+                forceAction=True)
             self.fp_frames.append(evt.cv2img)
             if birdView:
                 pic = evt.third_party_camera_frames[0]
@@ -66,31 +64,30 @@ class OriThorForVis:
                 action="Teleport",
                 position=pos2.position(),
                 rotation=dict(x=0, y=pos2.rotation, z=0),
-                horizon=pos2.horizon
-            )
-            assert evt.metadata['lastActionSuccess'],\
-                evt.metadata['errorMessage']
+                horizon=pos2.horizon,
+                forceAction=True)
         else:
+            y = pos2.y
             x_list = np.linspace(pos1.x, pos2.x, ACT_FRAME)
             z_list = np.linspace(pos1.z, pos2.z, ACT_FRAME)
+            # 确保转小角
             tempr = pos2.rotation - 360 if pos2.rotation != 0 else 360
             if abs(tempr - pos1.rotation) < abs(pos2.rotation - pos1.rotation):
-                pos2.rotation = tempr
+                pos2.rotation, tempr = tempr, pos2.rotation
             r_list = np.linspace(pos1.rotation, pos2.rotation, ACT_FRAME)
             h_list = np.linspace(pos1.horizon, pos2.horizon, ACT_FRAME)
             for i in range(ACT_FRAME):
                 evt = self.ctrler.step(
                     action="Teleport",
-                    position=dict(x=x_list[i], y=SAFE_Y, z=z_list[i]),
+                    position=dict(x=x_list[i], y=y, z=z_list[i]),
                     rotation=dict(y=round(r_list[i])),
-                    horizon=round(h_list[i])
-                )
-                assert evt.metadata['lastActionSuccess'],\
-                    evt.metadata['errorMessage']
+                    horizon=round(h_list[i]),
+                    forceAction=True)
                 self.fp_frames.append(evt.cv2img)
                 if birdView:
                     pic = evt.third_party_camera_frames[0]
                     self.top_frames.append(pic[:, :, [2, 1, 0]])
+            pos2.rotation = tempr
 
     def get_frames(
         self,
@@ -100,57 +97,48 @@ class OriThorForVis:
         smooth=False
     ):
         evt = self.ctrler.reset(scene=scene)
+        Y = evt.metadata['agent']['position']['y']
+        self.ctrler.step("PausePhysicsAutoSim")
         if birdView:
             evt = self.ctrler.step(action='GetMapViewCameraProperties')
             self.ctrler.step(
                 action='AddThirdPartyCamera', **evt.metadata['actionReturn'])
         last_p = None
         for p in poses:
-            if last_p is not None:
-                last_p = AgentPoseState(pose_str=last_p)
-            self.Animateframe(
-                last_p,
-                AgentPoseState(pose_str=p), birdView, smooth)
-            last_p = p
+            agt_p = AgentPoseState(pose_str=p, y=Y)
+            self.Animateframe(last_p, agt_p, birdView, smooth)
+            last_p = agt_p
 
     def visualize(
         self,
         scene: str,
         poses: List[str],
         wait: int = 0,
-        birdView=False,
-        smooth=False
+        birdView: bool = False,
+        smooth: bool = False
     ):
         assert wait >= 0
         self.get_frames(scene, poses, birdView, smooth)
         print("Press key to start")
-        start = True
-        for i, p in enumerate(poses):
+        print("Start pose:", poses[0])
+        cv2.imshow('vis', self.fp_frames[0])
+        if birdView:
+            cv2.imshow("Topview", self.top_frames[0])
+        cv2.waitKey(0)
+        for i, p in enumerate(poses[1:]):
             if not smooth:
-                print("Pose:", p)
                 cv2.imshow('vis', self.fp_frames[i])
                 if birdView:
                     cv2.imshow("Topview", self.top_frames[i])
-                if start:
-                    cv2.waitKey(0)
-                    start = False
-                else:
-                    cv2.waitKey(int(wait*1000))
-            else:
-                if start:
-                    cv2.imshow('vis', self.fp_frames[0])
-                    if birdView:
-                        cv2.imshow("Topview", self.top_frames[0])
-                    cv2.waitKey(0)
-                    start = False
                 print("Pose:", p)
-                if i == len(poses) - 1:
-                    break
+                cv2.waitKey(int(wait*1000))
+            else:
                 for j in range(i*ACT_FRAME, (i+1)*ACT_FRAME):
                     cv2.imshow('vis', self.fp_frames[j])
                     if birdView:
                         cv2.imshow("Topview", self.top_frames[j])
                     cv2.waitKey(int(1000/FPS))
+                print("Pose:", p)
                 cv2.waitKey(int(wait*1000))
         print("finished")
         cv2.destroyAllWindows()

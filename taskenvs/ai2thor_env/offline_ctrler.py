@@ -4,7 +4,7 @@ import json
 from typing import List, Optional, Set
 import copy
 import random
-from .agent_pose_state import AgentPoseState
+from taskenvs.ai2thor_env.agent_pose_state import AgentPoseState
 
 
 class OfflineThorCtrler:
@@ -194,3 +194,33 @@ class OfflineThorCtrler:
                         n_nodes.append(new_n)
                         mark[str(new_n)] = 1
         return -1
+
+
+if __name__ == "__main__":
+    import h5py
+    import cv2
+    path = input("input path:")
+    ctrler = OfflineThorCtrler(data_dir=path)
+    scene = input("scene:")
+    ctrler.preload_scenes([scene])
+    pose = ctrler.reset(scene=scene)
+    cmd_map = {
+        119: 'MoveAhead',
+        100: 'RotateRight',
+        97: 'RotateLeft',
+        107: 'LookDown',
+        105: 'LookUp'}
+    # frames hdf5
+    s_path = os.path.join(path, scene, 'frame.hdf5')
+    frames = h5py.File(s_path, 'r')
+    print(pose)
+    cv2.imshow('vis', frames[str(pose)][:][:, :, ::-1])
+    key = cv2.waitKey(0)
+    while key != 27:
+        if key in cmd_map:
+            pose, suc = ctrler.step(cmd_map[key])
+            print(pose, suc)
+            cv2.imshow('vis', frames[str(pose)][:][:, :, ::-1])
+            key = cv2.waitKey(0)
+        else:
+            print("Pressing ", key)

@@ -17,9 +17,10 @@ class AgentPoseState:
     ) -> None:
         if pose_str is not None:
             x, z, rotation, horizon = [float(x) for x in pose_str.split("|")]
-            y = DEFAULT_Y
+            if y is None:
+                y = DEFAULT_Y
         self.x = round(x, 2)
-        self.y = round(y, 2)
+        self.y = y
         self.z = round(z, 2)
         self.rotation = round(rotation)
         self.horizon = round(horizon)

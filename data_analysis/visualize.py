@@ -20,7 +20,8 @@ def init_parser():
 
 def traj_str(traj):
     return f"{traj['scene']}/{traj['target']}/success:{traj['success']}" + \
-        f"/return:{traj['return']}/ep_length:{traj['ep_length']}"
+        f"/return:{traj['return']}/ep_length:{traj['ep_length']}/" + \
+        f"model:{traj['model']}"
 
 
 def print_details(traj):

@@ -2,15 +2,14 @@ from ai2thor.controller import Controller
 import h5py
 import argparse
 import os
-from vnenv.environments.ai2thor_env.thordata_utils import get_scene_names
-from vnenv.environments.ai2thor_env.agent_pose_state import AgentPoseState
+from thordata_utils import get_scene_names
+from agent_pose_state import AgentPoseState
 import json
 from tqdm import tqdm
 from ai2thor.platform import CloudRendering
 from collections import defaultdict
-scenes = {'kitchen': '25'}
-# scenes = {'kitchen': '1-30', 'living_room': '1-30',
-#           'bedroom': '1-30', 'bathroom': '1-30'},
+scenes = {'kitchen': '1-30', 'living_room': '1-30',
+          'bedroom': '1-30', 'bathroom': '1-30'}
 v_fn = 'visible_map.json'
 t_fn = 'trans.json'
 move_list = [0, 1, 1, 1, 0, -1, -1, -1]
@@ -41,7 +40,11 @@ def init_parser():
     parser.add_argument("--vis_dist", type=float, default=1)
     parser.add_argument("--width", type=int, default=224)
     parser.add_argument("--height", type=int, default=224)
+    parser.add_argument("--obs_only", action='store_true')
+    parser.add_argument("--range", type=str, default='1-10')
     args = parser.parse_args()
+    for k in scenes:
+        scenes[k] = args.range
     return args
 
 
@@ -49,22 +52,27 @@ def dump(scene, ctrler, path, obs_key, rotate_angle):
     if not os.path.exists(path):
         os.makedirs(path)
     evt = ctrler.reset(scene=scene)
+    ctrler.step("PausePhysicsAutoSim")
+    # error log json
+    error_json = defaultdict(list)
+    error_flag = False
     # visible data
-    objectIDs = [x['objectId'] for x in evt.metadata['objects']]
-    visible_data = {}
-    for obj in objectIDs:
-        poses = ctrler.step(
-            action="GetInteractablePoses",
-            objectId=obj,
-            horizons=horizons
-        ).metadata["actionReturn"]
-        str_poses = []
-        for p in poses:
-            p.pop('standing')
-            str_poses.append(str(AgentPoseState(**p)))
-        visible_data[obj] = str_poses
-    with open(os.path.join(path, v_fn), "w") as fp:
-        json.dump(visible_data, fp)
+    if not args.obs_only:
+        objectIDs = [x['objectId'] for x in evt.metadata['objects']]
+        visible_data = {}
+        for obj in objectIDs:
+            poses = ctrler.step(
+                action="GetInteractablePoses",
+                objectId=obj,
+                horizons=horizons
+            ).metadata["actionReturn"]
+            str_poses = []
+            for p in poses:
+                p.pop('standing')
+                str_poses.append(str(AgentPoseState(**p)))
+            visible_data[obj] = str_poses
+        with open(os.path.join(path, v_fn), "w") as fp:
+            json.dump(visible_data, fp)
     # trans data & obs data
     positions = ctrler.step(
         action="GetReachablePositions"
@@ -80,6 +88,12 @@ def dump(scene, ctrler, path, obs_key, rotate_angle):
     for p in positions:
         pos_mark[(p['x'], p['z'])] = 1
     for p in positions:
+        out_deg = 0
+        pstr = f"{p['x']}|{p['y']}|{p['z']}"
+        # TODO due to unknown bug in FloorPlan26 x=-2.75
+        force = False
+        if scene == 'FloorPlan26' and p['x'] == -2.75:
+            force = True
         for r in range(0, 360, rotate_angle):
             for h in horizons:
                 pbar.update(1)
@@ -87,9 +101,13 @@ def dump(scene, ctrler, path, obs_key, rotate_angle):
                     action="Teleport",
                     position=p,
                     rotation=dict(x=0, y=r, z=0),
-                    horizon=h
-                )
-                assert evt.metadata['lastActionSuccess']
+                    horizon=h,
+                    forceAction=force)
+                if not evt.metadata['lastActionSuccess']:
+                    error_json[pstr].append(
+                        f"{r}|{h} " + evt.metadata['errorMessage'])
+                    error_flag = True
+                    continue
                 key = str(AgentPoseState(
                     p['x'], p['y'], p['z'],
                     rotation=r, horizon=h))
@@ -111,20 +129,30 @@ def dump(scene, ctrler, path, obs_key, rotate_angle):
                         h5_writer[x].create_dataset(key, data=evt.depth_frame)
                     else:
                         h5_writer[x].create_dataset(key, data=evt.frame)
-                # trans data
-                evt = ctrler.step(action="MoveAhead")
-                x = evt.metadata['agent']['position']['x']
-                z = evt.metadata['agent']['position']['z']
-                trans_data[key] = int(
-                    evt.metadata['lastActionSuccess'] and pos_mark[(x, z)])
+                if not args.obs_only:
+                    # trans data
+                    evt = ctrler.step(action="MoveAhead")
+                    x = evt.metadata['agent']['position']['x']
+                    z = evt.metadata['agent']['position']['z']
+                    trans_data[key] = int(
+                        evt.metadata['lastActionSuccess'] and pos_mark[(x, z)])
+                    out_deg += trans_data[key]
+        if out_deg == 0:
+            error_json[pstr].append("No way out")
+            error_flag = True
     pbar.close()
-    with open(os.path.join(path, t_fn), "w") as fp:
-        json.dump(trans_data, fp)
+    if not args.obs_only:
+        with open(os.path.join(path, t_fn), "w") as fp:
+            json.dump(trans_data, fp)
     if 'seg_frame' in obs_key:
         with open(os.path.join(path, 'seg_map.json'), "w") as fp:
             json.dump(seg_map, fp)
     for v in h5_writer.values():
         v.close()
+    if error_flag:
+        with open(os.path.join(path, 'error.json'), "w") as fp:
+            json.dump(error_json, fp, indent=4)
+    return error_flag
 
 
 if __name__ == '__main__':
@@ -142,10 +170,13 @@ if __name__ == '__main__':
     ctrler = Controller(
         width=args.width, height=args.height, renderDepthImage=args.depth,
         renderInstanceSegmentation=(args.seg_mask or args.seg_frame),
-        rotateStepDegrees=rotate_angle, gridSize=args.grid_size,
+        rotateStepDegrees=45, gridSize=args.grid_size,
         visibilityDistance=args.vis_dist, platform=CloudRendering)
+    error_scenes = []
     for s in tqdm(iterable=get_scene_names(scenes)):
-        dump(s, ctrler, os.path.join(path, s), obs_key, rotate_angle)
+        flag = dump(s, ctrler, os.path.join(path, s), obs_key, rotate_angle)
+        if flag:
+            error_scenes.append(s)
     # save metadata for all scenes
     metadata = dict(
         rotate_angle=rotate_angle,
@@ -156,3 +187,4 @@ if __name__ == '__main__':
         horizons=[0, 30])
     with open(os.path.join(path, 'metadata.json'), "w") as fp:
         json.dump(metadata, fp, indent=4)
+    print(error_scenes)
