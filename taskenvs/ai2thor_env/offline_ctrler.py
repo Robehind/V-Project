@@ -14,21 +14,36 @@ class OfflineThorCtrler:
 
     def __init__(
         self,
-        grid_size=0.25,
-        rotate_angle=45,
-        look_angle=30,
-        horizon_limits=[0, 30],
+        rotate_angle: int,
+        camera_up_down: bool,  # 相机是否可以上下看
         data_dir='../vdata/thordata'
     ):
+        # read metadata
+        with open(
+            os.path.join(data_dir, 'metadata.json'), "r",
+        ) as f:
+            metadata = json.load(f)
         self.data_dir = data_dir
-        self.grid_size = grid_size
+        self.grid_size = metadata['grid_size']
+        self.vis_dist = metadata['visibilityDistance']
+        # 旋转角
         self.rotate_angle = rotate_angle
-        self.look_angle = look_angle
-        # 向上向下看的角度可能是有限制的
-        self.horizon_limits = horizon_limits
+        # 检查设定的旋转角和数据集支持的最小旋转角
+        assert rotate_angle >= metadata['rotate_angle']
+        assert rotate_angle % metadata['rotate_angle'] == 0
+        # 旋转角区间
+        self.rotate_limits = list(range(0, 360, rotate_angle))
+        # 相机俯仰
+        if camera_up_down:
+            self.look_angle = metadata['horizons'][1] -\
+                metadata['horizons'][0]
+            self.horizon_limits = metadata['horizons']
+        else:
+            self.look_angle = 0
+            self.horizon_limits = [0]
+        # 移动计算列表
         self.move_list = [0, 1, 1, 1, 0, -1, -1, -1]
         self.move_list = [x*self.grid_size for x in self.move_list]
-        # 根据不同的绝对移动角度，x和z坐标的变化符合以下表格规律
         # 智能体面向z轴正方向，右手为x轴正方向时，角度为0度。向右转为正角度。
         # 向上看为负角度，向下看为正角度
         self.actions = {
@@ -46,7 +61,7 @@ class OfflineThorCtrler:
         self.last_action = None
         self.last_action_success = True
 
-        self.metadata = {}
+        self.metadata = metadata
         self.all_states = None  # 智能体所有的可能的位姿状态，str
         self.trans_data = {}
         self.visible_data = {}
@@ -69,9 +84,7 @@ class OfflineThorCtrler:
 
     def load_scene(self, scene: str):
         # load a single scene's data
-        scene_path = os.path.join(
-            self.data_dir, scene
-        )
+        scene_path = os.path.join(self.data_dir, scene)
         with open(
             os.path.join(scene_path, self.trans_file), "r",
         ) as f:
@@ -80,6 +93,19 @@ class OfflineThorCtrler:
             os.path.join(scene_path, self.visible_file), "r",
         ) as f:
             self.visible_data[scene] = json.load(f)
+            # 剔除当前动作空间下不可达的状态
+            tmp = []
+            for k in self.visible_data[scene]:
+                new_data = []
+                for p in self.visible_data[scene][k]:
+                    r, h = [int(x) for x in p.split("|")[-2:]]
+                    if r in self.rotate_limits and h in self.horizon_limits:
+                        new_data.append(p)
+                self.visible_data[scene][k] = new_data
+                if new_data == []:
+                    tmp.append(k)
+            for k in tmp:
+                self.visible_data[scene].pop(k)
 
     def objectIDs(self, scene) -> Set:
         if scene not in self.visible_data:
@@ -101,19 +127,13 @@ class OfflineThorCtrler:
             assert state in self.all_states
             self.state = state
         self.state = AgentPoseState(pose_str=self.state)
-        # fix horizon if need
-        if self.look_angle == 0:
-            self.state.horizon = 0
-        # if 90, don't init rotation to 45*(2n-1)
-        if self.rotate_angle == 90:
-            self.state.rotation = random.choice([0, 90, 180, 270])
+        # state是从数据集所支持的最细粒度的状态中选择的
+        # 未必适合当前动作空间的要求
+        self.state.horizon = random.choice(self.horizon_limits)
+        self.state.rotation = random.choice(self.rotate_limits)
         self.start_state = copy.deepcopy(self.state)
         # reset variale
         self.last_action = None
-        self.metadata = dict(
-            scene=self.scene,
-            start_at=str(self.start_state)
-            )
         return self.state
 
     def rotate(self, angle):
@@ -154,7 +174,6 @@ class OfflineThorCtrler:
         self.state, self.last_action_success = \
             self.actions[action](self.state, self.scene)
         self.last_action = action
-        self.metadata['pose'] = str(self.state)
         return self.state, self.last_action_success
 
     def min_actions(
@@ -199,7 +218,7 @@ class OfflineThorCtrler:
 if __name__ == "__main__":
     import h5py
     import cv2
-    path = input("input path:")
+    path = '/home/zhiyu/vdata/thordata'  # input("input path:")
     ctrler = OfflineThorCtrler(data_dir=path)
     scene = input("scene:")
     ctrler.preload_scenes([scene])

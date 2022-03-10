@@ -2,7 +2,7 @@ from collections import defaultdict
 from functools import lru_cache
 from ..task_env import TaskEnv
 from .offline_ctrler import OfflineThorCtrler as OCer
-from typing import Tuple, Any, Set
+from typing import Dict, Tuple, Set, List
 from .thordata_utils import get_scene_names, get_type
 import random
 from copy import deepcopy
@@ -13,28 +13,21 @@ class BaseTargetDrivenTHOR(TaskEnv):
     # 除了观测没有定义，其他都实现好了的一个目标驱动导航环境
     def __init__(
         self,
-        actions=[
-            'MoveAhead', 'MoveBack', 'MoveLeft', 'MoveRight',
-            'RotateRight', 'RotateLeft', 'LookUp', 'LookDown', 'Done'
-            ],
-        grid_size=0.25,
-        rotate_angle=45,
-        look_angle=30,
-        max_steps=200,
-        reward_dict={
-            'step': -0.01,
-            'collision': -0.1,
-            'success': 5,
-            'fail': 0
-        }
+        actions: List[str],
+        rotate_angle: int,
+        max_steps: int,
+        reward_dict: Dict[str, float],
+        ctl_data_dir: str = '../vdata/thordata'
     ) -> None:
         super().__init__()
+        camera_up_down = ('LookUp' in actions or 'LookDown' in actions)
         self.ctrler = OCer(
-            grid_size=grid_size,
             rotate_angle=rotate_angle,
-            look_angle=look_angle)
+            camera_up_down=camera_up_down,
+            data_dir=ctl_data_dir)
         self.action_space = Discrete(len(actions))
         self.actions = actions
+        self.scene = None
 
         self.get_shortest = False
         self.auto_done = 'Done' not in actions
@@ -73,6 +66,9 @@ class BaseTargetDrivenTHOR(TaskEnv):
         obs.update(self.get_target_obs())
         return obs
 
+    def init_obs(self, scene):
+        raise NotImplementedError
+
     def set_tasks(self, t):
         if 'scenes' not in t:
             # 无对应关键字视为全集
@@ -92,13 +88,23 @@ class BaseTargetDrivenTHOR(TaskEnv):
             'scenes': deepcopy(self.scenes_by_type),
             'targets': deepcopy(self.targets_by_type)}
 
-    def _reset(
-        self
-    ) -> Any:
-        self.scene = random.choice(self.scenes)
-        tgts = self.get_objects(self.scene) & \
-            self.targets_by_type[get_type(self.scene)]
-        self.target = random.choice(list(tgts))
+    def reset(self):
+        # choose scene
+        while 1:
+            scene = random.choice(self.scenes)
+            tgts = self.get_objects(scene) & \
+                self.targets_by_type[get_type(scene)]
+            if tgts == set():
+                print(f"Warning: no targtets to choose in {scene}")
+                idx = self.scenes.index(scene)
+                self.scenes.pop(idx)
+                continue
+            self.target = random.choice(list(tgts))
+            break
+        # init scene obs readers
+        self.init_obs(scene)
+        # reset controller
+        self.scene = scene
         self.state = self.ctrler.reset(scene=self.scene)
         self.start_state = deepcopy(self.state)
         self.steps = 0
@@ -113,9 +119,6 @@ class BaseTargetDrivenTHOR(TaskEnv):
         # info 中包含最短路信息
         if self.get_shortest:
             self.info.update(min_acts=self.min_actions())
-
-    def reset(self):
-        self._reset()
         return self.get_observation()
 
     def reward_and_done(self):
@@ -173,7 +176,8 @@ class BaseTargetDrivenTHOR(TaskEnv):
             str(self.start_state), ends,
             self.actions, self.scene)
         assert acts != -1, \
-            f"can't reach {self.target} from {self.start_state}"
+            f"In {self.scene} can't reach {self.target}" +\
+            f" from {self.start_state}"
         if 'Done' in self.actions:
             return acts + 1
         return acts

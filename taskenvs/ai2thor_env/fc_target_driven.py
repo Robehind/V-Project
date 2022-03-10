@@ -17,15 +17,13 @@ class FCTargetDrivenEnv(BTDTHOR):
     def __init__(
         self,
         actions: List[str],
+        rotate_angle: int,
+        max_steps: int,
         reward_dict: Dict,
-        grid_size=0.25,
-        rotate_angle=45,
-        look_angle=30,
-        max_steps=200,
+        ctl_data_dir: str = '../vdata/thordata'
     ) -> None:
         super().__init__(
-            actions, grid_size, rotate_angle,
-            look_angle, max_steps, reward_dict)
+            actions, rotate_angle, max_steps, reward_dict, ctl_data_dir)
         self.observation_space = DictSpc({
             'fc': Box(-float("inf"), float("inf"),
                       (2048, ), dtype=np.float32),
@@ -34,14 +32,14 @@ class FCTargetDrivenEnv(BTDTHOR):
         self.tgt_loader = h5py.File(self.glove_path, "r",)
         self.main_loader = {'fc': None}
 
-    def _reset(self):
-        super()._reset()
-        # read hdf5 file
-        path = os.path.join(
-            self.resnetFC_path, self.scene, self.resnetFC_name)
-        if self.main_loader['fc'] is not None:
-            self.main_loader['fc'].close()
-        self.main_loader = {'fc': h5py.File(path, "r")}
+    def init_obs(self, scene):
+        if scene != self.scene:
+            # read hdf5 file
+            path = os.path.join(
+                self.resnetFC_path, scene, self.resnetFC_name)
+            if self.main_loader['fc'] is not None:
+                self.main_loader['fc'].close()
+            self.main_loader = {'fc': h5py.File(path, "r")}
 
     def get_main_obs(self):
         return {
