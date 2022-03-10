@@ -43,7 +43,6 @@ args.update(
             "fail": -0.01,
         },
         'rotate_angle': 45,
-        'look_angle': 0,
         'max_steps': 100,
     },
 
