@@ -1,5 +1,6 @@
 import random
 from gym import Env
+import numpy as np
 
 
 class TaskEnv(Env):
@@ -18,3 +19,4 @@ class TaskEnv(Env):
 
     def seed(self, sd):
         random.seed(sd)
+        np.random.seed(sd)
