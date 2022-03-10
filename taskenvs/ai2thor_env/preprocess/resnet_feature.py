@@ -2,7 +2,7 @@ from torchvision import transforms as T
 import h5py
 import os
 from tqdm import tqdm
-from ..thordata_utils import get_scene_names, states_num
+from taskenvs.ai2thor_env.thordata_utils import get_scene_names, states_num
 from models import my_resnet50
 import torch
 # 300x300:[0.5265, 0.4560, 0.3682]), 'std': tensor([0.0540, 0.0554, 0.0567]
@@ -10,10 +10,10 @@ import torch
 """生成新的fc和fc score文件"""
 
 scenes = {
-        'kitchen': '25',
-        # 'living_room': '1-30',
-        # 'bedroom': '1-30',
-        # 'bathroom': '1-30',
+        'kitchen': '21-30',
+        'living_room': '21-30',
+        'bedroom': '21-30',
+        'bathroom': '21-30',
     }
 image_name = 'frame.hdf5'
 datadir = '../vdata/thordata/'
