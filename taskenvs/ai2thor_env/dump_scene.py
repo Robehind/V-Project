@@ -66,6 +66,8 @@ def dump(scene, ctrler, path, obs_key, rotate_angle):
                 objectId=obj,
                 horizons=horizons
             ).metadata["actionReturn"]
+            if poses == []:
+                continue
             str_poses = []
             for p in poses:
                 p.pop('standing')
