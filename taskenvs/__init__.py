@@ -1,5 +1,5 @@
 from gym.envs.registration import register
-from task_env import TaskEnv
+from .task_env import TaskEnv
 
 
 register(

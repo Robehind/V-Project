@@ -2,6 +2,7 @@ from typing import Dict, List, Tuple
 import numpy as np
 from .abs_agent import AbsAgent
 import random
+from gym.vector import VectorEnv
 
 
 class RandomAgent(AbsAgent):
@@ -10,12 +11,12 @@ class RandomAgent(AbsAgent):
     def __init__(
         self,
         model,
-        env,
+        env: VectorEnv,
         *args,
         **kwargs
     ):
-        self.action_sz = env.action_sz
-        self.proc_num = env.env_num
+        self.action_sz = env.single_action_space.n
+        self.proc_num = env.num_envs
         self.rct_shapes = {}
         self.rct_dtypes = {}
 

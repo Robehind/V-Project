@@ -6,8 +6,8 @@ from copy import deepcopy
 from gym.spaces import Discrete
 import numpy as np
 from taskenvs import TaskEnv
-from offline_ctrler import OfflineThorCtrler as OCer
-from thordata_utils import get_scene_names, get_type
+from .offline_ctrler import OfflineThorCtrler as OCer
+from .thordata_utils import get_scene_names, get_type
 
 
 class BaseTargetDrivenTHOR(TaskEnv):
