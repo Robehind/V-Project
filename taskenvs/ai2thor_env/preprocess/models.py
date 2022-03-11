@@ -1,6 +1,22 @@
+from typing import Dict
 import torch.nn as nn
 import torchvision.models as tvmodels
 import torch
+import numpy as np
+
+
+class resnet18fm(nn.Module):
+    def __init__(self) -> None:
+        super().__init__()
+        res18 = tvmodels.resnet18(pretrained=True)
+        Tres18 = list(res18.children())[:-2]
+        self.Tres18 = nn.Sequential(*Tres18)
+        self.Tres18.eval()
+
+    def forward(self, x) -> Dict[str, np.ndarray]:
+        with torch.no_grad():
+            fm = self.Tres18(x).squeeze()
+        return dict(resnet18fm=fm.cpu().numpy())
 
 
 class my_resnet50(nn.Module):
@@ -17,8 +33,9 @@ class my_resnet50(nn.Module):
         self.resnet50_s = nn.Sequential(*resnet50_s)
         self.resnet50_s.eval()
 
-    def forward(self, x):
+    def forward(self, x) -> Dict[str, np.ndarray]:
         with torch.no_grad():
             resnet_fc = self.resnet50_fc(x).squeeze()
             resnet_s = self.resnet50_s(resnet_fc).squeeze()
-        return dict(fc=resnet_fc, s=resnet_s)
+        return dict(resnet50fc=resnet_fc.cpu().numpy(),
+                    resnet50score=resnet_s.cpu().numpy())
