@@ -1,4 +1,4 @@
-from vnenv.agents.base_agent import BaseAgent
+from methods.agents.base_agent import BaseAgent
 import torch.nn as nn
 import torch
 import numpy as np

@@ -5,7 +5,7 @@ import torch.nn.functional as F
 import numpy as np
 from .a2c_learner import A2CLearner
 from .returns_calc import _basic_return, _GAE
-from vnenv.utils.convert import toNumpy, toTensor
+from methods.utils.convert import toNumpy, toTensor
 
 
 # to manage all the algorithm params

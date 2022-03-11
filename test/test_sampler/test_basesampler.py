@@ -1,4 +1,4 @@
-from vnenv.samplers import BaseSampler
+from methods.samplers import BaseSampler
 import numpy as np
 import torch
 import pytest

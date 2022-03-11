@@ -1,11 +1,11 @@
 import torch.optim as optim
 from tensorboardX import SummaryWriter
 from tqdm import tqdm
-from vnenv.utils.record_utils import MeanCalcer
-from vnenv.models.basic.model4gym import CartModel
-from vnenv.learners import A2CLearner
-from vnenv.agents import BaseAgent
-from vnenv.samplers import BaseSampler
+from methods.utils.record_utils import MeanCalcer
+from methods.models.basic.model4gym import CartModel
+from methods.learners import A2CLearner
+from methods.agents import BaseAgent
+from methods.samplers import BaseSampler
 from collections import deque
 import gym
 import numpy as np

@@ -1,7 +1,7 @@
 from typing import Any, Dict
 import os
 import torch
-from vnenv.utils.net_utils import save_model
+from methods.utils.net_utils import save_model
 
 
 class AbsLearner:

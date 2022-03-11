@@ -1,4 +1,4 @@
-from vnenv.utils.default_args import args
+from methods.utils.default_args import args
 
 args.update(
     # general params

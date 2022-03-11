@@ -1,4 +1,4 @@
-from vnenv.learners.returns_calc import _basic_return, _GAE
+from methods.learners.returns_calc import _basic_return, _GAE
 import numpy as np
 
 

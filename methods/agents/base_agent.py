@@ -4,8 +4,8 @@ import torch.nn as nn
 import numpy as np
 from .abs_agent import AbsAgent
 from gym.vector import VectorEnv
-from vnenv.utils.convert import dict2tensor, dict2numpy
-import vnenv.agents.select_funcs as sfcs
+from methods.utils.convert import dict2tensor, dict2numpy
+import methods.agents.select_funcs as sfcs
 
 
 class BaseAgent(AbsAgent):

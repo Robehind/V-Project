@@ -2,7 +2,7 @@ from typing import Dict
 import numpy as np
 import torch
 from .abs_learner import AbsLearner
-from vnenv.utils.convert import toTensor, dict2tensor
+from methods.utils.convert import toTensor, dict2tensor
 
 
 class RCTLearner(AbsLearner):

@@ -6,7 +6,7 @@ from torch.nn.utils import clip_grad_norm_
 import numpy as np
 from .rct_learner import RCTLearner
 from .returns_calc import _basic_return, _GAE
-from vnenv.utils.convert import toNumpy, toTensor
+from methods.utils.convert import toNumpy, toTensor
 
 
 # to manage all the algorithm params

@@ -1,5 +1,5 @@
 from matplotlib import pyplot as plt
-from vnenv.utils.record_utils import LabelMeanCalcer, MeanCalcer
+from methods.utils.record_utils import LabelMeanCalcer, MeanCalcer
 from epidata import EpisodeData
 from metrics import metrics1, metrics2
 from matplotlib.widgets import TextBox, RadioButtons, Button

@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from vnenv.utils.net_utils import weights_init, norm_col_init
+from methods.utils.net_utils import weights_init, norm_col_init
 
 
 class SavnBase(torch.nn.Module):

@@ -1,4 +1,4 @@
-from vnenv.samplers import BaseBuffer
+from methods.samplers import BaseBuffer
 import numpy as np
 from collections import deque
 import pytest

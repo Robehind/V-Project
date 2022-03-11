@@ -2,8 +2,8 @@ import numpy as np
 from typing import Dict
 from .base_buffer import BaseBuffer
 from gym.vector import VectorEnv
-from vnenv.agents import AbsAgent
-from vnenv.utils.record_utils import MeanCalcer
+from methods.agents import AbsAgent
+from methods.utils.record_utils import MeanCalcer
 
 
 class BaseSampler:

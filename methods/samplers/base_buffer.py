@@ -2,7 +2,7 @@ from typing import Dict, Union
 import numpy as np
 import gym
 from gym.spaces import Dict as dict_spc
-from vnenv.utils.convert import dtype2numpy
+from methods.utils.convert import dtype2numpy
 
 
 class Buff:

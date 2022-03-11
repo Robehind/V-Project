@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from ..perception.simple_cnn import SplitNetCNN
 from ..plan.rl_linear import AClinear, Qlinear
-from vnenv.utils.net_utils import weights_init
+from methods.utils.net_utils import weights_init
 import numpy as np
 
 

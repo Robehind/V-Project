@@ -23,7 +23,7 @@ V-PROJECT uses **config scripts** to manage and control modules and train/valida
 The demos use resnet50 features in FloorPlan25. So run the preprocess scripts first to generate the feature file for this scene:
 
 ```bash
-python vnenv/preprocess/thor_data_ops/resnet_feature.py
+python methods/preprocess/thor_data_ops/resnet_feature.py
 ```
 
 Take the demo using A2C algorithm and a LSTM model to navigate to Microwave/Sink in FloorPlan25. Open the `demo_args/thor_a2c_demo.py` for more details. What are those arguments mean can be found in `utils/default_args.py`.
@@ -33,7 +33,7 @@ Once we have a config script, we can use the entry scripts to load these configu
 - **Training**:
 
 ```bash
-python vnenv/main_train.py exp_args/thor_a2c_demo.py
+python methods/main_train.py exp_args/thor_a2c_demo.py
 ```
 
 The training script will create an experiment folder in the path specified by `exps_dir`, `exp_name` and the datetime containing logs, checkpoints, config arguments,  etc. The `tblog` folder in it holds all the logs and can be analysis by `tensorboard`. If you set `val_mode=True` and specify some corresponding arguments, a validating process will also be carried out during training.
@@ -43,7 +43,7 @@ The training script will create an experiment folder in the path specified by `e
 The evaluation entry script will search for the newest model automatically. If need to test a specific model, modify `load_model_dir` in the config script. Test results logs to the tensorboard files too, and will be stored in a folder whose name starts with `Eval-`.
 
 ```bash
-python vnenv/main_eval.py exp_args/thor_a2c_demo.py
+python methods/main_eval.py exp_args/thor_a2c_demo.py
 ```
 
 Or you can **test all** models in an experiment directory:
@@ -51,7 +51,7 @@ Or you can **test all** models in an experiment directory:
 Results will be stored in a folder whose name starts with `EvalAll-`.
 
 ```bash
-python vnenv/eval_all.py exp_args/thor_a2c_demo.py
+python methods/eval_all.py exp_args/thor_a2c_demo.py
 ```
 
 - **Visualization**:
@@ -59,7 +59,7 @@ python vnenv/eval_all.py exp_args/thor_a2c_demo.py
 Before visualization, we need to do a testing with `record_traj=True` in the config script to generate a file named `trajs.json` storing the test trajectories first. Note that the `eval_all` script doesn't generate it whether you turn the `record_traj` on.
 
 ```bash
-python vnenv/main_vis.py exp_args/thor_a2c_demo.py
+python methods/main_vis.py exp_args/thor_a2c_demo.py
 ```
 
 A simple command line interface allows you to filter and choose a particular trajectory in `trajs.json` to visualize. 

@@ -6,7 +6,7 @@ from copy import deepcopy
 import numpy as np
 from .rct_learner import RCTLearner
 from .returns_calc import _basic_return
-from vnenv.utils.convert import toNumpy, toTensor, dict2tensor
+from methods.utils.convert import toNumpy, toTensor, dict2tensor
 
 
 # to manage all the algorithm params
