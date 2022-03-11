@@ -1,6 +1,6 @@
 from typing import List
 from ai2thor.controller import Controller
-from .agent_pose_state import AgentPoseState
+from agent_pose_state import AgentPoseState
 from ai2thor.platform import CloudRendering
 import cv2
 import numpy as np
@@ -47,7 +47,6 @@ class OriThorForVis:
         birdView: bool,
         smooth: bool = False,
     ):
-        # get Y
         if not smooth:
             evt = self.ctrler.step(
                 action="Teleport",

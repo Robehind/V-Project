@@ -1,12 +1,13 @@
 from collections import defaultdict
 from functools import lru_cache
-from ..task_env import TaskEnv
-from .offline_ctrler import OfflineThorCtrler as OCer
 from typing import Dict, Tuple, Set, List
-from .thordata_utils import get_scene_names, get_type
 import random
 from copy import deepcopy
 from gym.spaces import Discrete
+import numpy as np
+from taskenvs import TaskEnv
+from offline_ctrler import OfflineThorCtrler as OCer
+from thordata_utils import get_scene_names, get_type
 
 
 class BaseTargetDrivenTHOR(TaskEnv):
@@ -40,6 +41,10 @@ class BaseTargetDrivenTHOR(TaskEnv):
             'kitchen': '1-30', 'living_room': '1-30',
             'bedroom': '1-30', 'bathroom': '1-30'}
         self.targets_by_type = defaultdict(set)
+
+    def seed(self, sd):
+        random.seed(sd)
+        np.random.seed(sd)
 
     def target_visible(self):
         return self.is_visible(self.scene, self.target, str(self.state))

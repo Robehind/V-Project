@@ -1,10 +1,9 @@
-import random
 from gym import Env
-import numpy as np
 
 
 class TaskEnv(Env):
-    """TODO Task Environment"""
+    """Base class for all Task Environment.
+    """
     _tasks = None
 
     def export_tasks(self):
@@ -16,7 +15,3 @@ class TaskEnv(Env):
 
     def add_extra_info(self, *args, **kwargs):
         pass
-
-    def seed(self, sd):
-        random.seed(sd)
-        np.random.seed(sd)
