@@ -41,8 +41,9 @@ print(f'making for {len(scene_names)} scenes')
 
 for scene_name in tqdm(iterable=scene_names):
     scene_path = os.path.join(datadir, scene_name)
+    mid = '_nn' if args.no_norm else ''
     writer = {
-        k: h5py.File(os.path.join(scene_path, k+'.hdf5'), 'w')
+        k: h5py.File(os.path.join(scene_path, k+mid+'.hdf5'), 'w')
         for k in featkey}
     RGBloader = h5py.File(os.path.join(scene_path, image_name), "r")
     keys, x = [], []

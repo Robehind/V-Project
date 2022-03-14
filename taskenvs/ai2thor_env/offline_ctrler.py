@@ -4,7 +4,7 @@ import json
 from typing import List, Optional, Set
 import copy
 import random
-from taskenvs.ai2thor_env.agent_pose_state import AgentPoseState
+from taskenvs.ai2thor_env.utils import AgentPoseState
 
 
 class OfflineThorCtrler:

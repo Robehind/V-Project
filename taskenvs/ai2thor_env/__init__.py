@@ -1,5 +1,5 @@
-from .fc_target_driven import FCTargetDrivenEnv
+from .res_target_driven import ReadFileTDenv
 from .vis_env import OriThorForVis
 
 
-__all__ = ['FCTargetDrivenEnv', 'OriThorForVis']
+__all__ = ['OriThorForVis', 'ReadFileTDenv']

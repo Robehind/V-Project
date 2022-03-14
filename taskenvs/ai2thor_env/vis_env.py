@@ -1,6 +1,6 @@
 from typing import List
 from ai2thor.controller import Controller
-from .agent_pose_state import AgentPoseState
+from .utils import AgentPoseState
 from ai2thor.platform import CloudRendering
 import cv2
 import numpy as np
