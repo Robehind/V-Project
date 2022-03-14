@@ -2,8 +2,7 @@ from ai2thor.controller import Controller
 import h5py
 import argparse
 import os
-from thordata_utils import get_scene_names
-from agent_pose_state import AgentPoseState
+from taskenvs.ai2thor_env.utils import get_scene_names, AgentPoseState
 import json
 from tqdm import tqdm
 from ai2thor.platform import CloudRendering
