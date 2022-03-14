@@ -9,17 +9,17 @@ import torch.nn.functional as F
 class ScenePriors(nn.Module):
     def __init__(
         self,
-        obs_shapes,
-        act_sz,
+        obs_spc,
+        act_spc,
         infer_sz=512,
         vobs_embed_sz=512,
         tobs_embed_sz=512,
         gcn_embed_sz=512
     ) -> None:
         super().__init__()
-        vobs_sz = np.prod(obs_shapes['fc'])
-        tobs_sz = np.prod(obs_shapes['glove'])
-        score_sz = np.prod(obs_shapes['score'])
+        vobs_sz = np.prod(obs_spc['fc'].shape)
+        tobs_sz = np.prod(obs_spc['glove'].shape)
+        score_sz = np.prod(obs_spc['score'].shape)
         self.v_embed = nn.Linear(vobs_sz, vobs_embed_sz)
         self.t_embed = nn.Linear(tobs_sz, tobs_embed_sz)
 
@@ -31,7 +31,7 @@ class ScenePriors(nn.Module):
         self.rct_shapes = {'hx': (infer_sz, ), 'cx': (infer_sz, )}
         dtype = next(self.lstm.parameters()).dtype
         self.rct_dtypes = {'hx': dtype, 'cx': dtype}
-        self.plan = AClinear(infer_sz, act_sz)
+        self.plan = AClinear(infer_sz, act_spc.n)
 
     def forward(self, obs, rct):
         x_fc = obs['fc']

@@ -2,19 +2,24 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from methods.utils.net_utils import weights_init, norm_col_init
+from gym.spaces import Dict as Dictspc
+from gym.spaces import Discrete
+import numpy as np
 
 
 class SavnBase(torch.nn.Module):
     """"""
     def __init__(
         self,
-        obs_shapes,
-        act_sz,
+        obs_spc: Dictspc,
+        act_spc: Discrete,
         target_sz=300,
         dropout_rate=0.25,
     ):
         resnet_embedding_sz = 512
         hidden_state_sz = 512
+        act_sz = act_spc.n
+        target_sz = np.prod(obs_spc['glove'].shape)
         super(SavnBase, self).__init__()
 
         self.conv1 = nn.Conv2d(resnet_embedding_sz, 64, 1)
