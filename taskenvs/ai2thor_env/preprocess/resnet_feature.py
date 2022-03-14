@@ -2,7 +2,7 @@ from torchvision import transforms as T
 import h5py
 import os
 from tqdm import tqdm
-from taskenvs.ai2thor_env.thordata_utils import get_scene_names
+from taskenvs.ai2thor_env.utils import get_scene_names
 from models import my_resnet50, resnet18fm
 import torch
 import argparse
