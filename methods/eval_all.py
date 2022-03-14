@@ -3,7 +3,6 @@ import random
 import torch
 import models
 import agents
-import taskers
 import evalors
 import json
 import gym
@@ -36,7 +35,7 @@ def main():
     # 加载具体类
     model_cls = getattr(models, args.model)
     agent_cls = getattr(agents, args.agent)
-    tasker_cls = getattr(taskers, args.tasker)
+    tasker_cls = getattr(taskenvs, args.tasker)
     eval_func = getattr(evalors, args.evalor)
 
     # gym 多进程化

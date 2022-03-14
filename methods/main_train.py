@@ -10,7 +10,6 @@ import models
 import agents
 import samplers
 import learners
-import taskers
 import taskenvs
 from utils.init_func import get_args, make_exp_dir, set_seed
 from utils.net_utils import optim2cuda
@@ -38,7 +37,7 @@ def main():
     agent_cls = getattr(agents, args.agent)
     sampler_cls = getattr(samplers, args.sampler)
     learner_cls = getattr(learners, args.learner)
-    tasker_cls = getattr(taskers, args.tasker)
+    tasker_cls = getattr(taskenvs, args.tasker)
     train_func = getattr(trainers, args.trainer)
     val_func = getattr(evalors, args.validater)
 

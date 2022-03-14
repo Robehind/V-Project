@@ -5,7 +5,7 @@ from tensorboardX import SummaryWriter
 from utils.record_utils import MeanCalcer, add_eval_data_seq
 from learners.abs_learner import AbsLearner
 from samplers.base_sampler import BaseSampler
-from taskers.base_tasker import Tasker
+from taskenvs import Tasker
 
 
 def basic_train(

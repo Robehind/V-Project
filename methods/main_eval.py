@@ -7,7 +7,6 @@ import json
 import evalors
 import models
 import agents
-import taskers
 import taskenvs
 from utils.init_func import (
     get_args,
@@ -36,7 +35,7 @@ def main():
     model_cls = getattr(models, args.model)
     agent_cls = getattr(agents, args.agent)
     # TODO 测试和训练用的tasker可能不一样...
-    tasker_cls = getattr(taskers, args.tasker)
+    tasker_cls = getattr(taskenvs, args.tasker)
     eval_func = getattr(evalors, args.evalor)
 
     # gym 多进程化
