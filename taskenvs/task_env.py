@@ -1,3 +1,4 @@
+from typing import Dict
 from gym import Env
 
 
@@ -6,10 +7,12 @@ class TaskEnv(Env):
     """
     _tasks = None
 
-    def export_tasks(self):
+    @property
+    def tasks(self):
         return self._tasks
 
-    def set_tasks(self, t):
+    @tasks.setter
+    def tasks(self, t: Dict):
         self._tasks = t
         # maybe need more operation when modify task space
 

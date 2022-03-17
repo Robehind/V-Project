@@ -74,7 +74,8 @@ class BaseTargetDrivenTHOR(TaskEnv):
     def init_obs(self, scene):
         raise NotImplementedError
 
-    def set_tasks(self, t):
+    @TaskEnv.tasks.setter
+    def tasks(self, t):
         if 'scenes' not in t:
             # 无对应关键字视为全集
             scenes_by_type = self.all_scenes_by_type

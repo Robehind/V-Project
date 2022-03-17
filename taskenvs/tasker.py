@@ -12,7 +12,7 @@ class Tasker:
     ) -> None:
         if tasks is None:
             return
-        envs.call('set_tasks', tasks)
+        envs.set_attr('tasks', tasks)
 
     def next_task(
         self,

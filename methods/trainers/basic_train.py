@@ -45,16 +45,16 @@ def basic_train(
             # validating
             if args.val_mode:
                 # save train task
-                o_tasks = sampler.Venv.call('export_tasks')
+                o_tasks = sampler.Venv.call('tasks')
                 # load validate task
-                sampler.Venv.call('set_tasks', args.val_task)
+                sampler.Venv.set_attr('tasks', args.val_task)
                 sampler.reset()
                 # TODO sampler.Venv.call('add_extra_info', args.calc_spl)
                 # validate process
                 val_data = val_func(
                     sampler.Vagent, sampler.Venv, args.val_epi)
                 # resume train task
-                sampler.Venv.call('set_tasks', o_tasks)
+                sampler.Venv.set_attr('tasks', o_tasks)
                 sampler.reset()
                 # TODO sampler.Venv.call('add_extra_info', False)
                 learner.model.train()

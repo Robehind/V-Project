@@ -31,4 +31,4 @@ class ThorAveSceneTasker(Tasker):
         task_list = [deepcopy(tasks) for _ in range(n)]
         for i, t in enumerate(task_list):
             t['scenes'] = out[i]
-        envs.call('set_tasks', task_list)
+        envs.set_attr('tasks', task_list)
