@@ -77,10 +77,15 @@ class BaseTargetDrivenTHOR(TaskEnv):
     def set_tasks(self, t):
         if 'scenes' not in t:
             # 无对应关键字视为全集
-            self.scenes_by_type = self.all_scenes_by_type
+            scenes_by_type = self.all_scenes_by_type
         else:
-            self.scenes_by_type = t['scenes']
-        self.scenes = get_scene_names(self.scenes_by_type)
+            if isinstance(t['scenes'], dict):
+                scenes_by_type = t['scenes']
+            else:
+                scenes_by_type = None
+                self.scenes = deepcopy(t['scenes'])
+        if scenes_by_type is not None:
+            self.scenes = get_scene_names(scenes_by_type)
         self.ctrler.preload_scenes(self.scenes)
         if 'targets' not in t:
             # 无对应关键字视为全集
@@ -90,7 +95,7 @@ class BaseTargetDrivenTHOR(TaskEnv):
             self.targets_by_type = {
                 k: set(v) for k, v in t['targets'].items()}
         self._tasks = {
-            'scenes': deepcopy(self.scenes_by_type),
+            'scenes': deepcopy(self.scenes),
             'targets': deepcopy(self.targets_by_type)}
 
     def reset(self):

@@ -21,14 +21,14 @@ class ThorAveSceneTasker(Tasker):
         if n > len(scenes):
             out = [scenes for _ in range(n)]
         else:
+            out = []
             step = len(scenes)//n
             mod = len(scenes) % n
             for i in range(0, n*step, step):
                 out.append(scenes[i:i + step])
             for i in range(0, mod):
                 out[i].append(scenes[-(i+1)])
-
         task_list = [deepcopy(tasks) for _ in range(n)]
         for i, t in enumerate(task_list):
-            t[scenes] = out[i]
+            t['scenes'] = out[i]
         envs.call('set_tasks', task_list)
