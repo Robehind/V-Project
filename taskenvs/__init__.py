@@ -8,6 +8,14 @@ register(
     id='FcTdThor-v0',
     entry_point='taskenvs.ai2thor_env:ReadFileTDenv',
     kwargs=dict(
+        obs_dict={'fc': 'resnet50fc.hdf5'},
+        target_embedding='glove',
+        info_scene='FloorPlan25')
+)
+register(
+    id='FcTdThor-v1',
+    entry_point='taskenvs.ai2thor_env:ReadFileTDenv',
+    kwargs=dict(
         obs_dict={'fc': 'resnet50fc_nn.hdf5'},
         target_embedding='glove',
         info_scene='FloorPlan25')
@@ -26,6 +34,28 @@ register(
     kwargs=dict(
         obs_dict={'fc': 'resnet50fc.hdf5', 'score': 'resnet50score.hdf5'},
         target_embedding='glove',
+        info_scene='FloorPlan25')
+)
+register(
+    id='FSTdThor-v1',
+    entry_point='taskenvs.ai2thor_env:ReadFileTDenv',
+    kwargs=dict(
+        obs_dict={'fc': 'resnet50fc_nn.hdf5', 'score': 'resnet50score.hdf5'},
+        target_embedding='glove',
+        info_scene='FloorPlan25')
+)
+register(
+    id='ZhuTdThor-v0',
+    entry_point='taskenvs.ai2thor_env:ZhuTDenv',
+    kwargs=dict(
+        res_fn='resnet50fc.hdf5',
+        info_scene='FloorPlan25')
+)
+register(
+    id='ZhuTdThor-v1',
+    entry_point='taskenvs.ai2thor_env:ZhuTDenv',
+    kwargs=dict(
+        res_fn='resnet50fc_nn.hdf5',
         info_scene='FloorPlan25')
 )
 __all__ = ['TaskEnv', 'Tasker', 'ThorAveSceneTasker']
