@@ -1,7 +1,9 @@
 from methods.samplers import BaseSampler
+from gym.spaces import Dict, Box
 import numpy as np
 import torch
 import pytest
+INF = -float("inf")
 
 
 # TODO not well tested
@@ -23,9 +25,9 @@ def cross_cmp(a, b):
 
 class TESTenv:
     def __init__(self) -> None:
-        self.env_num = 4
-        self.dtypes = {'rela': np.int32}
-        self.shapes = {'rela': (2,)}
+        self.num_envs = 4
+        self.single_observation_space = Dict({
+            'rela': Box(-INF, INF, (2,), np.int32)})
         self.obss = _obss
         self.infos = _infos
         self.rs = _rs

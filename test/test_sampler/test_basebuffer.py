@@ -2,6 +2,8 @@ from methods.samplers import BaseBuffer
 import numpy as np
 from collections import deque
 import pytest
+from gym.spaces import Dict, Box
+INF = float("inf")
 
 
 def cross_cmp(a, b):
@@ -36,9 +38,12 @@ def test_buffer(
     max_exp_num,
     rounds
 ):
+    obs_spc = Dict({
+        'map': Box(-INF, INF, (4, 4, 7), np.float32),
+        'fc': Box(-INF, INF, (1, 10), np.float32),
+    })
     bb = BaseBuffer(
-        {'map': (4, 4, 7), 'fc': (1, 10)},
-        {'map': np.float32, 'fc': np.float},
+        obs_spc,
         {'lstm': (10, )},
         {'lstm': np.float32},
         exp_length=exp_length,

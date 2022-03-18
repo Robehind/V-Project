@@ -29,7 +29,7 @@ class TESTmodel(nn.Module):
 
 class TESTenv:
     def __init__(self) -> None:
-        self.env_num = 4
+        self.num_envs = 4
 
 
 @pytest.mark.parametrize(["select_func", "select_params"],
