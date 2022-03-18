@@ -18,29 +18,30 @@ horizons = [0, 30]
 def init_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--path", type=str, help="Path to save all scenes")
+        "--path", type=str, help="Path to save all scenes",
+        default='../vdata/thordata')
     parser.add_argument(
-        "--frame", action='store_true', help="Whether to save RGB data")
+        "--frame", action='store_true', help="Whether to generate RGB data")
     parser.add_argument(
-        "--depth", action='store_true', help="Whether to save depth data")
+        "--depth", action='store_true', help="Whether to generate depth data")
     parser.add_argument(
         "--seg_frame", action='store_true',
-        help="Whether to save segmentation data" +
+        help="Whether to generate segmentation data" +
              "(seg frames and color-instance maps)")
     parser.add_argument(
         "--seg_mask", action='store_true',
-        help="Whether to save segmentation data" +
+        help="Whether to generate segmentation data" +
              "(seg masks)")
     parser.add_argument(
         "--detection", action='store_true',
-        help="Whether to save detection data")
+        help="Whether to generate detection data")
     parser.add_argument("--rotate_angle", type=int, default=45)
     parser.add_argument("--grid_size", type=float, default=0.25)
     parser.add_argument("--vis_dist", type=float, default=1)
     parser.add_argument("--width", type=int, default=224)
     parser.add_argument("--height", type=int, default=224)
     parser.add_argument("--obs_only", action='store_true')
-    parser.add_argument("--range", type=str, default='1-10')
+    parser.add_argument("--range", type=str, default='1-30')
     args = parser.parse_args()
     for k in scenes:
         scenes[k] = args.range
