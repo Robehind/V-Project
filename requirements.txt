@@ -4,7 +4,7 @@ gym==0.23.1
 h5py==2.10.0
 matplotlib==3.5.1
 mplcursors==0.5.1
-numpy==1.19.1
+numpy==1.21.0
 opencv_python==4.4.0.42
 pytest==6.2.4
 seaborn==0.11.2
