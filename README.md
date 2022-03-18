@@ -16,7 +16,7 @@ Temporarily named **v-project**.
 
 - Add `V-PROJECT` to your `PYTHONPATH`. Here are some [instructions](https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#macos-and-linux) about how to do it in a conda environment.
 
-- Generate the discrete [AI2THOR]() data:
+- Generate the discrete [AI2THOR](https://github.com/allenai/ai2thor) data:
 
   ```bash
   python taskenvs/ai2thor_env/preprocess/dump_scene.py --frame
@@ -24,7 +24,7 @@ Temporarily named **v-project**.
 
   Data will be generated in `../vdata/thordata`. Read this script to see more data generation options.
 
-- Download word embedding [data]() and place it in `vdata` directory.
+- Download word embedding [data](https://pan.baidu.com/s/1mLshUzZuJa7yhPweb55UqA) and place it in `vdata` directory (code: vqt3).
 
 - Run `pytest`. If there is no error and test is passed, then the installation is successful.
 
@@ -52,15 +52,15 @@ python methods/main_train.py demo_args/thor_a2c_demo.py
 
 The training script will create an experiment folder in the path specified by `exps_dir`, `exp_name` and the datetime containing logs, checkpoints, config arguments,  etc. The `tblog` folder in `exps_dir` holds all the logs and can be analysis by `tensorboard`. If you set `val_mode=True` and specify some corresponding arguments, a validating process will also be carried out during training.
 
-- **Testing**:
+- **Evaluating**:
 
-The evaluation entry script will search for the newest model automatically. If need to test a specific model, modify `load_model_dir` in the config script. Test results logs to the tensorboard files too, and will be stored in a folder whose name starts with `Eval-`.
+The evaluation entry script will search for the newest model automatically. If need to evaluate a specific model, modify `load_model_dir` in the config script. Test results will be saved in a json file named `trajs.json`, and will be stored in a folder whose name starts with `Eval-`.
 
 ```bash
 python methods/main_eval.py demo_args/thor_a2c_demo.py
 ```
 
-Or you can **test all** models in an experiment directory:
+Or you can **evaluate all** models in an experiment directory:
 
 Results will be stored in a folder whose name starts with `EvalAll-`.
 
@@ -70,11 +70,11 @@ python methods/eval_all.py demo_args/thor_a2c_demo.py
 
 - **Result Analysis**
 
-V-project provides a analysis script based on [Matplotlib]() and [seaborn]() to draw curves about some metrics and heatmap (only support AI2THOR env for now)
+V-project provides a analysis script based on [Matplotlib](https://matplotlib.org/) and [Seaborn](http://seaborn.pydata.org/) to draw curves about some metrics and heatmap (only support AI2THOR env for now)
 ```bash
 python data_analysis/plotter.py --path=<PATH-TO-THE-EVAL-DIR>
 ```
-Click what you want to click :)
+Use regular expression to filter result data and click what you want to click :)
 - **Visualization**:
 
 Run:
