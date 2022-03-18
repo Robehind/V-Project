@@ -1,6 +1,6 @@
 ai2thor==4.2.0
 einops==0.3.2
-gym==0.22.0
+gym==0.23.1
 h5py==2.10.0
 matplotlib==3.5.1
 mplcursors==0.5.1
