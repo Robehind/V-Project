@@ -133,8 +133,8 @@ class BaseTargetDrivenTHOR(TaskEnv):
             self.info.update(min_acts=self.min_actions())
         return self.get_observation()
 
-    def reward_and_done(self):
-        """判断一个应该获得的奖励，以及是否要停止，注意事件之间是相互独立，不可以叠加的"""
+    def event_and_done(self):
+        """判断当前时间步的事件，以及是否要停止，注意事件之间是相互独立，不可以叠加的"""
         done = False
         event = 'step'
         if not self.action_success:
@@ -172,7 +172,7 @@ class BaseTargetDrivenTHOR(TaskEnv):
         self.last_action = action
         self.steps += 1
         self.info['pose'] = str(self.state)
-        event, self.done = self.reward_and_done()
+        event, self.done = self.event_and_done()
         reward = self.reward_dict[event]
         self.info['event'] = event
         return self.get_observation(), reward, self.done, self.info

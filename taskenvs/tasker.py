@@ -14,7 +14,7 @@ class Tasker:
             return
         envs.set_attr('tasks', tasks)
 
-    def next_task(
+    def next_tasks(
         self,
         update_steps,
         *args,

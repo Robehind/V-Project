@@ -32,7 +32,7 @@ def basic_train(
 
         batched_exp = sampler.sample()
         obj_salars = learner.learn(batched_exp)
-        if tasker.next_task(update_steps, sampler.report()):
+        if tasker.next_tasks(update_steps, sampler.report()):
             sampler.reset()
 
         pbar.update(update_steps)
