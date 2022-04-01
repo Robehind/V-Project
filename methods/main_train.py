@@ -52,6 +52,7 @@ def main():
     if not isinstance(obs_spc, dict_spc):
         Venv = gym.wrappers.TransformObservation(Venv, lambda x: {'OBS': x})
     Venv.seed(args.seed)
+    Venv.call('add_extra_info', args.train_extra_info)
 
     # TODO params management
     # init tasker 此时通过调用Venv的call方法修改各个进程的task space

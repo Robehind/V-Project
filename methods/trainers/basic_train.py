@@ -26,7 +26,7 @@ def basic_train(
     obj_traker = MeanCalcer()
     pbar = tqdm(total=args.train_steps, unit='step')
 
-    if args.val_mode:
+    if args.val_epi != 0:
         val_writer = SummaryWriter(os.path.join(args.exp_dir, 'tblog/val'))
     while steps < args.train_steps:
 
@@ -43,11 +43,12 @@ def basic_train(
             save_gate_steps += save_freq
             learner.checkpoint(args.exp_dir, steps)
             # validating
-            if args.val_mode:
+            if args.val_epi != 0:
                 # save train task
                 o_tasks = sampler.Venv.call('tasks')
                 # load validate task
                 sampler.Venv.set_attr('tasks', args.val_task)
+                sampler.Venv.call('add_extra_info', args.val_extra_info)
                 sampler.reset()
                 # TODO sampler.Venv.call('add_extra_info', args.calc_spl)
                 # validate process
@@ -55,6 +56,7 @@ def basic_train(
                     sampler.Vagent, sampler.Venv, args.val_epi)
                 # resume train task
                 sampler.Venv.set_attr('tasks', o_tasks)
+                sampler.Venv.call('add_extra_info', args.train_extra_info)
                 sampler.reset()
                 # TODO sampler.Venv.call('add_extra_info', False)
                 learner.model.train()

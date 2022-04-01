@@ -4,13 +4,9 @@ args.update(
     # general params
     seed=8952,  # 随机数生成种子
     gpu_ids=[0],  # 指定要使用的显卡，为-1时使用cpu。gpu_ids = [0,1,2,3]
-    load_model_dir='',  # 要读取的模型参数的完整路径，包括文件名
-    load_optim_dir='',  # 要读取的优化其参数的完整路径，包括文件名
     exps_dir='../demoEXPS',  # 保存所有实验文件夹的路径
     exp_name='thor-a2c-demo',  # 将用于生成本次实验的实验文件夹的文件名，因此尽量不要包含特殊符号
-    exp_dir='',  # 单次实验的完整路径，会根据时间自动生成
     proc_num=8,  # 进程数
-    extra_info=True,
 
     # train proc params
     train_steps=200000,  # 指定训练多少frames
@@ -21,8 +17,15 @@ args.update(
         "targets": {'kitchen': ["Microwave", 'Sink']},
     },
 
+    val_epi=100,
+    val_task={
+        "scenes": {'kitchen': '25'},
+        "targets": {'kitchen': ["Microwave", 'Sink']},
+    },
+
     # eval proc params
     eval_epi=1000,  # 指定测试时测试多少个episode
+    eval_extra_info=True,
     eval_task={
         "scenes": {'kitchen': '25'},
         "targets": {'kitchen': ["Microwave", 'Sink']},

@@ -42,7 +42,7 @@ def validate(
                     'epis': 1
                 }
                 # 只要环境反馈了最短路信息，那么就算一下SPL
-                if 'min_len' in t_info:
+                if 'min_acts' in t_info:
                     if t_info['success']:
                         assert t_info['min_acts'] <= env_steps[i],\
                             f"{t_info['min_acts']}>{env_steps[i]}"
