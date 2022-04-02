@@ -18,8 +18,7 @@ class Buff:
         self.bshapes = bshapes
         self.buff = {
             k: np.zeros((*bshapes[k], *v), dtype=dtype2numpy(dtypes[k]))
-            for k, v in shapes.items()
-        }
+            for k, v in shapes.items()}
 
 
 class BaseBuffer(Buff):
@@ -47,15 +46,13 @@ class BaseBuffer(Buff):
         shapes = {
             "r": (),  # TODO if (1, ) can't broadcast (x) to (x, 1)
             "m": (),
-            "a": (),
-        }
+            "a": ()}
         shapes.update(obs_shapes)
         shapes.update(rct_shapes)
         dtypes = {
             "r": np.float32,
             "m": np.int8,
-            "a": np.int64,
-        }
+            "a": np.int64}
         dtypes.update(obs_dtypes)
         dtypes.update(rct_dtypes)
         # buff shapes
@@ -113,23 +110,15 @@ class BaseBuffer(Buff):
         if ed > self.max_exp_num:
             spt1 = self.max_exp_num - self.exp_p
             self._write_in(
-                self.exp_p,
-                self.max_exp_num,
+                self.exp_p, self.max_exp_num,
                 {k: v[:spt1] for k, v in obs.items()},
                 {k: v[:spt1] for k, v in rct.items()},
-                a[:spt1],
-                r[:spt1],
-                m[:spt1]
-                )
+                a[:spt1], r[:spt1], m[:spt1])
             self._write_in(
-                0,
-                self.env_num - spt1,
+                0, self.env_num - spt1,
                 {k: v[spt1:] for k, v in obs.items()},
                 {k: v[spt1:] for k, v in rct.items()},
-                a[spt1:],
-                r[spt1:],
-                m[spt1:]
-                )
+                a[spt1:], r[spt1:], m[spt1:])
         else:
             self._write_in(self.exp_p, ed, obs, rct, a, r, m)
         self.step_p += 1
@@ -141,7 +130,9 @@ class BaseBuffer(Buff):
                 self.exp_p %= self.max_exp_num
 
     def sample(
-        self
+        self,
+        st: int = 0,
+        ed: int = None
     ) -> Dict[str, Union[np.ndarray, Dict[str, np.ndarray]]]:
         if not self.once_full:
             # if buffer not fully filled, then sample from filled cols
@@ -151,20 +142,18 @@ class BaseBuffer(Buff):
             tmp = np.arange(self.exp_p)
         else:
             tmp = np.arange(self.max_exp_num)
+        ed = self.exp_length if ed is None else ed
         # TODO maybe slow
         np.random.shuffle(tmp)
         idx = tmp[:self.sample_num]
         return {
             'obs': {
-                k: self.buff[k][:, idx]
-                for k in self.obs_shapes
-            },
+                k: self.buff[k][st:ed, idx]
+                for k in self.obs_shapes},
             'rct': {
-                k: self.buff[k][:, idx]
-                for k in self.rct_shapes
-            },
-            'a': self.buff['a'][:, idx],
+                k: self.buff[k][st:ed, idx]
+                for k in self.rct_shapes},
+            'a': self.buff['a'][st:ed, idx],
             # don't flatten r and m for faster numpy mat computation
-            'r': self.buff['r'][:, idx],
-            'm': self.buff['m'][:, idx]
-        }
+            'r': self.buff['r'][st:ed, idx],
+            'm': self.buff['m'][st:ed, idx]}

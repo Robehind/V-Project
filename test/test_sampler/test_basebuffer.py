@@ -6,15 +6,17 @@ from gym.spaces import Dict, Box
 INF = float("inf")
 
 
-def cross_cmp(a, b):
+def cross_cmp(a, b, st=0, ed=None):
     # assert a.shape[1] == len(b), f'{a.shape[1]} vs {len(b)}'
-    assert a.shape[0] == len(b[0]), f'{a.shape[0]} vs {len(b[0])}'
+    if ed is None:
+        ed = len(b[0])
+    assert a.shape[0] == ed-st, f'{a.shape[0]} vs {len(b[0])}'
     n = a.shape[1]
     for i in range(n):
         x = a[:, i]
         flag = False
         for y in b:
-            if np.allclose(x, y):
+            if np.allclose(x, y[st:ed]):
                 flag = True
                 break
         if not flag:
@@ -86,3 +88,11 @@ def test_buffer(
     assert cross_cmp(out['obs']['map'], mapp)
     assert cross_cmp(out['rct']['lstm'], lstm)
     assert cross_cmp(out['obs']['fc'], fc)
+    # test for range specifiction
+    out = bb.sample(st=1, ed=3)
+    assert cross_cmp(out['r'], r, 1, 3)
+    assert cross_cmp(out['a'], a, 1, 3)
+    assert cross_cmp(out['m'], m, 1, 3)
+    assert cross_cmp(out['obs']['map'], mapp, 1, 3)
+    assert cross_cmp(out['rct']['lstm'], lstm, 1, 3)
+    assert cross_cmp(out['obs']['fc'], fc, 1, 3)
