@@ -24,6 +24,7 @@ class BaseSampler:
             buffer_update = buffer_limit
         assert buffer_update > 0
         assert batch_size % exp_length == 0
+        self.buffer_limit = buffer_limit
 
         self.Venv = Venv
         self.Vagent = Vagent
@@ -31,30 +32,31 @@ class BaseSampler:
         self.env_num = Venv.num_envs
         self.exp_length = exp_length
         self.batch_size = batch_size
-        sample_num = batch_size // exp_length
+        self.sample_num = batch_size // exp_length
 
-        if buffer_update // sample_num > 10:
-            print(f"Warning: Need only {sample_num} exps to update model \
+        if buffer_update // self.sample_num > 10:
+            print(f"Warning: Need only {self.sample_num} exps to update model \
                 but need to wait buffer update {buffer_update} exps. \
                 Consider reduce buffer update number for better performance")
 
         self.rounds = buffer_update // self.env_num + \
             int(buffer_update % self.env_num != 0)
 
-        # init buffer
-        self.buffer = BaseBuffer(
-            Venv.single_observation_space,
-            Vagent.rct_shapes,
-            Vagent.rct_dtypes,
-            exp_length + 1,  # sample_length = exp_length + 1
-            sample_num,
-            self.env_num,
-            buffer_limit
-        )
-
+        self.init_buffer()
         # init Mean Calcer
         self.mean_calc = MeanCalcer()
         self.reset()
+
+    def init_buffer(self):
+        # init buffer
+        self.buffer = BaseBuffer(
+            self.Venv.single_observation_space,
+            self.Vagent.rct_shapes,
+            self.Vagent.rct_dtypes,
+            self.exp_length + 1,  # sample_length = exp_length + 1
+            self.sample_num,
+            self.env_num,
+            self.buffer_limit)
 
     def reset(self):
         self.buffer.clear()
@@ -68,12 +70,12 @@ class BaseSampler:
 
     def sample(self) -> Dict:
         for _ in range(self.rounds):
-            self.run()
+            self.run(self.exp_length+1)
         return self.buffer.sample()
 
-    def run(self) -> np.ndarray:
+    def run(self, length):
         # sample exp_length + 1 exps for learner's need
-        for _ in range(self.exp_length+1):
+        for _ in range(length):
             a_idx, last_rct = self.Vagent.action(self.last_obs, self.last_done)
             obs_new, r, done, info = self.Venv.step(a_idx)
             # record obs_t, rct_t, a_t, r_t+1, m_t+1
@@ -96,7 +98,6 @@ class BaseSampler:
                         self.mean_calc.add(dict(SR=int(info[i]['success'])))
                     self.env_steps[i] = 0
                     self.env_reward[i] = 0
-        return dones
 
     def report(self) -> Dict:
         return self.mean_calc.report()
