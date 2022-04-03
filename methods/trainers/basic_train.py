@@ -53,7 +53,7 @@ def basic_train(
                 # TODO sampler.Venv.call('add_extra_info', args.calc_spl)
                 # validate process
                 val_data = val_func(
-                    sampler.Vagent, sampler.Venv, args.val_epi)
+                    sampler.agent, sampler.Venv, args.val_epi)
                 # resume train task
                 sampler.Venv.set_attr('tasks', o_tasks)
                 sampler.Venv.call('add_extra_info', args.train_extra_info)

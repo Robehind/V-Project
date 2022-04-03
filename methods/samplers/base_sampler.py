@@ -12,7 +12,7 @@ class BaseSampler:
     def __init__(
         self,
         Venv: VectorEnv,
-        Vagent: AbsAgent,
+        agent: AbsAgent,
         batch_size: int,
         exp_length: int,
         buffer_limit: int,
@@ -27,7 +27,7 @@ class BaseSampler:
         self.buffer_limit = buffer_limit
 
         self.Venv = Venv
-        self.Vagent = Vagent
+        self.agent = agent
 
         self.env_num = Venv.num_envs
         self.exp_length = exp_length
@@ -51,8 +51,8 @@ class BaseSampler:
         # init buffer
         self.buffer = BaseBuffer(
             self.Venv.single_observation_space,
-            self.Vagent.rct_shapes,
-            self.Vagent.rct_dtypes,
+            self.agent.rct_shapes,
+            self.agent.rct_dtypes,
             self.exp_length + 1,  # sample_length = exp_length + 1
             self.sample_num,
             self.env_num,
@@ -76,7 +76,7 @@ class BaseSampler:
     def run(self, length):
         # sample exp_length + 1 exps for learner's need
         for _ in range(length):
-            a_idx, last_rct = self.Vagent.action(self.last_obs, self.last_done)
+            a_idx, last_rct = self.agent.action(self.last_obs, self.last_done)
             obs_new, r, done, info = self.Venv.step(a_idx)
             # record obs_t, rct_t, a_t, r_t+1, m_t+1
             self.buffer.write_in(
@@ -110,5 +110,5 @@ class BaseSampler:
         return out
 
     def close(self):
-        self.Vagent.close()
+        self.agent.close()
         self.Venv.close()
