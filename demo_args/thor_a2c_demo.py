@@ -17,7 +17,7 @@ args.update(
         "targets": {'kitchen': ["Microwave", 'Sink']},
     },
 
-    val_epi=100,
+    val_epi=0,
     val_task={
         "scenes": {'kitchen': '25'},
         "targets": {'kitchen': ["Microwave", 'Sink']},
@@ -60,9 +60,6 @@ args.update(
     ),
     model='FcLstmModel',
     agent='BaseAgent',
-    agent_args=dict(
-        select_func='policy_select'
-    ),
     optim='Adam',
     optim_args=dict(
         lr=0.0001,
