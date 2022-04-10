@@ -12,15 +12,13 @@ class Qlinear(torch.nn.Module):
         input_sz,
         action_sz
     ):
-        super(Qlinear, self).__init__()
+        super().__init__()
         self.q_linear = nn.Linear(input_sz, action_sz)
         self.q_linear.weight.data = norm_col_init(
-            self.q_linear.weight.data, 1.0
-        )
+            self.q_linear.weight.data, 1.0)
         self.q_linear.bias.data.fill_(0)
 
     def forward(self, x, rct=None):
-
         return dict(q_value=self.q_linear(F.relu(x)))
 
 
@@ -35,17 +33,14 @@ class AClinear(torch.nn.Module):
         self.actor_linear = nn.Linear(input_sz, action_sz)
         self.critic_linear = nn.Linear(input_sz, 1)
         self.actor_linear.weight.data = norm_col_init(
-            self.actor_linear.weight.data, 0.01
-        )
+            self.actor_linear.weight.data, 0.01)
         self.actor_linear.bias.data.fill_(0)
         self.critic_linear.weight.data = norm_col_init(
-            self.critic_linear.weight.data, 1.0
-        )
+            self.critic_linear.weight.data, 1.0)
         self.critic_linear.bias.data.fill_(0)
 
     def forward(self, x, rct=None):
         x = F.relu(x)
         return dict(
             policy=self.actor_linear(x),
-            value=self.critic_linear(x)
-        )
+            value=self.critic_linear(x))
