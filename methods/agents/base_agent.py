@@ -1,11 +1,10 @@
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 import torch
 import torch.nn as nn
 import numpy as np
 from .abs_agent import AbsAgent
 from gym.vector import VectorEnv
 from methods.utils.convert import dict2tensor, dict2numpy
-import methods.agents.select_funcs as sfcs
 
 
 class BaseAgent(AbsAgent):
@@ -16,9 +15,7 @@ class BaseAgent(AbsAgent):
         self,
         model: nn.Module,
         Venv: VectorEnv,  # 传环境进来只是为了获取一些参数
-        gpu_ids: Optional[List[int]],
-        select_func: str,
-        select_params: List[Any] = [],  # TODO 暂时只有epsilon需要传,可以是generator
+        gpu_ids: Optional[List[int]]
     ):
         self.gpu_ids = gpu_ids
         self.model = model
@@ -38,16 +35,13 @@ class BaseAgent(AbsAgent):
             self.rct = {
                 k: torch.zeros((self.proc_num, *v),
                                dtype=self.rct_dtypes[k], device=self.dev)
-                for k, v in self.rct_shapes.items()
-            }
-        self.select = getattr(sfcs, select_func)
-        self.select_params = select_params
+                for k, v in self.rct_shapes.items()}
 
     def action(
         self,
         obs: Dict[str, np.ndarray],
         last_done: np.ndarray
-    ) -> Tuple[List[int], Dict[str, np.ndarray]]:
+    ) -> Tuple[np.ndarray, Dict[str, np.ndarray]]:
         # reset rct
         self._reset_rct(last_done == 1)
         last_rct = self.get_rct()
@@ -56,14 +50,13 @@ class BaseAgent(AbsAgent):
             # TODO copy?
             out = self.model(
                 dict2tensor(obs.copy(), self.dev),
-                self.rct
-            )
+                self.rct)
         # if has recurrent states, update
         if self.rct_shapes != {}:
             del self.rct
             self.rct = out['rct']
-        # action selection
-        return self.select(out, *self.select_params), last_rct
+        action = out['action'].cpu().numpy()
+        return action, last_rct
 
     def _reset_rct(self, idx: np.ndarray):
         # reset recurrent data specified by idx to 0

@@ -1,10 +1,10 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from ..perception.simple_cnn import SplitNetCNN
 from ..plan.rl_linear import AClinear, Qlinear
-from methods.utils.net_utils import weights_init
 import numpy as np
+from ..select_funcs import epsilon_select, policy_select
+from functools import partial
 
 
 class SimpleMP(torch.nn.Module):
@@ -19,10 +19,11 @@ class SimpleMP(torch.nn.Module):
         infer_sz=512,
         dropout_rate=0,
         mode=0,  # 0 for linear 1 for lstm
-        q_flag=0
+        q_flag=0,
+        eps=0.1
     ):
         super(SimpleMP, self).__init__()
-
+        self.eps = eps
         self.vobs_embed = nn.Linear(vobs_sz, vobs_embed_sz)
         self.tobs_embed = nn.Linear(tobs_sz, tobs_embed_sz)
         # mem&infer
@@ -42,8 +43,10 @@ class SimpleMP(torch.nn.Module):
         # plan
         if q_flag:
             self.plan_out = Qlinear(infer_sz, action_sz)
+            self.select_func = partial(epsilon_select, self.eps)
         else:
             self.plan_out = AClinear(infer_sz, action_sz)
+            self.select_func = policy_select
         # self.apply(weights_init)
 
     def forward(self, vobs, tobs, hx, cx):
@@ -54,76 +57,15 @@ class SimpleMP(torch.nn.Module):
         x = self.drop(x)
         if self.mode == 0:
             x = self.infer(x)
-            return self.plan_out(x)
+            out = self.plan_out(x)
+            out['action'] = self.select_func(out)
+            return out
         h, c = self.infer(x, (hx, cx))
         out = self.plan_out(h)
         n_rct = dict(hx=h, cx=c)
         out['rct'] = n_rct
+        out['action'] = self.select_func(out)
         return out
-
-
-class SplitLinear(torch.nn.Module):
-    """简单模型1, splitnet + linear, 延时堆叠"""
-    def __init__(
-        self,
-        action_sz,
-        vobs_sz=(128, 128, 3),
-        tobs_sz=300,
-        obs_stack=1
-    ):
-        super(SplitLinear, self).__init__()
-        self.obs_stack = obs_stack
-        self.vobs_sz = vobs_sz
-        # perception
-        CNN = SplitNetCNN()
-        self.conv_out_sz = CNN.out_fc_sz(vobs_sz[0], vobs_sz[1])
-        self.vobs_conv = nn.Sequential(
-            CNN,
-            nn.Flatten(),
-        )
-        self.MP = SimpleMP(action_sz, self.conv_out_sz*obs_stack, tobs_sz)
-
-    def forward(self, model_input):
-
-        vobs = model_input['image|4'] \
-            .view(-1, *self.vobs_sz).permute(0, 3, 1, 2)
-        vobs = vobs / 255.
-
-        vobs_embed = self.vobs_conv(vobs)
-        vobs_embed = torch.flatten(vobs_embed).view(
-            -1, self.obs_stack*self.conv_out_sz
-        )
-        return self.MP(vobs_embed, model_input['glove'])
-
-
-class SplitLstm(torch.nn.Module):
-    """简单模型2,是简单模型1带LSTM的版本"""
-    def __init__(
-        self,
-        action_sz,
-        vobs_sz=(128, 128, 3),
-        tobs_sz=300,
-    ):
-        super(SplitLstm, self).__init__()
-        # perception
-        self.vobs_sz = vobs_sz
-        CNN = SplitNetCNN()
-        self.conv_out_sz = CNN.out_fc_sz(vobs_sz[0], vobs_sz[1])
-        self.vobs_conv = nn.Sequential(
-            CNN,
-            nn.Flatten(),
-        )
-        self.apply(weights_init)
-        self.MP = SimpleMP(action_sz, self.conv_out_sz, tobs_sz, mode=1)
-        self.rct_shapes = self.net.rct_shapes
-        self.rct_dtypes = self.net.rct_dtypes
-
-    def forward(self, model_input):
-
-        vobs = model_input['image'].permute(0, 3, 1, 2) / 255.
-        vobs_embed = self.vobs_conv(vobs)
-
-        return self.MP(vobs_embed, model_input['glove'], model_input['hidden'])
 
 
 class FcLstmModel(torch.nn.Module):
@@ -149,8 +91,7 @@ class FcLstmModel(torch.nn.Module):
             obs['fc'],
             obs['glove'],
             rct['hx'],
-            rct['cx']
-        )
+            rct['cx'])
 
 
 class FcLinearModel(torch.nn.Module):
@@ -174,3 +115,51 @@ class FcLinearModel(torch.nn.Module):
         vobs_embed = torch.flatten(obs['fc']) \
             .view(-1, self.vobs_sz)
         return self.net(vobs_embed, obs['glove'], None, None)
+
+
+class FcActLstmModel(torch.nn.Module):
+    """观察都是预处理好的特征向量的lstm模型,上一时刻的动作也作为其输入"""
+    def __init__(
+        self,
+        obs_spc,
+        act_spc,
+        act_embed_sz=10,
+        dropout_rate=0,
+        q_flag=0
+    ):
+        super().__init__()
+        self.act_embed = nn.Linear(1, act_embed_sz)
+        self.vobs_embed = nn.Linear(
+            np.prod(obs_spc['fc'].shape), 512)
+        self.tobs_embed = nn.Linear(
+            np.prod(obs_spc['glove'].shape), 512)
+        # mem&infer
+        self.drop = nn.Dropout(p=dropout_rate)
+        self.mode = q_flag
+        i_size = 512
+        self.infer = nn.LSTMCell(1024+act_embed_sz, i_size)
+        self.rct_shapes = {
+            'hx': (i_size, ), 'cx': (i_size, ), 'action': (1,)}
+        dtype = next(self.infer.parameters()).dtype
+        self.rct_dtypes = {
+            'hx': dtype, 'cx': dtype, 'action': torch.int64}
+        # plan
+        if q_flag:
+            self.plan_out = Qlinear(i_size, act_spc.n)
+            self.select_func = partial(epsilon_select, self.eps)
+        else:
+            self.plan_out = AClinear(i_size, act_spc.n)
+            self.select_func = policy_select
+
+    def forward(self, obs, rct):
+        act = F.relu(self.act_embed(rct['action'].float()), True)
+        vobs_embed = F.relu(self.vobs_embed(obs['fc']), True)
+        tobs_embed = F.relu(self.tobs_embed(obs['glove']), True)
+        x = torch.cat((vobs_embed, tobs_embed, act), dim=1)
+        x = self.drop(x)
+        h, c = self.infer(x, (rct['hx'], rct['cx']))
+        out = self.plan_out(h)
+        out['action'] = self.select_func(out).detach()
+        n_rct = dict(hx=h, cx=c, action=out['action'].unsqueeze(1))
+        out['rct'] = n_rct
+        return out

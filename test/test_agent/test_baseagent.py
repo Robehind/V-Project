@@ -2,7 +2,6 @@ from methods.agents.base_agent import BaseAgent
 import torch.nn as nn
 import torch
 import numpy as np
-import pytest
 
 
 class TESTmodel(nn.Module):
@@ -32,16 +31,10 @@ class TESTenv:
         self.num_envs = 4
 
 
-@pytest.mark.parametrize(["select_func", "select_params"],
-                         [
-                             ['policy_select', []],
-                             ['epsilon_select', [0.00001]],
-                             ['continous', []]
-                         ])
-def test_base_agent(select_func, select_params):
+def test_base_agent():
     env = TESTenv()
     model = TESTmodel()
-    agt = BaseAgent(model, env, None, select_func, select_params)
+    agt = BaseAgent(model, env, None)
     for i in range(5):
 
         done = np.array([0, 0, 0, 0])
