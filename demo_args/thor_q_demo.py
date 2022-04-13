@@ -4,13 +4,9 @@ args.update(
     # general params
     seed=7519,  # 随机数生成种子
     gpu_ids=[0],  # 指定要使用的显卡，为-1时使用cpu。gpu_ids = [0,1,2,3]
-    load_model_dir='',  # 要读取的模型参数的完整路径，包括文件名
-    load_optim_dir='',  # 要读取的优化其参数的完整路径，包括文件名
     exps_dir='../demoEXPS',  # 保存所有实验文件夹的路径
-    exp_name='thor-q-demo',  # 将用于生成本次实验的实验文件夹的文件名，因此尽量不要包含特殊符号
-    exp_dir='',  # 单次实验的完整路径，会根据时间自动生成
+    exp_name='thor-q-demo',
     proc_num=8,  # 进程数
-    extra_info=True,
 
     # train proc params
     train_steps=200000,  # 指定训练多少frames
@@ -57,10 +53,6 @@ args.update(
     model='FcLstmModel',
     model_args={'q_flag': 1},
     agent='BaseAgent',
-    agent_args=dict(
-        select_func='epsilon_select',
-        select_params=[0.085]
-    ),
     optim='Adam',
     optim_args=dict(
         lr=0.0001,
