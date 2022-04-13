@@ -21,11 +21,13 @@ max_train_steps = 100000
 PRINT_INTERVAL = 2000
 reward_scale = 100.0
 speedrun = True
+finish_gate = 200
+vis_rounds = 3
 
 
 def visualize(agt):
     v_env = gym.make('CartPole-v1')
-    for _ in range(5):
+    for _ in range(vis_rounds):
         s = v_env.reset()
         d = False
         rr = 0
@@ -54,7 +56,7 @@ if __name__ == '__main__':
                          vf_loss='smooth_l1_loss',
                          grad_norm_max=float("inf"),
                          batch_loss_mean=True)
-    agt = BaseAgent(model, envs, None, select_func='policy_select')
+    agt = BaseAgent(model, envs, None)
     spler = BaseSampler(envs, agt, batch_size=exp_length*proc_num,
                         exp_length=exp_length, buffer_limit=proc_num)
 
@@ -76,7 +78,7 @@ if __name__ == '__main__':
             data = spler.pop_records()
             for _ in range(int(data['epis'])):
                 rs.append(data['return'])
-            if sum(rs) >= 400:
+            if sum(rs) >= finish_gate:
                 break
         pbar.update(batch_sz)
         if not speedrun and step_idx % PRINT_INTERVAL == 0:
