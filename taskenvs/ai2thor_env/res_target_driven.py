@@ -41,8 +41,12 @@ class ReadFileTDenv(BTDTHOR):
                                   (300, ), dtype=np.float32)}
         for k, v in self.main_loader.items():
             sp = v[list(v.keys())[0]][:]
-            spc_dict[k] = Box(-float("inf"), float("inf"),
-                              sp.shape, dtype=sp.dtype)
+            if sp.dtype == np.uint8:
+                spc_dict[k] = Box(0, 255,
+                                  sp.shape, dtype=sp.dtype)
+            else:
+                spc_dict[k] = Box(-float("inf"), float("inf"),
+                                  sp.shape, dtype=sp.dtype)
         self.observation_space = DictSpc(spc_dict)
 
     def init_obs(self, scene):

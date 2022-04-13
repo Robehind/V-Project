@@ -65,4 +65,13 @@ register(
         res_fn='resnet50fc_nn.hdf5',
         info_scene='FloorPlan25')
 )
+register(
+    id='FrameTdThor-v1',
+    entry_point='taskenvs.ai2thor_env:ReadFileTDenv',
+    order_enforce=False,
+    kwargs=dict(
+        obs_dict={'fc': 'resnet50fc_nn.hdf5', 'frame': 'frame.hdf5'},
+        target_embedding='glove',
+        info_scene='FloorPlan25')
+)
 __all__ = ['TaskEnv', 'Tasker', 'ThorAveSceneTasker']
