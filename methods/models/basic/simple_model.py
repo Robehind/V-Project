@@ -75,14 +75,15 @@ class FcLstmModel(torch.nn.Module):
         obs_spc,
         act_spc,
         dropout_rate=0,
-        q_flag=0
+        q_flag=0,
+        eps=0.08
     ):
         super(FcLstmModel, self).__init__()
         self.net = SimpleMP(act_spc.n,
                             np.prod(obs_spc['fc'].shape),
                             np.prod(obs_spc['glove'].shape),
                             dropout_rate=dropout_rate,
-                            mode=1, q_flag=q_flag)
+                            mode=1, q_flag=q_flag, eps=eps)
         self.rct_shapes = self.net.rct_shapes
         self.rct_dtypes = self.net.rct_dtypes
 
@@ -123,7 +124,7 @@ class FcActLstmModel(torch.nn.Module):
         self,
         obs_spc,
         act_spc,
-        act_embed_sz=10,
+        act_embed_sz=64,
         dropout_rate=0,
         q_flag=0
     ):
