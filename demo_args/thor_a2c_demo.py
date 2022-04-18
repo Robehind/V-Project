@@ -25,7 +25,6 @@ args.update(
 
     # eval proc params
     eval_epi=1000,  # 指定测试时测试多少个episode
-    eval_extra_info=True,
     eval_task={
         "scenes": {'kitchen': '25'},
         "targets": {'kitchen': ["Microwave", 'Sink']},
