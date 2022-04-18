@@ -5,7 +5,7 @@ args.update(
     seed=1114,  # 随机数生成种子
     gpu_ids=[0],  # 指定要使用的显卡，为-1时使用cpu。gpu_ids = [0,1,2,3]
     exps_dir='../grad_exps/base_exps',  # 保存所有实验文件夹的路径
-    exp_name='a2c-base-avescene',  # 将用于生成本次实验的实验文件夹的文件名，因此尽量不要包含特殊符号
+    exp_name='a2c-base-dropout',  # 将用于生成本次实验的实验文件夹的文件名，因此尽量不要包含特殊符号
     proc_num=8,  # 进程数
 
     # train proc params
@@ -18,12 +18,10 @@ args.update(
         "targets": {
             'kitchen': [
                 "Toaster", "Microwave", "Fridge",
-                "CoffeeMaker", "GarbageCan", "Box", "Bowl",
-                ],
+                "CoffeeMaker", "GarbageCan", "Box", "Bowl"],
             'living_room': [
                 "Pillow", "Laptop", "Television",
-                "GarbageCan", "Box", "Bowl",
-                ],
+                "GarbageCan", "Box", "Bowl"],
             'bedroom': ["HousePlant", "Lamp", "Book", "AlarmClock"],
             'bathroom': ["Sink", "ToiletPaper", "SoapBottle", "LightSwitch"],
         },
@@ -37,15 +35,12 @@ args.update(
         "targets": {
             'kitchen': [
                 "Toaster", "Microwave", "Fridge",
-                "CoffeeMaker", "GarbageCan", "Box", "Bowl",
-                ],
+                "CoffeeMaker", "GarbageCan", "Box", "Bowl"],
             'living_room': [
                 "Pillow", "Laptop", "Television",
-                "GarbageCan", "Box", "Bowl",
-                ],
+                "GarbageCan", "Box", "Bowl"],
             'bedroom': ["HousePlant", "Lamp", "Book", "AlarmClock"],
-            'bathroom': ["Sink", "ToiletPaper", "SoapBottle", "LightSwitch"]},
-    },
+            'bathroom': ["Sink", "ToiletPaper", "SoapBottle", "LightSwitch"]}},
     evalor='basic_eval',
 
     # env params
@@ -72,7 +67,8 @@ args.update(
         vf_nsteps=float("inf"),
         vf_param=0.5,
         ent_param=0.01,),
-    model='FcLstmModel',
+    model='BaseLstmModel',
+    model_args=dict(dropout_rate=0.25),
     agent='BaseAgent',
     optim='Adam',
     optim_args=dict(lr=0.0001,),

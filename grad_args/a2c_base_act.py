@@ -75,7 +75,7 @@ args.update(
         vf_param=0.5,
         ent_param=0.01,
     ),
-    model='FcActLstmModel',
+    model='BaseActLstmModel',
     model_args={'act_embed_sz': 128},
     agent='BaseAgent',
     optim='Adam',
