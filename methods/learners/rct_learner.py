@@ -59,6 +59,7 @@ class RCTLearner(AbsLearner):
         # detach part of the batch to stop gradient between epis
         # TODO more elegant detach method?
         for k, v in rct.items():
-            nv = torch.zeros_like(v)
+            nv = getattr(self.model, k).repeat(v.shape[0], 1)
+            # nv = torch.zeros_like(v)
             nv[idxes] = v[idxes]
             rct[k] = nv
