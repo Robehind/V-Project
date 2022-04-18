@@ -5,6 +5,7 @@ from ..plan.rl_linear import AClinear, Qlinear
 import numpy as np
 from ..select_funcs import epsilon_select, policy_select
 from functools import partial
+from torch.nn.parameter import Parameter
 
 
 class SimpleMP(torch.nn.Module):
@@ -40,6 +41,8 @@ class SimpleMP(torch.nn.Module):
             self.rct_shapes = {'hx': (infer_sz, ), 'cx': (infer_sz, )}
             dtype = next(self.infer.parameters()).dtype
             self.rct_dtypes = {'hx': dtype, 'cx': dtype}
+            self.hx = Parameter(torch.randn((1, infer_sz), dtype=dtype), True)
+            self.cx = Parameter(torch.randn((1, infer_sz), dtype=dtype), True)
         # plan
         if q_flag:
             self.plan_out = Qlinear(infer_sz, action_sz)
@@ -84,6 +87,8 @@ class FcLstmModel(torch.nn.Module):
                             np.prod(obs_spc['glove'].shape),
                             dropout_rate=dropout_rate,
                             mode=1, q_flag=q_flag, eps=eps)
+        self.hx = self.net.hx
+        self.cx = self.net.cx
         self.rct_shapes = self.net.rct_shapes
         self.rct_dtypes = self.net.rct_dtypes
 

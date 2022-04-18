@@ -59,11 +59,9 @@ class BaseAgent(AbsAgent):
         return action, last_rct
 
     def _reset_rct(self, idx: np.ndarray):
-        # reset recurrent data specified by idx to 0
-        # TODO learnable init state?
         assert not isinstance(idx, bool)
-        for v in self.rct.values():
-            v[idx] = 0
+        for k in self.rct:
+            self.rct[k][idx] = getattr(self.model, k)
 
     def get_rct(self) -> Dict[str, np.ndarray]:
         return dict2numpy(self.rct)
