@@ -5,6 +5,7 @@ from methods.utils.net_utils import weights_init, norm_col_init
 from gym.spaces import Dict as Dictspc
 from gym.spaces import Discrete
 import numpy as np
+from .tcn import TemporalConvNet
 
 
 class SavnBase(torch.nn.Module):
@@ -33,7 +34,6 @@ class SavnBase(torch.nn.Module):
 
         lstm_input_sz = 7 * 7 * 64
 
-        self.hidden_state_sz = hidden_state_sz
         self.hidden_sz = hidden_state_sz
         self.lstm = nn.LSTMCell(lstm_input_sz, hidden_state_sz)
         self.rct_shapes = {'hx': (hidden_state_sz, ),
@@ -104,3 +104,15 @@ class SavnBase(torch.nn.Module):
                 action_probs=F.softmax(actor_out, dim=1)  # .detach()
             )
         )
+
+
+class SAVNtcn(nn.Module):
+    def __init__(self, meta_length):
+        super().__init__()
+        self.ll_tc = TemporalConvNet(
+            meta_length, [10, 1], kernel_size=2, dropout=0)
+
+    def forward(self, int_input):
+        H_input = int_input.unsqueeze(0)
+        x = self.ll_tc(H_input).squeeze(0)
+        return x.pow(2).sum(1).pow(0.5)
