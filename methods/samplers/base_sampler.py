@@ -61,17 +61,50 @@ class BaseSampler:
     def reset(self):
         self.buffer.clear()
         self.mean_calc.pop()
-        # log rewards and steps for each env
-        self.env_reward = np.zeros((self.env_num))
+        # log return and steps for each env
+        self.env_return = np.zeros((self.env_num))
         self.env_steps = np.zeros((self.env_num))
 
         self.last_obs = self.Venv.reset()
+        self.vis_cnt = []
+        for info in self.Venv.call("info"):
+            self.vis_cnt.append(info['visible'])
         self.last_done = np.ones((self.env_num))
 
     def sample(self) -> Dict:
         for _ in range(self.rounds):
             self.run(self.exp_length+1)
         return self.buffer.sample()
+
+    def record(self, r, done, info):
+        # scalar records
+        dones = done.sum()
+        self.mean_calc.add(dict(epis=dones), count=False)
+        self.env_return += r
+        self.env_steps += 1
+        for i in range(self.env_num):
+            self.vis_cnt[i] += info[i]['visible']
+            if done[i]:
+                self.vis_cnt[i] -= info[i]['visible']
+                data = {
+                    'ep_length': self.env_steps[i],
+                    'SR': int(info[i]['success']),
+                    'return': self.env_return[i],
+                    'vis_cnt': self.vis_cnt[i]}
+                # 只要环境反馈了最短路信息，那么就算一下SPL
+                if 'min_acts' in info[i]:
+                    spl = 0
+                    if info[i]['success']:
+                        assert info[i]['min_acts'] <= self.env_steps[i],\
+                            f"{info[i]['min_acts']}>{self.env_steps[i]}"
+                        # TODO spl计算问题。0？done？
+                        spl = info[i]['min_acts']/self.env_steps[i]
+                    data['SPL'] = spl
+                self.mean_calc.add(data)
+                # if 'success' in info[i]:
+                #     self.mean_calc.add(dict(SR=int(info[i]['success'])))
+                self.env_steps[i], self.env_return[i] = 0, 0
+                self.vis_cnt[i] = self.Venv.call("info")[i]['visible']
 
     def run(self, length):
         # sample exp_length + 1 exps for learner's need
@@ -81,23 +114,11 @@ class BaseSampler:
             # record obs_t, rct_t, a_t, r_t+1, m_t+1
             self.buffer.write_in(
                 self.last_obs, last_rct,
-                a_idx, r, 1 - done
-            )
+                a_idx, r, 1 - done)
             self.last_obs = obs_new
             self.last_done = done
             # scalar records
-            dones = done.sum()
-            self.mean_calc.add(dict(epis=dones), count=False)
-            self.env_reward += r
-            self.env_steps += 1
-            for i in range(self.env_num):
-                if done[i]:
-                    self.mean_calc.add({'return': self.env_reward[i]})
-                    self.mean_calc.add(dict(ep_length=self.env_steps[i]))
-                    if 'success' in info[i]:
-                        self.mean_calc.add(dict(SR=int(info[i]['success'])))
-                    self.env_steps[i] = 0
-                    self.env_reward[i] = 0
+            self.record(r, done, info)
 
     def report(self) -> Dict:
         return self.mean_calc.report()
