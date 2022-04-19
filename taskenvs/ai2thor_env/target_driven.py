@@ -127,7 +127,8 @@ class BaseTargetDrivenTHOR(TaskEnv):
             scene=self.scene,
             target=self.target,
             agent_done=False,
-            start_at=str(self.start_state))
+            start_at=str(self.start_state),
+            visible=self.target_visible())
         # info 中包含最短路信息
         if self.get_shortest:
             self.info.update(min_acts=self.min_actions())
@@ -175,6 +176,7 @@ class BaseTargetDrivenTHOR(TaskEnv):
         event, self.done = self.event_and_done()
         reward = self.reward_dict[event]
         self.info['event'] = event
+        self.info['visible'] = self.target_visible()
         return self.get_observation(), reward, self.done, self.info
 
     def add_extra_info(self, flag: bool):
