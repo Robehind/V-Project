@@ -19,6 +19,9 @@ def validate(
     test_scalars = MeanCalcer()
 
     obs = envs.reset()
+    vis_cnt = []
+    for info in envs.call("info"):
+        vis_cnt.append(info['visible'])
     done = np.ones((proc_num))
 
     pbar = tqdm(total=total_epi, desc='Validating', leave=False, unit='epi')
@@ -30,17 +33,19 @@ def validate(
         env_steps += 1
         for i in range(proc_num):
             t_info = info[i]
+            vis_cnt[i] += int(t_info['visible'])
             if t_info is None:  # info is None means this proc does nothing
                 continue
             if done[i] and epis < total_epi:
+                vis_cnt[i] -= int(t_info['visible'])
                 epis += 1
                 pbar.update(1)
                 data = {
                     'ep_length': env_steps[i],
                     'SR': t_info['success'],
                     'return': env_rewards[i],
-                    'epis': 1
-                }
+                    'epis': 1,
+                    'vis_cnt': vis_cnt[i]}
                 # 只要环境反馈了最短路信息，那么就算一下SPL
                 if 'min_acts' in t_info:
                     if t_info['success']:
@@ -54,6 +59,8 @@ def validate(
                 test_scalars.add(data)
                 env_steps[i] = 0
                 env_rewards[i] = 0
+                # 需要获得reset后的info
+                vis_cnt[i] = int(envs.call("info")[i]['visible'])
 
     pbar.close()
     out = test_scalars.pop(['epis'])

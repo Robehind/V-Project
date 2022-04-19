@@ -24,6 +24,9 @@ def basic_eval(
     trajs = []
 
     obs = envs.reset()
+    vis_cnt = []
+    for info in envs.call("info"):
+        vis_cnt.append(info['visible'])
     done = np.ones((proc_num))
 
     pbar = tqdm(total=total_epi, desc=bar_desc, leave=bar_leave, unit='epi')
@@ -37,9 +40,11 @@ def basic_eval(
             acts_rec[i].append(int(action[i]))
             poses_rec[i].append(t_info['pose'])
             events_rec[i].append(t_info['event'])
+            vis_cnt[i] += int(t_info['visible'])
             if t_info is None:  # info is None means this proc does nothing
                 continue
             if done[i] and epis < total_epi:
+                vis_cnt[i] -= int(t_info['visible'])
                 epis += 1
                 pbar.update(1)
                 poses_rec[i] = [t_info['start_at']] + poses_rec[i]
@@ -53,13 +58,14 @@ def basic_eval(
                     'poses': poses_rec[i].copy(),  # S_0 to S_T, total of T + 1
                     'events': events_rec[i].copy(),  # E_1 to E_T, total of T
                     'agent_done': t_info['agent_done'],
-                    'ep_length': len(acts_rec[i])
-                }
+                    'ep_length': len(acts_rec[i]),
+                    'vis_cnt': vis_cnt[i]}
                 if 'min_acts' in t_info:
                     traj['min_acts'] = t_info['min_acts']
                 trajs.append(traj)
                 acts_rec[i], poses_rec[i], events_rec[i] = [], [], []
                 env_rewards[i] = 0
+                vis_cnt[i] = int(envs.call("info")[i]['visible'])
 
     pbar.close()
     return trajs
