@@ -3,7 +3,6 @@ import random
 import torch
 import gym
 from gym.spaces import Dict as dict_spc
-from tensorboardX import SummaryWriter
 import trainers
 import evalors
 import models
@@ -85,12 +84,10 @@ def main():
     learner = learner_cls(model, optim, **args.learner_args)
     # make exp directory
     make_exp_dir(args)
-    # init tensorboardx
-    tx_writer = SummaryWriter(log_dir=os.path.join(args.exp_dir, 'tblog'))
     # training
     print('Set detect anomaly:', args.debug)
     with torch.autograd.set_detect_anomaly(args.debug):
-        train_func(args, sampler, learner, tasker, tx_writer, val_func)
+        train_func(args, sampler, learner, tasker, val_func)
 
 
 if __name__ == "__main__":
