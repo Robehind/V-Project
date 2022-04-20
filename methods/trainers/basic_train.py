@@ -23,7 +23,7 @@ def basic_train(
     save_gate_steps = save_freq
     obj_traker = MeanCalcer()
 
-    wandb.init(project='test', entity='robehind',
+    wandb.init(project='grad', entity='robehind',
                config=args, dir=args.exp_dir)
     pbar = tqdm(total=args.train_steps, unit='step')
 
