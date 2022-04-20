@@ -78,9 +78,7 @@ args.update(
     model='Zhu2017',
     agent='BaseAgent',
     optim='Adam',
-    optim_args=dict(
-        lr=0.0001,
-    ),
+    optim_args=dict(lr=0.0001),
 
     # exp params
     sampler='BaseSampler',
@@ -89,7 +87,4 @@ args.update(
         exp_length=40,
         buffer_limit=8
     ),
-
-    # Tasker
-    tasker='ThorAveSceneTasker'
 )
