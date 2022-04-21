@@ -1,7 +1,7 @@
 from matplotlib import pyplot as plt
 from methods.utils.record_utils import LabelMeanCalcer, MeanCalcer
 from epidata import EpisodeData
-from metrics import metrics1, metrics2
+from metrics import metrics1, metrics2, scene_scales
 from matplotlib.widgets import TextBox, RadioButtons, Button
 import argparse
 import seaborn
@@ -252,7 +252,7 @@ class Plotter:
         if x_axis == 'scene':
             X = sorted(
                 data.keys(),
-                key=lambda x: int(x.split("_")[0].split('n')[-1]))
+                key=lambda x: scene_scales[x])# int(x.split("_")[0].split('n')[-1]))
             rot = 30
         elif x_axis == 'model':
             X = sorted(data.keys(), key=lambda x: int(x.split('_')[-1]))
@@ -262,9 +262,6 @@ class Plotter:
             rot = 30
         Y = [data[x][y_axis] for x in X]
         line, = self.ax.plot(range(len(X)), Y, marker='o', markersize=3)
-        # TODO
-        if x_axis == 'scene':
-            X = [x.split("_")[0] for x in X]
         self.ax.set_xticks(range(len(X)), X, rotation=rot)
         return line
 
