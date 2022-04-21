@@ -1,7 +1,7 @@
 from gym.envs.registration import register
 from .task_env import TaskEnv
 from .tasker import Tasker
-from .ai2thor_env.thor_taskers import ThorAveSceneTasker
+from .ai2thor_env.thor_taskers import *
 
 
 register(
