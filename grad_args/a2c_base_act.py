@@ -76,12 +76,11 @@ args.update(
         ent_param=0.01,
     ),
     model='BaseActLstmModel',
-    model_args={'act_embed_sz': 128},
+    model_args={
+        'act_embed_sz': 64, 'dropout_rate': 0, 'learnable_x': False},
     agent='BaseAgent',
     optim='Adam',
-    optim_args=dict(
-        lr=0.0001,
-    ),
+    optim_args=dict(lr=0.0001,),
 
     # exp params
     sampler='BaseSampler',

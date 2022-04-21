@@ -4,8 +4,8 @@ args.update(
     # general params
     seed=1114,  # 随机数生成种子
     gpu_ids=[0],  # 指定要使用的显卡，为-1时使用cpu。gpu_ids = [0,1,2,3]
-    exps_dir='../grad_exps/base_exps',  # 保存所有实验文件夹的路径
-    exp_name='a2c-base',  # 将用于生成本次实验的实验文件夹的文件名，因此尽量不要包含特殊符号
+    exps_dir='../grad_exps',  # 保存所有实验文件夹的路径
+    exp_name='a2c-scalescene',  # 将用于生成本次实验的实验文件夹的文件名，因此尽量不要包含特殊符号
     proc_num=8,  # 进程数
 
     # train proc params
@@ -78,4 +78,10 @@ args.update(
         batch_size=320,
         exp_length=40,
         buffer_limit=8),
+    tasker='SceneScaleTasker',
+    tasker_args=dict(
+        window_sz=20,
+        inc_num=1,
+        sr_gate=0.9,
+        epis_gate=1000)
 )
