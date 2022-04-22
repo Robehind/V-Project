@@ -37,8 +37,8 @@ class ReadFileTDenv(BTDTHOR):
             k: h5py.File(
                 os.path.join(spath, obs_dict[k]), "r") for k in obs_dict}
         spc_dict = {
-            self.t_embedding: Box(-float("inf"), float("inf"),
-                                  (300, ), dtype=np.float32)}
+            'wd': Box(-float("inf"), float("inf"),
+                      (300, ), dtype=np.float32)}
         for k, v in self.main_loader.items():
             sp = v[list(v.keys())[0]][:]
             if sp.dtype == np.uint8:
@@ -66,7 +66,7 @@ class ReadFileTDenv(BTDTHOR):
     def get_target_obs(self):
         ld = self.tgt_loader[self.t_embedding]
         try:
-            return {self.t_embedding: ld[self.target][:]}
+            return {'wd': ld[self.target][:]}
         except KeyError:
             raise KeyError(
                 f"{self.target} not supported by {self.t_embedding}")
