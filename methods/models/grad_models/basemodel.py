@@ -21,7 +21,7 @@ class BaseLstmModel(torch.nn.Module):
     ):
         super().__init__()
         self.vobs_embed = nn.Linear(np.prod(obs_spc['fc'].shape), 512)
-        self.tobs_embed = nn.Linear(np.prod(obs_spc['glove'].shape), 512)
+        self.tobs_embed = nn.Linear(np.prod(obs_spc['wd'].shape), 512)
         # mem&infer
         self.drop = nn.Dropout(p=dropout_rate)
         self.mode = q_flag
@@ -42,7 +42,7 @@ class BaseLstmModel(torch.nn.Module):
 
     def forward(self, obs, rct):
         vobs_embed = F.relu(self.vobs_embed(obs['fc']), True)
-        tobs_embed = F.relu(self.tobs_embed(obs['glove']), True)
+        tobs_embed = F.relu(self.tobs_embed(obs['wd']), True)
         x = torch.cat((vobs_embed, tobs_embed), dim=1)
         x = self.drop(x)
         h, c = self.infer(x, (rct['hx'], rct['cx']))
@@ -65,7 +65,7 @@ class SiamLstmModel(torch.nn.Module):
         super().__init__()
         fcsz = np.prod(obs_spc['fc'].shape)
         self.siam = SiameseLinear(fcsz, 512)
-        self.tobs_embed = nn.Linear(np.prod(obs_spc['glove'].shape), fcsz)
+        self.tobs_embed = nn.Linear(np.prod(obs_spc['wd'].shape), fcsz)
         # mem&infer
         self.drop = nn.Dropout(p=dropout_rate)
         self.mode = q_flag
@@ -85,7 +85,7 @@ class SiamLstmModel(torch.nn.Module):
             self.select_func = policy_select
 
     def forward(self, obs, rct):
-        tobs_embed = F.relu(self.tobs_embed(obs['glove']), True)
+        tobs_embed = F.relu(self.tobs_embed(obs['wd']), True)
         x = F.relu(self.siam(obs['fc'], tobs_embed), True)
         x = self.drop(x)
         h, c = self.infer(x, (rct['hx'], rct['cx']))
@@ -109,7 +109,7 @@ class BaseActLstmModel(nn.Module):
         super().__init__()
         self.n_acts = act_spc.n
         self.vobs_embed = nn.Linear(np.prod(obs_spc['fc'].shape), 512)
-        self.tobs_embed = nn.Linear(np.prod(obs_spc['glove'].shape), 512)
+        self.tobs_embed = nn.Linear(np.prod(obs_spc['wd'].shape), 512)
         # mem&infer
         self.drop = nn.Dropout(p=dropout_rate)
         self.mode = q_flag
@@ -135,7 +135,7 @@ class BaseActLstmModel(nn.Module):
     def forward(self, obs, rct):
         act = F.relu(self.act_embed(rct['action'].float()), True)
         vobs_embed = F.relu(self.vobs_embed(obs['fc']), True)
-        tobs_embed = F.relu(self.tobs_embed(obs['glove']), True)
+        tobs_embed = F.relu(self.tobs_embed(obs['wd']), True)
         x = torch.cat((vobs_embed, tobs_embed, act), dim=1)
         x = self.drop(x)
         h, c = self.infer(x, (rct['hx'], rct['cx']))

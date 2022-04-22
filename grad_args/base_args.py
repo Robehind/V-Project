@@ -44,6 +44,7 @@ args.update(
         "targets": targets},
     # env params
     env_args={
+        'target_embedding': 'fasttext',
         'actions': [
             'MoveAhead', 'RotateLeft', 'RotateRight',
             'LookUp', 'LookDown', 'Done'],
