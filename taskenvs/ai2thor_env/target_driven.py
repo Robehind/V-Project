@@ -128,6 +128,7 @@ class BaseTargetDrivenTHOR(TaskEnv):
             target=self.target,
             agent_done=False,
             start_at=str(self.start_state),
+            pose=str(self.start_state),
             visible=self.target_visible())
         # info 中包含最短路信息
         if self.get_shortest:
