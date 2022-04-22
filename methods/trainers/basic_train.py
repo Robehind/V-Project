@@ -1,7 +1,7 @@
 from typing import Callable
 from tqdm import tqdm
 import wandb
-from utils.record_utils import MeanCalcer, add_eval_data_seq
+from utils.record_utils import MeanCalcer
 from learners.abs_learner import AbsLearner
 from samplers.base_sampler import BaseSampler
 from taskenvs import Tasker
@@ -22,8 +22,9 @@ def basic_train(
     print_gate_steps = print_freq
     save_gate_steps = save_freq
     obj_traker = MeanCalcer()
-
-    wandb.init(project='test', entity='robehind',
+    projn = args.exps_dir.split('/')[-1]
+    name = args.exp_dir.split('/')[-1]
+    wandb.init(project=projn, entity='robehind', name=name,
                config=args, dir=args.exp_dir)
     pbar = tqdm(total=args.train_steps, unit='step')
 
@@ -44,25 +45,26 @@ def basic_train(
             save_gate_steps += save_freq
             learner.checkpoint(args.exp_dir, steps)
             # validating
-            # if args.val_epi != 0:
-            #     # save train task
-            #     o_tasks = sampler.Venv.call('tasks')
-            #     # load validate task
-            #     sampler.Venv.set_attr('tasks', args.val_task)
-            #     sampler.Venv.call('add_extra_info', args.val_extra_info)
-            #     sampler.reset()
-            #     # TODO sampler.Venv.call('add_extra_info', args.calc_spl)
-            #     # validate process
-            #     val_data = val_func(
-            #         sampler.agent, sampler.Venv, args.val_epi)
-            #     # resume train task
-            #     sampler.Venv.set_attr('tasks', o_tasks)
-            #     sampler.Venv.call('add_extra_info', args.train_extra_info)
-            #     sampler.reset()
-            #     # TODO sampler.Venv.call('add_extra_info', False)
-            #     learner.model.train()
-            #     # log
-            #     add_eval_data_seq(val_writer, val_data, steps)
+            if args.val_epi != 0:
+                # save train task
+                o_tasks = sampler.Venv.call('tasks')
+                # load validate task
+                sampler.Venv.set_attr('tasks', args.val_task)
+                sampler.Venv.call('add_extra_info', args.val_extra_info)
+                sampler.reset()
+                # validate process
+                val_data = val_func(
+                    sampler.agent, sampler.Venv, args.val_epi)
+                # resume train task
+                sampler.Venv.set_attr('tasks', o_tasks)
+                sampler.Venv.call('add_extra_info', args.train_extra_info)
+                sampler.reset()
+                learner.model.train()
+                # log
+                out_data = {}
+                for k in val_data:
+                    out_data['val/'+k] = val_data[k]
+                wandb.log(out_data, step=steps)
 
         # logging
         obj_traker.add(obj_salars)
@@ -71,9 +73,13 @@ def basic_train(
             print_gate_steps += print_freq
             record = sampler.pop_records()
             total_epis += record.pop('epis')
-            wandb.log({'epis': total_epis}, step=steps, commit=False)
-            wandb.log(record, step=steps, commit=False)
-            wandb.log(obj_traker.pop(), step=steps)
+            t_data = {'epis': total_epis}
+            t_data.update(record)
+            t_data.update(obj_traker.pop())
+            out_data = {}
+            for k in t_data:
+                out_data['train/'+k] = t_data[k]
+            wandb.log(out_data, step=steps)
 
     sampler.close()
     pbar.close()
