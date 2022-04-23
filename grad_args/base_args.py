@@ -34,7 +34,7 @@ args.update(
             'bathroom': '8,12,14,21,28'},
         "targets": targets},
     # val proc params
-    val_epi=0,
+    val_epi=1000,
     val_task={
         "scenes": {
             'kitchen': '1,4,20,21,30',
