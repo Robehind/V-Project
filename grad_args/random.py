@@ -1,11 +1,12 @@
 from .base_args import args
 
 args.update(
-    exps_dir='../grad_exps',
-    exp_name='a2c-sp',
+    exps_dir='../grad_exps/baseline',
+    exp_name='random',
     proc_num=8,  # 进程数
     # env params
-    env_id='FsTdThor-v1',
+    env_id='FcTdThor-v1',
+    agent='RandomAgent',
     # algo params
     learner='A2CLearner',
     learner_args=dict(
@@ -14,7 +15,7 @@ args.update(
         vf_nsteps=float("inf"),
         vf_param=0.5,
         ent_param=0.01),
-    model='ScenePriors',
+    model='BaseLstmModel',
     model_args=dict(dropout_rate=0, learnable_x=False),
     optim_args=dict(lr=0.0001)
 )
