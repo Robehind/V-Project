@@ -11,7 +11,8 @@ class YangGCN(nn.Module):
         self,
         adj_path: str = "../vdata/gcn/adjmat.dat",
         obj_path: str = "../vdata/gcn/objects.txt",
-        wd_path: str = "../vdata/gcn/glove_map300d.hdf5",
+        wd_path: str = "../vdata/word_embedding/word_embedding.hdf5",
+        wd_type: str = "fasttext",
         wd_sz: int = 300,
         input_sz: int = 1000,
         output_sz: int = 512,
@@ -31,10 +32,11 @@ class YangGCN(nn.Module):
 
         # 构造词嵌入特征矩阵
         self.register_buffer('wd_clues', torch.zeros(self.obj_num, 300))
-        wd = h5py.File(wd_path, "r",)
+        wdf = h5py.File(wd_path, "r")
+        wd = wdf[wd_type]
         for i in range(self.obj_num):
             self.wd_clues[i, :] = torch.from_numpy(wd[objects[i]][:])
-        wd.close()
+        wdf.close()
 
         map2sz = gcn_in_sz // 2
         self.wd_linear = nn.Linear(wd_sz, map2sz)
