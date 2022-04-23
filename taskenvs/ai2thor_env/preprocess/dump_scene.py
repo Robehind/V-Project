@@ -56,6 +56,25 @@ def dump(scene, ctrler, path, obs_key, rotate_angle):
     # error log json
     error_json = defaultdict(list)
     error_flag = False
+    # visible data
+    if not args.obs_only:
+        objectIDs = [x['objectId'] for x in evt.metadata['objects']]
+        visible_data = {}
+        for obj in objectIDs:
+            poses = ctrler.step(
+                action="GetInteractablePoses",
+                objectId=obj,
+                horizons=horizons
+            ).metadata["actionReturn"]
+            if poses == []:
+                continue
+            str_poses = []
+            for p in poses:
+                p.pop('standing')
+                str_poses.append(str(AgentPoseState(**p)))
+            visible_data[obj] = list(set(str_poses))
+        with open(os.path.join(path, v_fn), "w") as fp:
+            json.dump(visible_data, fp)
     # trans data & obs data
     positions = ctrler.step(
         action="GetReachablePositions"
@@ -124,29 +143,6 @@ def dump(scene, ctrler, path, obs_key, rotate_angle):
             error_json[pstr].append("No way out")
             error_flag = True
     pbar.close()
-    # visible data
-    if not args.obs_only:
-        objectIDs = [x['objectId'] for x in evt.metadata['objects']]
-        visible_data = {}
-        check_pos = trans_data.keys()
-        for obj in objectIDs:
-            poses = ctrler.step(
-                action="GetInteractablePoses",
-                objectId=obj,
-                horizons=horizons
-            ).metadata["actionReturn"]
-            str_poses = set()
-            for p in poses:
-                p.pop('standing')
-                postr = str(AgentPoseState(**p))
-                if postr not in check_pos:
-                    continue
-                str_poses.add(postr)
-            if str_poses == set():
-                continue
-            visible_data[obj] = list(str_poses)
-        with open(os.path.join(path, v_fn), "w") as fp:
-            json.dump(visible_data, fp)
     if not args.obs_only:
         with open(os.path.join(path, t_fn), "w") as fp:
             json.dump(trans_data, fp)
