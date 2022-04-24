@@ -66,6 +66,15 @@ register(
         info_scene='FloorPlan25')
 )
 register(
+    id='FrameTdThor-v0',
+    entry_point='taskenvs.ai2thor_env:ReadFileTDenv',
+    order_enforce=False,
+    kwargs=dict(
+        obs_dict={'frame': 'frame.hdf5'},
+        target_embedding='glove',
+        info_scene='FloorPlan25')
+)
+register(
     id='FrameTdThor-v1',
     entry_point='taskenvs.ai2thor_env:ReadFileTDenv',
     order_enforce=False,
