@@ -44,6 +44,8 @@ args.update(
         "targets": targets},
     # env params
     env_args={
+        'ctl_data_dir': '/mnt/vdata/thordata',
+        'wd_path': '/mnt/vdata/word_embedding/word_embedding.hdf5',
         'target_embedding': 'fasttext',
         'actions': [
             'MoveAhead', 'RotateLeft', 'RotateRight',
