@@ -2,7 +2,7 @@ from methods.utils.default_args import args
 
 args.update(
     # general params
-    seed=8952,  # 随机数生成种子
+    seed=1114,  # 随机数生成种子
     gpu_ids=[0],  # 指定要使用的显卡，为-1时使用cpu。gpu_ids = [0,1,2,3]
     exps_dir='../demoEXPS',  # 保存所有实验文件夹的路径
     exp_name='thor-a2c-demo',  # 将用于生成本次实验的实验文件夹的文件名，因此尽量不要包含特殊符号
