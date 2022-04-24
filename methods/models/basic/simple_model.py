@@ -84,7 +84,7 @@ class FcLstmModel(torch.nn.Module):
         super(FcLstmModel, self).__init__()
         self.net = SimpleMP(act_spc.n,
                             np.prod(obs_spc['fc'].shape),
-                            np.prod(obs_spc['glove'].shape),
+                            np.prod(obs_spc['wd'].shape),
                             dropout_rate=dropout_rate,
                             mode=1, q_flag=q_flag, eps=eps)
         self.hx = self.net.hx
@@ -95,7 +95,7 @@ class FcLstmModel(torch.nn.Module):
     def forward(self, obs, rct):
         return self.net(
             obs['fc'],
-            obs['glove'],
+            obs['wd'],
             rct['hx'],
             rct['cx'])
 

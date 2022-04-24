@@ -10,7 +10,6 @@ import random
 
 class ReadFileTDenv(BTDTHOR):
     """TODO read file as observation"""
-    embedding_path = '../vdata/word_embedding/word_embedding.hdf5'
 
     def __init__(
         self,
@@ -21,13 +20,15 @@ class ReadFileTDenv(BTDTHOR):
         max_steps: int,
         reward_dict: Dict,
         info_scene: str,  # 用于预读数据的大小和格式以生成obs spc
-        ctl_data_dir: str = '../vdata/thordata',
+        ctl_data_dir: str,
+        wd_path: str,
         obs_data_dir: Optional[str] = None
     ) -> None:
         super().__init__(
             actions, rotate_angle, max_steps, reward_dict, ctl_data_dir)
+        self.wd_path = wd_path
         self.t_embedding = target_embedding
-        self.tgt_loader = h5py.File(self.embedding_path, "r",)
+        self.tgt_loader = h5py.File(self.wd_path, "r",)
         if obs_data_dir is None:
             self.obs_data_dir = ctl_data_dir
         self.obs_dict = obs_dict
@@ -82,7 +83,7 @@ class ZhuTDenv(BTDTHOR):
         max_steps: int,
         reward_dict: Dict,
         info_scene: str,  # 用于预读数据的大小和格式以生成obs spc
-        ctl_data_dir: str = '../vdata/thordata',
+        ctl_data_dir: str,
         obs_data_dir: Optional[str] = None
     ) -> None:
         super().__init__(

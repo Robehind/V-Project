@@ -18,7 +18,7 @@ class BaseTargetDrivenTHOR(TaskEnv):
         rotate_angle: int,
         max_steps: int,
         reward_dict: Dict[str, float],
-        ctl_data_dir: str = '../vdata/thordata'
+        ctl_data_dir: str
     ) -> None:
         super().__init__()
         camera_up_down = ('LookUp' in actions or 'LookDown' in actions)
