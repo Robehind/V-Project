@@ -2,10 +2,20 @@ from .base_args import args
 
 args.update(
     exps_dir='../grad_exps',
-    exp_name='a2c-baseline',
+    exp_name='a2c-baseline-rewardcons',
     proc_num=8,  # 进程数
     # env params
-    env_id='FcTdThor-v0',
+    env_id='FcTdThor-v1',
+    env_args={
+        'target_embedding': 'fasttext',
+        'actions': [
+            'MoveAhead', 'RotateLeft', 'RotateRight',
+            'LookUp', 'LookDown', 'Done'],
+        "reward_dict": {
+            "collision": -0.01, "step": -0.01,
+            "success": 5.0, "fail": -0.01},
+        'rotate_angle': 45,
+        'max_steps': 200},
     # algo params
     learner='A2CLearner',
     learner_args=dict(
