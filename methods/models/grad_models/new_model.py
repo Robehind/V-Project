@@ -9,7 +9,18 @@ from ..plan import AClinear
 from ..select_funcs import policy_select
 
 
-class CNNmodel(torch.nn.Module):
+class MyBase(nn.Module):
+    def __init__(self) -> None:
+        super().__init__()
+
+    def get_rcts(self):
+        self.rct_dtypes = self.rec.rct_dtypes
+        self.rct_shapes = self.rec.rct_shapes
+        for k in self.rct_dtypes:
+            setattr(self, k, getattr(self.rec, k))
+
+
+class CNNmodel(MyBase):
     def __init__(
         self,
         obs_spc,
@@ -20,14 +31,20 @@ class CNNmodel(torch.nn.Module):
     ):
         super().__init__()
         self.img_per = MyCNN()
+        cnn_sz = self.img_per.out_fc_sz(*obs_spc['frame'].shape[:2])
+        self.vobs_embed = nn.Linear(cnn_sz, 512)
         self.tobs_embed = nn.Linear(np.prod(obs_spc['wd'].shape), 512)
-        self.i_sz = 512
-        self.rec = MyLSTM()
-        self.plan = AClinear(self.i_sz, act_spc.n)
+        i_sz = 512
+        self.rec = MyLSTM(512+512, i_sz, learnable_x, init)
+        self.plan = AClinear(i_sz, act_spc.n)
         self.drop = nn.Dropout(p=dropout_rate)
+        self.get_rcts()
 
     def forward(self, obs, rct):
-        vobs_embed = F.relu(self.img_per(obs['frame']), True)
+        frames = obs['frame'].permute(0, 3, 1, 2) / 255.
+        cnn_tmp = F.relu(self.img_per(frames))
+        cnn_out = torch.flatten(cnn_tmp, 1)
+        vobs_embed = F.relu(self.vobs_embed(cnn_out), True)
         tobs_embed = F.relu(self.tobs_embed(obs['wd']), True)
         x = torch.cat((vobs_embed, tobs_embed), dim=1)
         x = self.drop(x)
@@ -38,7 +55,7 @@ class CNNmodel(torch.nn.Module):
         return out
 
 
-class SplitDoneModel(torch.nn.Module):
+class SplitDoneModel(MyBase):
     """单独的done网络"""
     def __init__(
         self,
@@ -62,11 +79,7 @@ class SplitDoneModel(torch.nn.Module):
             nn.Linear(1024, 512),
             nn.ReLU(),
             nn.Linear(512, 1))
-
-    def __getattr__(self, name: str):
-        if not hasattr(self, name):
-            return getattr(self.rec, name)
-        return getattr(self, name)
+        self.get_rcts()
 
     def forward(self, obs, rct):
         vobs_embed = F.relu(self.vobs_embed(obs['fc']), True)

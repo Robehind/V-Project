@@ -49,8 +49,8 @@ args.update(
             'MoveAhead', 'RotateLeft', 'RotateRight',
             'LookUp', 'LookDown', 'Done'],
         "reward_dict": {
-            "collision": 0, "step": 0,
-            "success": 5.0, "fail": 0},
+            "collision": -0.01, "step": -0.01,
+            "success": 5.0, "fail": -0.01},
         'rotate_angle': 45,
         'max_steps': 200},
     # algo params
