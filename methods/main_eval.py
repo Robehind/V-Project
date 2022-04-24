@@ -63,6 +63,8 @@ def main():
         model.load_state_dict(torch.load(load_dir))
     model_id = os.path.split(load_dir)[-1].split('_')[:-1]
     model_id = '_'.join(model_id)
+    if model_id == "":
+        model_id = 'NoID'
     model.eval()
     # init agent
     agent = agent_cls(model, Venv, args.gpu_ids, **args.agent_args)

@@ -17,6 +17,7 @@ class RandomAgent(AbsAgent):
     ):
         self.action_sz = env.single_action_space.n
         self.proc_num = env.num_envs
+        self.model = model
         self.rct_shapes = {}
         self.rct_dtypes = {}
 
