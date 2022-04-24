@@ -34,6 +34,8 @@ args.update(
     # env params
     env_id='FcTdThor-v0',
     env_args={
+        'ctl_data_dir': '../vdata/thordata',
+        'wd_path': '../vdata/word_embedding/word_embedding.hdf5',
         'actions': [
             'MoveAhead', 'RotateLeft',
             'RotateRight', 'Done'
