@@ -46,8 +46,8 @@ class MyCNN(nn.Module):
         super().__init__()
         ndf = 64
         self.net = nn.Sequential(
-            # 3 128 128
-            nn.Conv2d(3, ndf, 4, 2, 1, bias=False),
+            # 3 256 256 k , s, p
+            nn.Conv2d(3, ndf, 6, 4, 1, bias=False),
             nn.LeakyReLU(0.2, inplace=True),
             # 64 64 64
             nn.Conv2d(ndf, ndf*2, 4, 2, 1, bias=False),
@@ -74,3 +74,8 @@ class MyCNN(nn.Module):
 
     def out_sz(self, h, w):
         return CNNout_HWC(self.net, h, w)
+
+
+if __name__ == '__main__':
+    a = MyCNN()
+    print(CNNout_sz(a.net, 256, 256))
