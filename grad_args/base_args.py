@@ -13,7 +13,7 @@ args.update(
     # general params
     seed=1014,
     gpu_ids=[0],
-    proc_num=8,
+    proc_num=16,
     # train proc params
     train_steps=5e7,
     print_freq=20000,
@@ -44,8 +44,8 @@ args.update(
         "targets": targets},
     # env params
     env_args={
-        'ctl_data_dir': '/mnt/vdata/thordata',
-        'wd_path': '/mnt/vdata/word_embedding/word_embedding.hdf5',
+        'ctl_data_dir': '/mnt/ssd/vdata/thordata',
+        'wd_path': '/mnt/ssd/vdata/word_embedding/word_embedding.hdf5',
         'target_embedding': 'fasttext',
         'actions': [
             'MoveAhead', 'RotateLeft', 'RotateRight',
@@ -69,7 +69,7 @@ args.update(
     # exp params
     sampler='BaseSampler',
     sampler_args=dict(
-        batch_size=320,
+        batch_size=640,
         exp_length=40,
-        buffer_limit=8),
+        buffer_limit=16),
 )

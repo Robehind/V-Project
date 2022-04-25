@@ -1,11 +1,10 @@
 from .base_args import args
 
 args.update(
-    exps_dir='../grad_exps',
+    exps_dir='../graduate',
     exp_name='a2c-yang',
-    proc_num=8,  # 进程数
     # env params
-    env_id='FSTdThor-v0',
+    env_id='FSTdThor-v1',
     # algo params
     learner='A2CLearner',
     learner_args=dict(
