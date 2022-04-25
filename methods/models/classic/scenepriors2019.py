@@ -14,6 +14,8 @@ class ScenePriors(nn.Module):
         obs_spc,
         act_spc,
         learnable_x,
+        gcn_path,
+        wd_path,
         infer_sz=512,
         vobs_embed_sz=512,
         tobs_embed_sz=512,
@@ -27,6 +29,7 @@ class ScenePriors(nn.Module):
         self.t_embed = nn.Linear(tobs_sz, tobs_embed_sz)
 
         self.yanggcn = YangGCN(
+            gcn_path=gcn_path, wd_path=wd_path,
             output_sz=gcn_embed_sz, input_sz=score_sz, wd_type="fasttext")
         self.lstm = nn.LSTMCell(
             vobs_embed_sz+tobs_embed_sz+gcn_embed_sz,

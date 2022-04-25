@@ -4,15 +4,15 @@ import h5py
 import torch.nn.functional as F
 import math
 from torch.nn.parameter import Parameter
+import os
 
 
 class YangGCN(nn.Module):
     def __init__(
         self,
-        adj_path: str = "../vdata/gcn/adjmat.dat",
-        obj_path: str = "../vdata/gcn/objects.txt",
-        wd_path: str = "../vdata/word_embedding/word_embedding.hdf5",
-        wd_type: str = "fasttext",
+        gcn_path: str,
+        wd_path: str,
+        wd_type: str,
         wd_sz: int = 300,
         input_sz: int = 1000,
         output_sz: int = 512,
@@ -20,7 +20,8 @@ class YangGCN(nn.Module):
         gcn_hid_sz: int = 1024
     ):
         super(YangGCN, self).__init__()
-
+        adj_path = os.path.join(gcn_path, 'adjmat.dat')
+        obj_path = os.path.join(gcn_path, 'objects.txt')
         adj = torch.load(adj_path)
         adj = stdlize_adj(adj)
         self.register_buffer('adj', norm_adj(adj))

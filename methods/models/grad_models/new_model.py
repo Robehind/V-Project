@@ -7,17 +7,7 @@ from .grad_plan import SplitDone
 from .grad_perception import MyCNN
 from ..plan import AClinear
 from ..select_funcs import policy_select
-
-
-class MyBase(nn.Module):
-    def __init__(self) -> None:
-        super().__init__()
-
-    def get_rcts(self):
-        self.rct_dtypes = self.rec.rct_dtypes
-        self.rct_shapes = self.rec.rct_shapes
-        for k in self.rct_dtypes:
-            setattr(self, k, getattr(self.rec, k))
+from .basemodel import MyBase
 
 
 class CNNmodel(MyBase):
