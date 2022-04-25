@@ -45,12 +45,11 @@ class ScenePriors(nn.Module):
         x_fc = obs['fc']
         x_score = obs['score']
         x_tgt = obs['wd']
-        hx, cx = rct['hx'], rct['cx']
         x_fc = F.relu(self.v_embed(x_fc))
         x_tgt = F.relu(self.t_embed(x_tgt))
         x_gcn = F.relu(self.yanggcn(x_score))
         embed = torch.cat((x_fc, x_tgt, x_gcn), dim=1)
-        hx, cx = self.lstm(embed, (hx, cx))
+        hx, cx = self.lstm(embed, (rct['hx'], rct['cx']))
         out = self.plan(hx)
         out['action'] = policy_select(out).detach()
         out['rct'] = dict(hx=hx, cx=cx)
