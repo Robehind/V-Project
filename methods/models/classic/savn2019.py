@@ -6,6 +6,8 @@ from gym.spaces import Dict as Dictspc
 from gym.spaces import Discrete
 import numpy as np
 from .tcn import TemporalConvNet
+from torch.nn.parameter import Parameter
+from ..select_funcs import policy_select
 
 
 class SavnBase(torch.nn.Module):
@@ -14,13 +16,14 @@ class SavnBase(torch.nn.Module):
         self,
         obs_spc: Dictspc,
         act_spc: Discrete,
+        dropout_rate,
+        learnable_x,
         target_sz=300,
-        dropout_rate=0.25,
     ):
         resnet_embedding_sz = 512
         hidden_state_sz = 512
         act_sz = act_spc.n
-        target_sz = np.prod(obs_spc['glove'].shape)
+        target_sz = np.prod(obs_spc['wd'].shape)
         super(SavnBase, self).__init__()
 
         self.conv1 = nn.Conv2d(resnet_embedding_sz, 64, 1)
@@ -39,26 +42,27 @@ class SavnBase(torch.nn.Module):
         self.rct_shapes = {'hx': (hidden_state_sz, ),
                            'cx': (hidden_state_sz, ),
                            'action_probs': (act_sz, )}
+        self.hx = Parameter(torch.zeros(1, self.hidden_sz), learnable_x)
+        self.cx = Parameter(torch.zeros(1, self.hidden_sz), learnable_x)
+        self.action_probs = Parameter(torch.zeros(1, act_sz), False)
         dtype = next(self.lstm.parameters()).dtype
         self.rct_dtypes = {'hx': dtype, 'cx': dtype, 'action_probs': dtype}
         num_outputs = act_sz
         self.critic_linear = nn.Linear(hidden_state_sz, 1)
         self.actor_linear = nn.Linear(hidden_state_sz, num_outputs)
 
-        self.apply(weights_init)
-        relu_gain = nn.init.calculate_gain("relu")
-        self.conv1.weight.data.mul_(relu_gain)
+        # self.apply(weights_init)
+        # relu_gain = nn.init.calculate_gain("relu")
+        # self.conv1.weight.data.mul_(relu_gain)
         self.actor_linear.weight.data = norm_col_init(
-             self.actor_linear.weight.data, 0.01
-        )
+             self.actor_linear.weight.data, 0.01)
         self.actor_linear.bias.data.fill_(0)
         self.critic_linear.weight.data = norm_col_init(
-            self.critic_linear.weight.data, 1.0
-        )
+            self.critic_linear.weight.data, 1.0)
         self.critic_linear.bias.data.fill_(0)
 
-        self.lstm.bias_ih.data.fill_(0)
-        self.lstm.bias_hh.data.fill_(0)
+        # self.lstm.bias_ih.data.fill_(0)
+        # self.lstm.bias_hh.data.fill_(0)
         self.dropout = nn.Dropout(p=dropout_rate)
 
     def embedding(self, state, target, action_probs):
@@ -88,22 +92,23 @@ class SavnBase(torch.nn.Module):
     def forward(self, obs, rct):
 
         state = obs['res18fm']
-        target = obs['glove']
+        target = obs['wd']
         action_probs = rct['action_probs']
         hx, cx = rct['hx'], rct['cx']
 
         x = self.embedding(state, target, action_probs)
         actor_out, critic_out, (hx, cx) = self.a3clstm(x, (hx, cx))
 
-        return dict(
+        out = dict(
             policy=actor_out,
             value=critic_out,
             rct=dict(
-                hx=hx,
-                cx=cx,
+                hx=hx, cx=cx,
                 action_probs=F.softmax(actor_out, dim=1)  # .detach()
             )
         )
+        out['action'] = policy_select(out).detach()
+        return out
 
 
 class SAVNtcn(nn.Module):
