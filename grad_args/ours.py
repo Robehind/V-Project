@@ -1,14 +1,11 @@
 from .base_args import args
 
+args.env_args.update(
+    actions=['MoveAhead', 'RotateLeft', 'RotateRight',
+             'LookUp', 'LookDown'])
 args.update(
-    debug=True,
-    sampler_args=dict(
-        batch_size=20,
-        exp_length=10,
-        buffer_limit=2),
-    proc_num=2,
     exps_dir='../grad_exps',
-    exp_name='Amat_SplitD_TgtAtt',
+    exp_name='TgtAtt-baseGTD',
     # env params
     env_id='FcTdThor-v1',
     # algo params
@@ -19,7 +16,7 @@ args.update(
         vf_nsteps=float("inf"),
         vf_param=0.5,
         ent_param=0.01),
-    model='GradModel',
-    model_args=dict(dropout_rate=0, learnable_x=True, init='randn'),
+    model='TgtAttModel',
+    model_args=dict(dropout_rate=0, learnable_x=False, init='zeros'),
     optim_args=dict(lr=0.0001)
 )

@@ -1,8 +1,11 @@
 from .base_args import args
 
+args.env_args.update(
+    actions=['MoveAhead', 'RotateLeft', 'RotateRight',
+             'LookUp', 'LookDown'])
 args.update(
     exps_dir='../grad_exps',
-    exp_name='a2c-baseline',
+    exp_name='a2c-baseline-0.01GTD',
     # env params
     env_id='FcTdThor-v1',
     # algo params

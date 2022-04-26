@@ -3,8 +3,50 @@ import torch.nn as nn
 import numpy as np
 from .grad_recognize import MyLSTM
 from .grad_plan import SplitDone
+from ..plan import AClinear
+from ..select_funcs import policy_select
 from .basemodel import MyBase
 from torch.nn.parameter import Parameter
+import torch.nn.functional as F
+
+
+class TgtAttModel(MyBase):
+    """"""
+    def __init__(
+        self,
+        obs_spc,
+        act_spc,
+        dropout_rate,
+        learnable_x: bool,
+        init: str
+    ):
+        super().__init__()
+        self.vobs_embed = nn.Linear(np.prod(obs_spc['fc'].shape), 512)
+        # mem&infer
+        self.drop = nn.Dropout(p=dropout_rate)
+        i_size = 512
+        self.rec = MyLSTM(512, i_size, learnable_x, init)
+        # plan
+        self.plan_out = AClinear(i_size, act_spc.n)
+        self.select_func = policy_select
+        # target attention
+        wd_sz = np.prod(obs_spc['wd'].shape)
+        self.tgt_att = nn.Sequential(
+            nn.Linear(wd_sz, 512),
+            nn.ReLU(),
+            nn.Linear(512, i_size),
+            nn.Sigmoid())
+        self.get_rcts()
+
+    def forward(self, obs, rct):
+        vobs_embed = F.relu(self.vobs_embed(obs['fc']), True)
+        h, c = self.rec(vobs_embed, (rct['hx'], rct['cx']))
+        # x = self.drop(x)
+        tgt_att = self.tgt_att(obs['wd'])
+        out = self.plan_out(h*tgt_att)
+        out['action'] = self.select_func(out).detach()
+        out['rct'] = dict(hx=h, cx=c)
+        return out
 
 
 class GradModel(MyBase):
