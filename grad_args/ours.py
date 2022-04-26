@@ -5,7 +5,7 @@ args.env_args.update(
              'LookUp', 'LookDown'])
 args.update(
     exps_dir='../grad_exps',
-    exp_name='TgtAtt-baseGTD',
+    exp_name='TgtAttActMatModel-baseGTD',
     # env params
     env_id='FcTdThor-v1',
     # algo params
@@ -16,7 +16,7 @@ args.update(
         vf_nsteps=float("inf"),
         vf_param=0.5,
         ent_param=0.01),
-    model='TgtAttModel',
+    model='TgtAttActMatModel',
     model_args=dict(dropout_rate=0, learnable_x=False, init='zeros'),
     optim_args=dict(lr=0.0001)
 )
