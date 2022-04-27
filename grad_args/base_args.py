@@ -7,7 +7,7 @@ targets = {
     'bedroom': [
         'Bed', 'AlarmClock', 'Laptop', 'GarbageCan', 'LightSwitch'],
     'bathroom': [
-        'HandTower', 'SoapBottle', 'Sink', 'GarbageCan', 'LightSwitch']}
+        'HandTowel', 'SoapBottle', 'Sink', 'GarbageCan', 'LightSwitch']}
 
 args.update(
     # general params
