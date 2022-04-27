@@ -33,11 +33,11 @@ class CNNmodel(MyBase):
     def forward(self, obs, rct):
         frames = obs['frame'].permute(0, 3, 1, 2) / 255.
         cnn_tmp = F.relu(self.img_per(frames))
-        cnn_out = torch.flatten(cnn_tmp, 1)
+        cnn_feat = self.drop(cnn_tmp)
+        cnn_out = torch.flatten(cnn_feat, 1)
         vobs_embed = F.relu(self.vobs_embed(cnn_out), True)
         tobs_embed = F.relu(self.tobs_embed(obs['wd']), True)
         x = torch.cat((vobs_embed, tobs_embed), dim=1)
-        x = self.drop(x)
         h, c = self.rec(x, (rct['hx'], rct['cx']))
         out = self.plan(h)
         out['rct'] = dict(hx=h, cx=c)

@@ -1,7 +1,6 @@
 from .base_args import args
 
 args.update(
-    exps_dir='../grad_exps',
     exp_name='a2c-zhu-equal',
     # env params
     env_id='FcTdThor-v1',

@@ -3,8 +3,7 @@ from .base_args import args
 args.env_args.pop('target_embedding')
 args.env_args.pop('wd_path')
 args.update(
-    exps_dir='../grad_exps',
-    exp_name='a2c-zhu',
+    exp_name='STD',
     # env params
     env_id='ZhuTdThor-v1',
     # algo params

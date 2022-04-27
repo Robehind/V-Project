@@ -10,6 +10,7 @@ targets = {
         'HandTowel', 'SoapBottle', 'Sink', 'GarbageCan', 'LightSwitch']}
 
 args.update(
+    exps_dir='../new_grad_exps',
     # general params
     seed=1014,
     gpu_ids=[0],

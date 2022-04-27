@@ -1,9 +1,8 @@
 from .base_args import args
 
 args.update(
-    gpu_ids=[1],  # 指定要使用的显卡，为-1时使用cpu。gpu_ids = [0,1,2,3]
-    exps_dir='../grad_exps',  # 保存所有实验文件夹的路径
-    exp_name='savnbase',
+    gpu_ids=[1],
+    exp_name='Savnbase',
     # env params
     env_id='FmTdThor-v0',
     # algo params
@@ -16,6 +15,6 @@ args.update(
         ent_param=0.01,
     ),
     model='SavnBase',
-    model_args=dict(dropout_rate=0, learnable_x=False),
+    model_args=dict(dropout_rate=0.25, learnable_x=False),
     optim_args=dict(lr=0.0001),
 )

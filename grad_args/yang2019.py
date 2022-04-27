@@ -3,8 +3,7 @@ from .base_args import args
 wd_path = args.env_args['wd_path']
 args.update(
     seed=1114,
-    exps_dir='../grad_exps',
-    exp_name='a2c-yang',
+    exp_name='SP',
     # env params
     env_id='FSTdThor-v1',
     # algo params

@@ -4,7 +4,6 @@ args.env_args.update(
     actions=['MoveAhead', 'RotateLeft', 'RotateRight',
              'LookUp', 'LookDown'])
 args.update(
-    exps_dir='../grad_exps',
     exp_name='TgtAttActMatModel-baseGTD',
     # env params
     env_id='FcTdThor-v1',

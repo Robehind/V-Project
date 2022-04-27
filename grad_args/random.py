@@ -1,8 +1,7 @@
 from .base_args import args
 
 args.update(
-    exps_dir='../grad_exps/baseline',
-    exp_name='random',
+    exp_name='Random',
     proc_num=8,  # 进程数
     # env params
     env_id='FcTdThor-v1',
