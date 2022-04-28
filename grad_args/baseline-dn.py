@@ -14,7 +14,7 @@ args.update(
         ent_param=0.01),
     model='BaseDoneModel',
     model_args=dict(
-        dropout_rate=0, learnable_x=False, done_thres=0.05,
+        dropout_rate=0, learnable_x=False, done_thres=0.5,
         done_net_path='./DoneNet/DoneNet_4925.dat', init='zeros'),
     optim_args=dict(lr=0.0001)
 )

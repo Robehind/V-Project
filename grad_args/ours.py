@@ -1,12 +1,9 @@
 from .base_args import args
 
-args.env_args.update(
-    actions=['MoveAhead', 'RotateLeft', 'RotateRight',
-             'LookUp', 'LookDown'])
 args.update(
-    exp_name='TgtAttActMatModel-baseGTD',
+    exp_name='TgtAttActMat',
     # env params
-    env_id='FcTdThor-v1',
+    env_id='GradThor-v1',
     # algo params
     learner='A2CLearner',
     learner_args=dict(
@@ -16,6 +13,6 @@ args.update(
         vf_param=0.5,
         ent_param=0.01),
     model='TgtAttActMatModel',
-    model_args=dict(dropout_rate=0, learnable_x=False, init='zeros'),
+    model_args=dict(learnable_x=False, init='zeros'),
     optim_args=dict(lr=0.0001)
 )

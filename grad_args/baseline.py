@@ -13,6 +13,6 @@ args.update(
         vf_param=0.5,
         ent_param=0.01),
     model='BaseLstmModel',
-    model_args=dict(dropout_rate=0, learnable_x=False),
+    model_args=dict(dropout_rate=0, learnable_x=False, init='zeros'),
     optim_args=dict(lr=0.0001)
 )

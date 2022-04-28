@@ -1,12 +1,11 @@
 import torch
 import torch.nn as nn
-from torch.nn.parameter import Parameter
 import torch.nn.functional as F
-from ..plan.rl_linear import AClinear, Qlinear
+from ..plan.rl_linear import AClinear
 import numpy as np
-from ..select_funcs import epsilon_select, policy_select
-from functools import partial
+from ..select_funcs import policy_select
 from .grad_recognize import MyLSTM
+from gym.spaces import Discrete
 from .donenet import DoneNet
 
 
@@ -21,78 +20,25 @@ class MyBase(nn.Module):
             setattr(self, k, getattr(self.rec, k))
 
 
-class BaseLstmModel(torch.nn.Module):
+class BaseLstmModel(MyBase):
     """观察都是预处理好的特征向量的lstm模型,上一时刻的动作也作为其输入"""
     def __init__(
         self,
         obs_spc,
         act_spc,
-        dropout_rate=0,
-        q_flag=0,
-        learnable_x=False
+        dropout_rate,
+        learnable_x,
+        init
     ):
         super().__init__()
         self.vobs_embed = nn.Linear(np.prod(obs_spc['fc'].shape), 512)
         self.tobs_embed = nn.Linear(np.prod(obs_spc['wd'].shape), 512)
         # mem&infer
         self.drop = nn.Dropout(p=dropout_rate)
-        self.mode = q_flag
-        i_size = 512
-        self.infer = nn.LSTMCell(1024, i_size)
-        self.rct_shapes = {'hx': (i_size, ), 'cx': (i_size, )}
-        dtype = next(self.infer.parameters()).dtype
-        self.rct_dtypes = {'hx': dtype, 'cx': dtype}
-        self.hx = Parameter(torch.zeros(1, i_size), learnable_x)
-        self.cx = Parameter(torch.zeros(1, i_size), learnable_x)
-        # plan
-        if q_flag:
-            self.plan_out = Qlinear(i_size, act_spc.n)
-            self.select_func = partial(epsilon_select, self.eps)
-        else:
-            self.plan_out = AClinear(i_size, act_spc.n)
-            self.select_func = policy_select
-
-    def forward(self, obs, rct):
-        vobs_embed = F.relu(self.vobs_embed(obs['fc']), True)
-        tobs_embed = F.relu(self.tobs_embed(obs['wd']), True)
-        x = torch.cat((vobs_embed, tobs_embed), dim=1)
-        x = self.drop(x)
-        h, c = self.infer(x, (rct['hx'], rct['cx']))
-        out = self.plan_out(h)
-        out['action'] = self.select_func(out).detach()
-        out['rct'] = dict(hx=h, cx=c)
-        return out
-
-
-class BaseDoneModel(MyBase):
-    """Baseline + DoneNet"""
-    def __init__(
-        self,
-        obs_spc,
-        act_spc,
-        done_net_path,
-        done_thres,
-        dropout_rate,
-        learnable_x,
-        init
-    ):
-        super().__init__()
-
-        self.done_thres = done_thres
-        self.done_idx = act_spc.n - 1
-        fc_sz = np.prod(obs_spc['fc'].shape)
-        wd_sz = np.prod(obs_spc['wd'].shape)
-        self.vobs_embed = nn.Linear(fc_sz, 512)
-        self.tobs_embed = nn.Linear(wd_sz, 512)
-        # mem&infer
-        self.drop = nn.Dropout(p=dropout_rate)
         i_size = 512
         self.rec = MyLSTM(1024, i_size, learnable_x, init)
         # plan
-        self.done_net = DoneNet(fc_sz+wd_sz, 512, 0)
-        self.done_net.load_state_dict(torch.load(done_net_path))
-        self.done_net.eval()
-        self.plan = AClinear(i_size, act_spc.n-1)
+        self.plan = AClinear(i_size, act_spc.n)
         self.get_rcts()
 
     def forward(self, obs, rct):
@@ -101,12 +47,44 @@ class BaseDoneModel(MyBase):
         x = torch.cat((vobs_embed, tobs_embed), dim=1)
         x = self.drop(x)
         h, c = self.rec(x, (rct['hx'], rct['cx']))
-        # plan
+        out = self.plan(h)
+        out['action'] = policy_select(out).detach()
+        out['rct'] = dict(hx=h, cx=c)
+        return out
+
+
+class BaseDoneModel(BaseLstmModel):
+    """Baseline + DoneNet"""
+    def __init__(
+        self,
+        obs_spc,
+        act_spc,
+        dropout_rate,
+        learnable_x,
+        init,
+        done_net_path,
+        done_thres,
+    ):
+        _act_spc = Discrete(act_spc.n-1)
+        super().__init__(obs_spc, _act_spc, dropout_rate,
+                         learnable_x, init)
+        self.done_thres = done_thres
+        self.done_idx = act_spc.n - 1
+        fc_sz = np.prod(obs_spc['fc'].shape)
+        wd_sz = np.prod(obs_spc['wd'].shape)
+        self.done_net = DoneNet(fc_sz+wd_sz, 512, 0)
+        self.done_net.load_state_dict(torch.load(done_net_path))
+        self.done_net.eval()
+
+    def forward(self, obs, rct):
+        out = super().forward(obs, rct)
+        action = out['action'].unsqueeze(1)
+        # done plan
         with torch.no_grad():
             done = self.done_net(torch.cat([obs['fc'], obs['wd']], dim=1))
-        out = self.plan(h)
-        action = policy_select(out).detach().unsqueeze(1)
-        action[done >= self.done_thres] = self.done_idx
+        idx = done >= self.done_thres
+        action[idx] = self.done_idx
+        # 加一行policy凑够动作，done是不带梯度的
+        out['policy'] = torch.cat([out['policy'], done], dim=1)
         out['action'] = action.squeeze()
-        out['rct'] = dict(hx=h, cx=c)
         return out
