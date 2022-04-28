@@ -2,6 +2,7 @@ from typing import Dict, List, Optional
 from .target_driven import BaseTargetDrivenTHOR as BTDTHOR
 from gym.spaces import Box
 from gym.spaces import Dict as DictSpc
+from gym.spaces import Discrete
 import numpy as np
 import h5py
 import os
@@ -112,3 +113,33 @@ class ZhuTDenv(BTDTHOR):
     def get_target_obs(self):
         states = list(self.ctrler.visible_states(self.scene, self.target))
         return dict(tgt=self.loader[random.choice(states)][:])
+
+
+class GradEnv(ReadFileTDenv):
+    def __init__(
+        self,
+        actions: List[str],
+        obs_dict: Dict[str, str],
+        target_embedding: str,
+        rotate_angle: int,
+        max_steps: int,
+        reward_dict: Dict,
+        info_scene: str,
+        ctl_data_dir: str,
+        wd_path: str,
+        obs_data_dir: Optional[str] = None
+    ) -> None:
+        super().__init__(
+            actions, obs_dict, target_embedding, rotate_angle,
+            max_steps, reward_dict, info_scene, ctl_data_dir,
+            wd_path, obs_data_dir)
+        self.observation_space['visible'] = Discrete(2)
+        self.observation_space['collision'] = Discrete(2)
+
+    def get_observation(self):
+        obs = super().get_observation()
+        obs['collision'] = 0
+        if 'event' in self.info:
+            obs['collision'] = int(self.info['event'] == 'collision')
+        obs['visible'] = int(self.info['visible'])
+        return obs

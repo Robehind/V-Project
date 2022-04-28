@@ -83,4 +83,13 @@ register(
         target_embedding='glove',
         info_scene='FloorPlan25')
 )
+register(
+    id='GradThor-v1',
+    entry_point='taskenvs.ai2thor_env:GradEnv',
+    order_enforce=False,
+    kwargs=dict(
+        obs_dict={'fc': 'resnet50fc_nn.hdf5'},
+        target_embedding='glove',
+        info_scene='FloorPlan25')
+)
 __all__ = ['TaskEnv', 'Tasker', 'ThorAveSceneTasker']
