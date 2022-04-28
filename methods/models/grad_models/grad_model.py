@@ -135,8 +135,9 @@ class TgtAttActMatModel(MyBase):
             nn.Linear(512, i_size),
             nn.Sigmoid())
         # plan
-        self.done_net = DoneNet(fc_sz+wd_sz, 512)
+        self.done_net = DoneNet(fc_sz+wd_sz, 512, 0)
         self.done_net.load_state_dict(torch.load(done_net_path))
+        self.done_net.eval()
         self.plan = AClinear(i_size, act_spc.n-1)
         self.get_rcts()
         self.rct_dtypes.update(action=torch.int64)
@@ -165,8 +166,8 @@ class TgtAttActMatModel(MyBase):
             done = self.done_net(torch.cat([obs['fc'], obs['wd']], dim=1))
         tgt_att = self.tgt_att(obs['wd'])
         out = self.plan(h*tgt_att)
-        action = policy_select(out).detach()
+        action = policy_select(out).detach().unsqueeze(1)
         action[done >= self.done_thres] = self.done_idx
-        out['action'] = action
+        out['action'] = action.squeeze()
         out['rct'] = dict(hx=h, cx=c, action=out['action'].unsqueeze(1))
         return out

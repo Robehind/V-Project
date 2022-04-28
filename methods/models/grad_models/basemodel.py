@@ -89,8 +89,9 @@ class BaseDoneModel(MyBase):
         i_size = 512
         self.rec = MyLSTM(1024, i_size, learnable_x, init)
         # plan
-        self.DoneNet = DoneNet(fc_sz+wd_sz, 512)
+        self.done_net = DoneNet(fc_sz+wd_sz, 512, 0)
         self.done_net.load_state_dict(torch.load(done_net_path))
+        self.done_net.eval()
         self.plan = AClinear(i_size, act_spc.n-1)
         self.get_rcts()
 
@@ -104,8 +105,8 @@ class BaseDoneModel(MyBase):
         with torch.no_grad():
             done = self.done_net(torch.cat([obs['fc'], obs['wd']], dim=1))
         out = self.plan(h)
-        action = policy_select(out).detach()
+        action = policy_select(out).detach().unsqueeze(1)
         action[done >= self.done_thres] = self.done_idx
-        out['action'] = action
+        out['action'] = action.squeeze()
         out['rct'] = dict(hx=h, cx=c)
         return out
