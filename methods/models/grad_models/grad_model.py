@@ -183,6 +183,7 @@ class OurModel(TgtAttActMatModel):
         self.done_net = DoneNet(fc_sz+wd_sz, 512, 0)
         self.done_net.load_state_dict(torch.load(done_net_path))
         self.done_net.eval()
+        self.big_num = 9999999
 
     def forward(self, obs, rct):
         out = super().forward(obs, rct)
@@ -193,6 +194,8 @@ class OurModel(TgtAttActMatModel):
         idx = done >= self.done_thres
         action[idx] = self.done_idx
         # 加一行policy凑够动作，done是不带梯度的
-        out['policy'] = torch.cat([out['policy'], done], dim=1)
+        inf_pre = -torch.ones_like(done)
+        inf_pre[idx] = -inf_pre[idx]
+        out['policy'] = torch.cat([out['policy'], self.big_num*inf_pre], dim=1)
         out['action'] = action.squeeze()
         return out
