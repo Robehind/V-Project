@@ -1,7 +1,7 @@
 from .base_args import args
 
 args.update(
-    exp_name='Ours',
+    exp_name='ActMatDmodel',
     # env params
     env_id='GradThor-v1',
     # algo params
@@ -12,7 +12,7 @@ args.update(
         vf_nsteps=float("inf"),
         vf_param=0.5,
         ent_param=0.01),
-    model='OurModel',
+    model='ActMatDmodel',
     model_args=dict(
         learnable_x=False, done_thres=0.5,
         done_net_path='./PriorDoneNet/DoneNet_4000.dat', init='zeros'),
