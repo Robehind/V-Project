@@ -8,6 +8,8 @@ from .basemodel import MyBase
 from torch.nn.parameter import Parameter
 import torch.nn.functional as F
 import math
+from gym.spaces import Discrete
+from .donenet import DoneNet
 
 
 class TgtAttModel(MyBase):
@@ -158,4 +160,39 @@ class TgtAttActMatModel(MyBase):
         out = self.plan(h*tgt_att)
         out['action'] = policy_select(out).detach()
         out['rct'] = dict(hx=h, cx=c, action=out['action'].unsqueeze(1))
+        return out
+
+
+class OurModel(TgtAttActMatModel):
+    """TgtAttActMat + DoneNet"""
+    def __init__(
+        self,
+        obs_spc,
+        act_spc,
+        learnable_x,
+        init,
+        done_net_path,
+        done_thres,
+    ):
+        _act_spc = Discrete(act_spc.n-1)
+        super().__init__(obs_spc, _act_spc, learnable_x, init)
+        self.done_thres = done_thres
+        self.done_idx = act_spc.n - 1
+        fc_sz = np.prod(obs_spc['fc'].shape)
+        wd_sz = np.prod(obs_spc['wd'].shape)
+        self.done_net = DoneNet(fc_sz+wd_sz, 512, 0)
+        self.done_net.load_state_dict(torch.load(done_net_path))
+        self.done_net.eval()
+
+    def forward(self, obs, rct):
+        out = super().forward(obs, rct)
+        action = out['action'].unsqueeze(1)
+        # done plan
+        with torch.no_grad():
+            done = self.done_net(torch.cat([obs['fc'], obs['wd']], dim=1))
+        idx = done >= self.done_thres
+        action[idx] = self.done_idx
+        # 加一行policy凑够动作，done是不带梯度的
+        out['policy'] = torch.cat([out['policy'], done], dim=1)
+        out['action'] = action.squeeze()
         return out

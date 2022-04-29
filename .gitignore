@@ -9,3 +9,4 @@ preuse.py
 replicate_args/
 .vscode
 wandb/
+PriorDoneNet/

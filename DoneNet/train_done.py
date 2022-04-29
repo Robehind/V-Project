@@ -14,7 +14,7 @@ from settings import datadir, wd_path, data_name, tscenes, vscenes, targets
 # ######################training##################################
 args = dict(
     epoch=5000,
-    batch_scenes=6,
+    batch_scenes=10,
     scene_samples=64,
     lr=0.0007,
     model='DoneNet',
@@ -61,7 +61,10 @@ for s in t_scenes+v_scenes:
         tgt = k.split("|")[0]
         if tgt in targets:
             for pos in set(vis_json[k]):
-                vis_data[s][pos][targets.index(tgt)] = 1
+                kk = pos.split('|')
+                kk[2] = str(int(kk[2]) % 360)
+                _pos = '|'.join(kk)
+                vis_data[s][_pos][targets.index(tgt)] = 1
 # scene loaders
 loader = {s: h5py.File(os.path.join(datadir, s, data_name))
           for s in t_scenes+v_scenes}
@@ -126,39 +129,39 @@ for ep in tqdm(iterable=range(epoch)):
         state_to_save = model.state_dict()
         torch.save(state_to_save, pp)
 
-        pbar = tqdm(total=val_nums, leave=False,
-                    desc='validating')
-        model.eval()
-        TPR, FPR = 0, 0
-        TPR_c, FPR_c = 0, 0
-        for s in v_scenes:
-            sps, lbs = [], []
-            poses = pose_keys[s]
-            sps.append(torch.stack(
-                [torch.tensor(loader[s][x][:]) for x in poses]))
-            lbs.append(torch.stack(
-                [torch.tensor(vis_data[s][x]) for x in poses]))
-            sps = torch.stack(sps, dim=1).reshape(-1, 2048)
-            lbs = torch.stack(lbs, dim=1).reshape(-1, tgt_num).float()
-            for j in range(tgt_num):
-                data = torch.cat(
-                    [sps, wd_tensor[j].repeat(len(poses), 1)], dim=1)
-                label = lbs[:, j].unsqueeze(1).cuda()
-                with torch.no_grad():
-                    out = model(data.cuda())
-                Tprob = out[label == 1].cpu()
-                TPR += (Tprob >= pred_gate).sum().item()
-                TPR_c += Tprob.shape[0]
-                Fprob = out[label == 0].cpu()
-                FPR += (Fprob >= pred_gate).sum().item()
-                FPR_c += Fprob.shape[0]
-            pbar.update(len(poses))
-        pbar.close()
-        model.train()
-        TPR /= TPR_c
-        FPR /= FPR_c
-        if not debug:
-            wandb.log({'val/TPR': TPR, 'val/FPR': FPR}, commit=False)
+        # pbar = tqdm(total=val_nums, leave=False,
+        #             desc='validating')
+        # model.eval()
+        # TPR, FPR = 0, 0
+        # TPR_c, FPR_c = 0, 0
+        # for s in v_scenes:
+        #     sps, lbs = [], []
+        #     poses = pose_keys[s]
+        #     sps.append(torch.stack(
+        #         [torch.tensor(loader[s][x][:]) for x in poses]))
+        #     lbs.append(torch.stack(
+        #         [torch.tensor(vis_data[s][x]) for x in poses]))
+        #     sps = torch.stack(sps, dim=1).reshape(-1, 2048)
+        #     lbs = torch.stack(lbs, dim=1).reshape(-1, tgt_num).float()
+        #     for j in range(tgt_num):
+        #         data = torch.cat(
+        #             [sps, wd_tensor[j].repeat(len(poses), 1)], dim=1)
+        #         label = lbs[:, j].unsqueeze(1).cuda()
+        #         with torch.no_grad():
+        #             out = model(data.cuda())
+        #         Tprob = out[label == 1].cpu()
+        #         TPR += (Tprob >= pred_gate).sum().item()
+        #         TPR_c += Tprob.shape[0]
+        #         Fprob = out[label == 0].cpu()
+        #         FPR += (Fprob >= pred_gate).sum().item()
+        #         FPR_c += Fprob.shape[0]
+        #     pbar.update(len(poses))
+        # pbar.close()
+        # model.train()
+        # TPR /= TPR_c
+        # FPR /= FPR_c
+        # if not debug:
+        #     wandb.log({'val/TPR': TPR, 'val/FPR': FPR}, commit=False)
     if not debug:
         wandb.log({'train/'+k: v/count for k, v in record.items()})
 

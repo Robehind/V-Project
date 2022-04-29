@@ -8,14 +8,17 @@ import numpy as np
 import json
 from taskenvs.ai2thor_env.utils import get_scene_names
 from done_model import DoneNet
-from settings import datadir, wd_path, data_name, vscenes, targets
+from settings import datadir, wd_path, data_name, targets
 import math
-
-s, t = 0.005, 0.0025
-base = 0.8
+vscenes = {'kitchen': '1,4,20,21,30',
+           'living_room': '1,12,14,17,27',
+           'bedroom': '3,6,14,17,27',
+           'bathroom': '3,4,7,24,27'}
+s, t = 0.5, 0.0001
+base = 0.5
 num = int(math.log(t/s, base))
 mula = s / base
-model_path = './DoneNet/DoneNet_4925.dat'
+model_path = './PriorDoneNet/DoneNet_4000.dat'
 model = DoneNet(2048+300, 512, 0).cuda()
 model.load_state_dict(torch.load(model_path))
 model.eval()
@@ -82,8 +85,6 @@ for p in tqdm(iterable=np.logspace(1, num, num=num, base=base)):
     TPRs.append(TPR)
     FPRs.append(FPR)
 plt.scatter(FPRs, TPRs)
-plt.xlim([0, 1])
-plt.ylim([0, 1])
 for i, p in enumerate(np.logspace(1, num, num=num, base=base)):
     plt.annotate(
         str(mula*p), xy=(FPRs[i], TPRs[i]), xytext=(FPRs[i]+0.01, TPRs[i]))

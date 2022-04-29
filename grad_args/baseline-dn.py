@@ -1,6 +1,7 @@
 from .base_args import args
 
 args.update(
+    eval_epi=1000,
     exp_name='Baseline-DN',
     # env params
     env_id='FcTdThor-v1',
@@ -14,7 +15,7 @@ args.update(
         ent_param=0.01),
     model='BaseDoneModel',
     model_args=dict(
-        dropout_rate=0, learnable_x=False, done_thres=0.5,
-        done_net_path='./DoneNet/DoneNet_4925.dat', init='zeros'),
+        dropout_rate=0, learnable_x=False, done_thres=0.6,
+        done_net_path='./PriorDoneNet/DoneNet_4000.dat', init='zeros'),
     optim_args=dict(lr=0.0001)
 )

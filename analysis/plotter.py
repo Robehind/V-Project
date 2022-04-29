@@ -185,7 +185,7 @@ class Plotter:
             for i, x in enumerate(metrics1):
                 ave_data[i] += ep[x]
         self.draw_table([
-            round(x/len(epis), 4) for x in ave_data])
+            round(x/len(epis), 3) for x in ave_data])
         # 会先全部清除然后重画
         self.ax.cla()
         self.ax2.cla()
@@ -200,7 +200,7 @@ class Plotter:
         else:
             line = self.DrawNormalCurve(epis)
         # 显示数据的鼠标
-        self.cursor = cursor(line, hover=True)
+        self.cursor = cursor(line, hover=False)
         self.ax.set_xlabel(self.X_axis)
         self.ax.set_ylabel(self.Y_axis)
         self.last_X_axis = self.x_choose.value_selected
