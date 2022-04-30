@@ -11,10 +11,11 @@ args.update(
         gae_lbd=1,
         vf_nsteps=float("inf"),
         vf_param=0.5,
-        ent_param=0.01),
+        ent_param=0.01,
+        optim='Adam',
+        optim_args=dict(lr=0.0001,)),
     model='BaseDoneModel',
     model_args=dict(
         dropout_rate=0, learnable_x=False, done_thres=0.5,
         done_net_path='./PriorDoneNet/DoneNet_4000.dat', init='zeros'),
-    optim_args=dict(lr=0.0001)
 )

@@ -63,14 +63,15 @@ args.update(
         gae_lbd=1,
         vf_nsteps=float("inf"),
         vf_param=0.5,
-        ent_param=0.01,),
+        ent_param=0.01,
+        optim='Adam',
+        optim_args=dict(lr=0.0001,)),
     agent='BaseAgent',
-    optim='Adam',
-    optim_args=dict(lr=0.0001,),
     # exp params
     sampler='BaseSampler',
     sampler_args=dict(
         batch_size=640,
         exp_length=40,
         buffer_limit=16),
+    recorder='TDNavRecorder'
 )
