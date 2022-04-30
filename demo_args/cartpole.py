@@ -27,16 +27,11 @@ args.update(
         vf_nsteps=float("inf"),
         vf_param=0.5,
         ent_param=0,
+        optim='Adam',
+        optim_args=dict(lr=0.001,),
     ),
     model='CartModel',
     agent='BaseAgent',
-    agent_args=dict(
-        select_func='policy_select'
-    ),
-    optim='Adam',
-    optim_args=dict(
-        lr=0.001,
-    ),
 
     # exp params
     sampler='BaseSampler',

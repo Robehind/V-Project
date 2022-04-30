@@ -66,6 +66,8 @@ args.update(
     sampler_args=dict(
         batch_size=160,
         exp_length=20,
-        buffer_limit=8
-    ),
+        buffer_limit=8),
+
+    # recorder
+    recorder='TDNavRecorder'
 )

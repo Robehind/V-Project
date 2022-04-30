@@ -1,11 +1,10 @@
-import torch.optim as optim
 from tensorboardX import SummaryWriter
 from tqdm import tqdm
 from methods.utils.record_utils import MeanCalcer
 from methods.models.basic.model4gym import CartModel
 from methods.learners import A2CLearner
 from methods.agents import BaseAgent
-from methods.samplers import BaseSampler
+from methods.samplers import BaseSampler, BaseRecorder
 from collections import deque
 import gym
 import numpy as np
@@ -49,15 +48,16 @@ if __name__ == '__main__':
     batch_sz = exp_length*proc_num
 
     model = CartModel(envs.single_observation_space, envs.single_action_space)
-    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
-
-    learner = A2CLearner(model, optimizer, gamma, gae_lbd=1,
+    optim = 'Adam'
+    op_args = dict(lr=learning_rate)
+    rcder = BaseRecorder(envs)
+    agt = BaseAgent(model, envs, None)
+    learner = A2CLearner(model, optim, op_args, gamma, gae_lbd=1,
                          vf_nsteps=float("inf"), vf_param=1,
                          vf_loss='smooth_l1_loss',
                          grad_norm_max=float("inf"),
                          batch_loss_mean=True)
-    agt = BaseAgent(model, envs, None)
-    spler = BaseSampler(envs, agt, batch_size=exp_length*proc_num,
+    spler = BaseSampler(envs, agt, rcder, batch_size=exp_length*proc_num,
                         exp_length=exp_length, buffer_limit=proc_num)
 
     pbar = tqdm(total=max_train_steps)
