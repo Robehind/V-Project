@@ -14,7 +14,8 @@ class PPOLearner(A2CLearner):
     def __init__(
         self,
         model: nn.Module,
-        optimizer: torch.optim,
+        optim: str,
+        optim_args: Dict,
         pi_eps: float,
         repeat: int,
         recalc_adv: bool,
@@ -27,7 +28,8 @@ class PPOLearner(A2CLearner):
     ) -> None:
         super().__init__(
             model,
-            optimizer,
+            optim,
+            optim_args,
             gamma,
             gae_lbd,
             vf_nsteps,
@@ -88,9 +90,9 @@ class PPOLearner(A2CLearner):
             ent_loss = (- log_pi * pi).sum(1).mean()
             obj_func = \
                 pi_loss + self.vf_param * v_loss - self.ent_param * ent_loss
-            self.optimizer.zero_grad()
+            self.optim.zero_grad()
             obj_func.backward()
-            self.optimizer.step()
+            self.optim.step()
             loss_track['obj_func'] += obj_func.item()
             loss_track['pi_loss'] += pi_loss.item()
             loss_track['v_loss'] += v_loss.item()

@@ -15,7 +15,8 @@ class A2CLearner(RCTLearner):
     def __init__(
         self,
         model: nn.Module,
-        optimizer: torch.optim,
+        optim: torch.optim,
+        optim_args: Dict,
         gamma: float,
         gae_lbd: float,
         vf_nsteps: int,
@@ -27,8 +28,7 @@ class A2CLearner(RCTLearner):
     ) -> None:
         self.model = model
         self.dev = next(model.parameters()).device
-
-        self.optimizer = optimizer
+        self.optim = self.init_optim(optim, optim_args, self.dev)
         self.vf_nsteps = vf_nsteps
         self.gae_lbd = gae_lbd
         self.vf_param = vf_param
@@ -78,10 +78,10 @@ class A2CLearner(RCTLearner):
         # backward and optimize
         obj_func = \
             pi_loss + self.vf_param * v_loss - self.ent_param * ent_loss
-        self.optimizer.zero_grad()
+        self.optim.zero_grad()
         obj_func.backward()
         clip_grad_norm_(self.model.parameters(), self.grad_norm_max)
-        self.optimizer.step()
+        self.optim.step()
         return dict(
             obj_func=obj_func.item(),
             pi_loss=pi_loss.item(),

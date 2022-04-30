@@ -15,7 +15,8 @@ class QLearner(RCTLearner):
     def __init__(
         self,
         model: nn.Module,
-        optimizer: torch.optim,
+        optim: str,
+        optim_args: Dict,
         gamma: float,
         nsteps: int,
         target_model: bool = False,
@@ -29,7 +30,7 @@ class QLearner(RCTLearner):
         self.sync_freq = sync_freq
         self.dev = next(model.parameters()).device
 
-        self.optimizer = optimizer
+        self.optim = self.init_optim(optim, optim_args, self.dev)
         self.nsteps = nsteps
         self.gamma = np.float32(gamma)
         self.est_type = est_type
@@ -83,9 +84,9 @@ class QLearner(RCTLearner):
         q_loss = F.smooth_l1_loss(
             q_a, toTensor(returns, self.dev))
         obj_func = q_loss
-        self.optimizer.zero_grad()
+        self.optim.zero_grad()
         obj_func.backward()
-        self.optimizer.step()
+        self.optim.step()
 
         # sync target model
         if self.target_model is not None:

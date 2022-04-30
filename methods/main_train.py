@@ -11,7 +11,6 @@ import samplers
 import learners
 import taskenvs
 from utils.init_func import get_args, make_exp_dir, set_seed
-from utils.net_utils import optim2cuda
 os.environ["OMP_NUM_THREADS"] = '1'
 
 
@@ -27,12 +26,10 @@ def main():
         args.gpu_ids = None
     else:
         # TODO 在a2c中暂时只调用一块gpu用于训练，多线程训练可能需要调用pytorch本身的api
-        gpu_id = args.gpu_ids[0]
         assert torch.cuda.is_available()
 
     # 加载具体类
     model_cls = getattr(models, args.model)
-    optim_cls = getattr(torch.optim, args.optim)  # 直接取torch的
     agent_cls = getattr(agents, args.agent)
     sampler_cls = getattr(samplers, args.sampler)
     learner_cls = getattr(learners, args.learner)
@@ -67,23 +64,16 @@ def main():
         model.load_state_dict(torch.load(args.load_model_dir))
     model.train()
 
-    # init optimizer and load params
-    optim = optim_cls(model.parameters(), **args.optim_args)
-    if args.load_optim_dir != '':
-        print("load optim %s" % args.load_optim_dir)
-        optim.load_state_dict(torch.load(args.load_optim_dir))
-        # TODO Data Parallel？
-        if args.gpu_ids is not None:
-            optim2cuda(optim, gpu_id)
-
     # init agent
     agent = agent_cls(model, Venv, args.gpu_ids, **args.agent_args)
+
     # init sampler
     sampler = sampler_cls(Venv, agent, **args.sampler_args)
     # init learner
-    learner = learner_cls(model, optim, **args.learner_args)
+    learner = learner_cls(model, **args.learner_args)
     # make exp directory
-    make_exp_dir(args)
+    if not args.debug:
+        make_exp_dir(args)
     # training
     print('Set detect anomaly:', args.debug)
     with torch.autograd.set_detect_anomaly(args.debug):

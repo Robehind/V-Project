@@ -1,6 +1,7 @@
 import torch
 import os
 import numpy as np
+import time
 
 
 def norm_col_init(weights, std=1.0):
@@ -29,27 +30,23 @@ def weights_init(m):
         m.bias.data.fill_(0)
 
 
-def save_model(model, path_to_save, title):
+def save_model(model, path_to_save, title, time_suffix=True):
     """保存模型到path_to_save。保存的名称是title_{local_time}.dat,时间会自动算出来
        也可以用于保存优化算法的状态
     """
     if not os.path.exists(path_to_save):
         os.makedirs(path_to_save)
     state_to_save = model.state_dict()
-    import time
-    start_time = time.time()
-    time_str = time.strftime(
-        "%H%M%S", time.localtime(start_time)
-    )
-    save_path = os.path.join(
-        path_to_save,
-        f"{title}_{time_str}.dat"
-    )
+    if time_suffix:
+        start_time = time.time()
+        time_str = time.strftime("%H%M%S", time.localtime(start_time))
+        title += f'_{time_str}'
+    save_path = os.path.join(path_to_save, f"{title}.dat")
     torch.save(state_to_save, save_path)
 
 
-def optim2cuda(optim, gpu_id):
+def optim2dev(optim, dev):
     for state in optim.state.values():
         for k, v in state.items():
             if torch.is_tensor(v):
-                state[k] = v.cuda(gpu_id)
+                state[k] = v.to(dev)
