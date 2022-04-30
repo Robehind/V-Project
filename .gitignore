@@ -8,3 +8,6 @@ dev_args/
 preuse.py
 replicate_args/
 .vscode
+/PriorDoneNet
+/DoneNet
+/wandb
