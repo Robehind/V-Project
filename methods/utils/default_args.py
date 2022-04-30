@@ -70,15 +70,13 @@ args_dict = dict(
         nsteps=1000,
         vf_param=0.5,
         ent_param=0,
+        optim='Adam',
+        optim_args=dict(lr=0.0001,),
     ),
     model='DemoModel',
     model_args={},
     agent='BaseAgent',
     agent_args={},
-    optim='Adam',
-    optim_args=dict(
-        lr=0.0001,
-    ),
 
     # exp params
     sampler='BaseSampler',
