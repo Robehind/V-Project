@@ -83,6 +83,7 @@ args_dict = dict(
     sampler_args=dict(
         batch_size=20,
     ),
+    recorder='BaseRecorder',
     tasker='Tasker',
     tasker_args={},
 )

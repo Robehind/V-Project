@@ -32,6 +32,7 @@ def main():
     model_cls = getattr(models, args.model)
     agent_cls = getattr(agents, args.agent)
     sampler_cls = getattr(samplers, args.sampler)
+    recorder_cls = getattr(samplers, args.recorder)
     learner_cls = getattr(learners, args.learner)
     tasker_cls = getattr(taskenvs, args.tasker)
     train_func = getattr(trainers, args.trainer)
@@ -48,7 +49,9 @@ def main():
     if not isinstance(obs_spc, dict_spc):
         Venv = gym.wrappers.TransformObservation(Venv, lambda x: {'OBS': x})
     Venv.seed(args.seed)
-    Venv.call('add_extra_info', args.train_extra_info)
+
+    # init recorder
+    recorder = recorder_cls(Venv, args.train_extra_info)
 
     # TODO params management
     # init tasker 此时通过调用Venv的call方法修改各个进程的task space
@@ -68,7 +71,7 @@ def main():
     agent = agent_cls(model, Venv, args.gpu_ids, **args.agent_args)
 
     # init sampler
-    sampler = sampler_cls(Venv, agent, **args.sampler_args)
+    sampler = sampler_cls(Venv, agent, recorder, **args.sampler_args)
     # init learner
     learner = learner_cls(model, **args.learner_args)
     # make exp directory
