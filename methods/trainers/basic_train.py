@@ -24,9 +24,9 @@ def basic_train(
     obj_traker = MeanCalcer()
     projn = args.exps_dir.split('/')[-1]
     name = args.exp_dir.split('/')[-1]
-    if not args.debug:
-        wandb.init(project=projn, entity='robehind', name=name,
-                   config=args, dir=args.exp_dir)
+    wmode = 'disabled' if args.debug else None
+    wandb.init(project=projn, entity='robehind', name=name,
+               config=args, dir=args.exp_dir, mode=wmode)
     pbar = tqdm(total=args.train_steps, unit='step')
 
     # if args.val_epi != 0:
@@ -65,8 +65,7 @@ def basic_train(
                 out_data = {}
                 for k in val_data:
                     out_data['val/'+k] = val_data[k]
-                if not args.debug:
-                    wandb.log(out_data, step=steps)
+                wandb.log(out_data, step=steps)
 
         # logging
         obj_traker.add(obj_salars)
@@ -81,8 +80,7 @@ def basic_train(
             out_data = {}
             for k in t_data:
                 out_data['train/'+k] = t_data[k]
-            if not args.debug:
-                wandb.log(out_data, step=steps)
+            wandb.log(out_data, step=steps)
 
     sampler.close()
     pbar.close()

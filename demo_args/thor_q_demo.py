@@ -27,6 +27,8 @@ args.update(
     # env params
     env_id='FcTdThor-v0',
     env_args={
+        'ctl_data_dir': '../vdata/thordata',
+        'wd_path': '../vdata/word_embedding/word_embedding.hdf5',
         'actions': [
             'MoveAhead', 'RotateLeft',
             'RotateRight', 'Done'
@@ -38,7 +40,6 @@ args.update(
             "fail": -0.01,
         },
         'rotate_angle': 45,
-        'look_angle': 0,
         'max_steps': 100,
     },
 
@@ -48,21 +49,21 @@ args.update(
         gamma=0.99,
         nsteps=float("inf"),
         target_model=False,
-        sync_freq=30
+        sync_freq=30,
+        optim='Adam',
+        optim_args=dict(lr=0.0001,),
     ),
     model='FcLstmModel',
     model_args={'q_flag': 1},
     agent='BaseAgent',
-    optim='Adam',
-    optim_args=dict(
-        lr=0.0001,
-    ),
 
     # exp params
     sampler='BaseSampler',
     sampler_args=dict(
         batch_size=160,
         exp_length=20,
-        buffer_limit=8
-    ),
+        buffer_limit=8),
+
+    # recorder
+    recorder='TDNavRecorder'
 )

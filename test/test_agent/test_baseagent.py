@@ -12,6 +12,7 @@ class TESTmodel(nn.Module):
         self.outs = _acts
         self.rct_shapes = {'lstm': (6, )}
         self.rct_dtypes = {'lstm': torch.float32}
+        self.lstm = torch.zeros((6,))
         self.rcts = torch.randn(5, 4, 6)
 
     def forward(self, obs, rct):

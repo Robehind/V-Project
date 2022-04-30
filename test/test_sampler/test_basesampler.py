@@ -1,4 +1,4 @@
-from methods.samplers import BaseSampler
+from methods.samplers import BaseSampler, BaseRecorder
 from gym.spaces import Dict, Box
 import numpy as np
 import torch
@@ -77,9 +77,11 @@ class TESTagent:
 def test_sampler(rct_on):
     Venv = TESTenv()
     agent = TESTagent(rct_on)
+    recorder = BaseRecorder(Venv)
     sampler = BaseSampler(
         Venv,
         agent,
+        recorder,
         batch_size=20,
         exp_length=4,
         buffer_limit=4
@@ -93,7 +95,6 @@ def test_sampler(rct_on):
         assert cross_cmp(out['rct']['lstm'], agent.rcts)
     records = sampler.pop_records()
     assert records['epis'] == 3
-    assert records['SR'] == 2/3
     assert np.allclose(records['return'], 9.79/3)
     assert records['ep_length'] == 5
     sampler.close()

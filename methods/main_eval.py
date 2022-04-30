@@ -75,12 +75,6 @@ def main():
     Venv.close()
     with open(os.path.join(args.exp_dir, 'trajs.json'), "w") as fp:
         json.dump(eval_trajs, fp, indent=4)
-    # output
-    # if args.record_traj:
-    #     trajs = eval_data.pop('trajs')
-    #     with open(os.path.join(args.exp_dir, 'trajs.json'), "w") as fp:
-    #         json.dump(trajs, fp, indent=4)
-    # add_eval_data(writer, eval_data)
 
 
 if __name__ == "__main__":

@@ -58,19 +58,19 @@ args.update(
         vf_nsteps=float("inf"),
         vf_param=0.5,
         ent_param=0,
+        optim='Adam',
+        optim_args=dict(lr=0.0001,),
     ),
     model='FcLstmModel',
     agent='BaseAgent',
-    optim='Adam',
-    optim_args=dict(
-        lr=0.0001,
-    ),
 
     # exp params
     sampler='BaseSampler',
     sampler_args=dict(
         batch_size=64,
         exp_length=8,
-        buffer_limit=8
-    ),
+        buffer_limit=8),
+
+    # recorder
+    recorder='TDNavRecorder'
 )
