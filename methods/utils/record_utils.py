@@ -1,5 +1,4 @@
 from typing import Union, List, Dict
-from tensorboardX import SummaryWriter
 
 
 class MeanCalcer(object):
@@ -95,56 +94,3 @@ class LabelMeanCalcer(object):
                 out[k] = self.trackers[k].pop()
         self.trackers = {}
         return out
-
-
-def add_eval_data_seq(
-    writer: SummaryWriter,
-    data: Dict,
-    step: int,
-    prefix: str = ''
-):
-    for k, v in data.items():
-        if k == 'trajs':  # TODO trajs pop out to store in json
-            continue
-        if isinstance(v, dict):
-            if prefix != '':
-                raise Exception("data dict too deep(Can't Dict[Dict[Dict]])")
-            else:
-                add_eval_data_seq(writer, v, step, k)
-        elif isinstance(v, list):
-            tmp = k if prefix == '' else prefix+'/'+k
-            if type(v[0]) not in [list, tuple]:
-                v = list(enumerate(v, 1))
-            for x, y in v:
-                writer.add_scalars(tmp, {str(step): y}, x)
-        else:
-            if prefix == '':
-                writer.add_scalar(k, v, step)
-            else:
-                writer.add_scalars(prefix, {k: v}, step)
-
-
-def add_eval_data(writer: SummaryWriter, data: Dict, prefix: str = ''):
-    """add data organized in Dict to TensoboardX"""
-    result_str = ''
-    for k, v in data.items():
-        if k == 'trajs':  # TODO trajs pop out to store in json
-            continue
-        if isinstance(v, dict):
-            if prefix != '':
-                raise Exception("data dict too deep(Can't Dict[Dict[Dict]])")
-            else:
-                add_eval_data(writer, v, k)
-        elif isinstance(v, list):
-            if type(v[0]) not in [list, tuple]:
-                v = list(enumerate(v, 1))
-            for x, y in v:
-                if prefix == '':
-                    writer.add_scalar(k, y, x)
-                else:
-                    writer.add_scalars(prefix, {k: y}, x)
-        else:
-            result_str += f'{k}: {v}<br>'
-    tag = 'result' if prefix == '' else prefix
-    if result_str != '':
-        writer.add_text(tag, result_str[:-4])
