@@ -27,7 +27,7 @@ class TgtAttModel(MyBase):
             nn.Linear(fc_sz, 512), nn.ReLU())
         i_size = 512
         # LSTM
-        self.rec = MyLSTM(fc_sz, i_size, learnable_x, init)
+        self.rec = MyLSTM(i_size, i_size, learnable_x, init)
         # target attention
         self.tgt_att = nn.Sequential(
             nn.Linear(wd_sz+i_size, 512),
