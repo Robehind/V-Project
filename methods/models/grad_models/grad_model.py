@@ -93,15 +93,10 @@ class ActVecModel(MyBase):
         idx = rct['action']
         hx, cx = rct['hx'], rct['cx']
         # 前进、左转、右转将使It发生某种转换，碰撞了就不变换
-        # new_hx = []
         for i in range(hx.shape[0]):
-            # tmp = hx[i]
             act_n = idx[i].item()
             if act_n <= 2 and not obs['collision'][i]:
-                # tmp = hx[i]*getattr(self, 'Mat'+str(idx[i].item()))
                 hx[i] *= getattr(self, 'Mat'+str(act_n))
-            # new_hx.append(tmp)
-        # n_hx = torch.stack(new_hx, dim=0)
         h, c = self.rec(
             torch.cat([vobs_embed, tobs_embed], dim=1), (hx, cx))
         # plan
