@@ -1,7 +1,7 @@
 from .base_args import args
 
 args.update(
-    exp_name='ActVecDmodel-explr',
+    exp_name='TgtAttActVecDmodel-explr',
     # env params
     env_id='GradThor-v1',
     # algo params
@@ -14,7 +14,7 @@ args.update(
         ent_param=0.01,
         optim='RMSprop',
         optim_args=dict(lr=0.0007,)),
-    model='ActVecDmodel',
+    model='TAttAVecDmodel',
     model_args=dict(
         learnable_x=False, done_thres=0.5,
         done_net_path='./PriorDoneNet/DoneNet_4000.dat', init='zeros'),
