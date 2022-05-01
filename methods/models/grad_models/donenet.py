@@ -42,6 +42,7 @@ def done_wrapper(name, clss):
             fc_sz = np.prod(obs_spc['fc'].shape)
             wd_sz = np.prod(obs_spc['wd'].shape)
             self.done_net = DoneNet(fc_sz+wd_sz, 512, 0)
+            self.done_net.requires_grad_(False)
             self.done_net.load_state_dict(torch.load(done_net_path))
             self.done_net.eval()
             self.big_num = 9999999
