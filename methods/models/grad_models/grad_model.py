@@ -119,10 +119,6 @@ class TgtAttActVecModel(MyBase):
         # embedding
         fc_sz = np.prod(obs_spc['fc'].shape)
         wd_sz = np.prod(obs_spc['wd'].shape)
-        self.vobs_embed = nn.Sequential(
-            nn.Linear(fc_sz, 1024), nn.ReLU())
-        self.tobs_embed = nn.Sequential(
-            nn.Linear(wd_sz, 512), nn.ReLU())
         # 动作变换向量
         i_size = 512
         self.Mat0 = Parameter(torch.FloatTensor(i_size), True)
@@ -134,10 +130,10 @@ class TgtAttActVecModel(MyBase):
         self.Mat1.data.uniform_(-stdv, stdv)
         self.Mat2.data.uniform_(-stdv, stdv)
         # LSTM
-        self.rec = MyLSTM(1024, i_size, learnable_x, init)
+        self.rec = MyLSTM(fc_sz, i_size, learnable_x, init)
         # target attention
         self.tgt_att = nn.Sequential(
-            nn.Linear(1024, 512),
+            nn.Linear(wd_sz+i_size, 512),
             nn.ReLU(),
             nn.Linear(512, i_size),
             nn.Sigmoid())
@@ -150,8 +146,6 @@ class TgtAttActVecModel(MyBase):
             3*torch.ones((1,), dtype=torch.int64), False)
 
     def forward(self, obs, rct):
-        vobs_embed = self.vobs_embed(obs['fc'])
-        tobs_embed = self.tobs_embed(obs['wd'])
         idx = rct['action']
         hx, cx = rct['hx'], rct['cx']
         # 前进、左转、右转将使It发生某种转换，碰撞了就不变换
@@ -162,9 +156,9 @@ class TgtAttActVecModel(MyBase):
             if act_n <= 2 and not obs['collision'][i]:
                 tmp = hx[i]*getattr(self, 'Mat'+str(act_n))
             n_hx.append(tmp)
-        h, c = self.rec(vobs_embed, (torch.stack(n_hx, dim=0), cx))
+        h, c = self.rec(obs['fc'], (torch.stack(n_hx, dim=0), cx))
         # plan
-        tgt_att = self.tgt_att(torch.cat([c, tobs_embed], dim=1))
+        tgt_att = self.tgt_att(torch.cat([c, obs['wd']], dim=1))
         atted_h = h*tgt_att
         out = self.plan(atted_h)
         out['action'] = policy_select(out).detach()
