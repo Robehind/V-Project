@@ -2,7 +2,7 @@ from collections import defaultdict
 from typing import Dict
 # 'scene' 'target' 'success' 'model' 'return'
 # 'actions' 'poses' 'events' 'agent_done' 'min_acts
-metrics1 = ['SR', 'SPL', 'ER', 'CR', 'VC', 'steps', 'Done']
+metrics1 = ['SR', 'SPL', 'ER', 'CR', 'VC', 'steps', 'Done', 'min_acts']
 metrics2 = ['Et', 'Ct', 'ERt', 'CRt']
 
 
