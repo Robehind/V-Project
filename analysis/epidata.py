@@ -9,7 +9,7 @@ class EpisodeData:
     # 计算episode的相关metrics
     def __init__(
         self,
-        json_path
+        json_paths
     ) -> None:
         self.scene = set()
         self.target = set()
@@ -17,10 +17,11 @@ class EpisodeData:
         self.step = set()
         self.min_acts = set()
         self.episodes = []
-        with open(json_path, 'r') as f:
-            ori_epis = json.load(f)
-        for epi in ori_epis:
-            self.add_episode(epi)
+        for json_path in json_paths:
+            with open(json_path, 'r') as f:
+                ori_epis = json.load(f)
+            for epi in ori_epis:
+                self.add_episode(epi)
 
     def add_episode(
         self,

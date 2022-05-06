@@ -1,3 +1,4 @@
+from typing import List
 from matplotlib import pyplot as plt
 from methods.utils.record_utils import LabelMeanCalcer, MeanCalcer
 from epidata import EpisodeData
@@ -41,7 +42,7 @@ def _pose2picXY(cam_params, height, width):
 class Plotter:
     def __init__(
         self,
-        trajs_path: str
+        trajs_path: List
     ) -> None:
         # 载入轨迹数据
         self.data = EpisodeData(trajs_path)
@@ -155,9 +156,11 @@ class Plotter:
 
     def draw_table(self, avedata=[0]*len(metrics1)):
         half = len(metrics1) // 2
+        _mets = metrics1.copy()
+        _mets[_mets.index("min_acts")] = 'ATD'
         table_value = [
-            metrics1[:half], avedata[:half],
-            metrics1[half:], avedata[half:]]
+            _mets[:half], avedata[:half],
+            _mets[half:], avedata[half:]]
         if len(metrics1) % 2 != 0:
             table_value[0].append("")
             table_value[1].append("")
@@ -268,5 +271,10 @@ class Plotter:
 
 if __name__ == '__main__':
     args = init_parser()
-    trajs_path = os.path.join(args.path, 'trajs.json')
-    plter = Plotter(trajs_path)
+    paths = []
+    for p, _, f in os.walk(args.path):
+        for fn in f:
+            if fn == 'trajs.json':
+                paths.append(os.path.join(p, fn))
+    print(f"Find {len(paths)} trajs.json")
+    plter = Plotter(paths)
