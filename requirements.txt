@@ -1,7 +1,7 @@
 ai2thor==4.2.0
 einops==0.3.2
 gym==0.23.1
-h5py==2.10.0
+h5py==3.6.0
 matplotlib==3.5.1
 mplcursors==0.5.1
 numpy==1.21.0
@@ -9,6 +9,6 @@ opencv_python==4.4.0.42
 pytest==6.2.4
 seaborn==0.11.2
 tensorboardX==2.5
-torch==1.10.0
-torchvision==0.11.1
+torch==1.11.0
+torchvision==0.12.0
 tqdm==4.48.2
