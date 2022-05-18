@@ -16,6 +16,8 @@ Temporarily named **v-project**.
 
 - Add `V-PROJECT` to your `PYTHONPATH`. Here are some [instructions](https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#macos-and-linux) about how to do it in a conda environment.
 
+- Sign up for [W&B](https://wandb.ai/) and [set it up](https://docs.wandb.ai/quickstart).
+
 - Generate the discrete [AI2THOR](https://github.com/allenai/ai2thor) data:
 
   ```bash
@@ -50,7 +52,7 @@ Once we have a config script, we can use the entry scripts to load these configu
 python methods/main_train.py demo_args/thor_a2c_demo.py
 ```
 
-The training script will create an experiment folder in the path specified by `exps_dir`, `exp_name` and the datetime containing logs, checkpoints, config arguments,  etc. The `tblog` folder in `exps_dir` holds all the logs and can be analysis by `tensorboard`. If you set `val_mode=True` and specify some corresponding arguments, a validating process will also be carried out during training.
+The training script will create an experiment folder in the path specified by `exps_dir`, `exp_name` and the datetime containing logs, checkpoints, config arguments,  etc. The `wandb` folder in `exps_dir` holds all the logs by W&B. If you set `val_epi>0` and specify some corresponding arguments, a validating process will also be carried out during training.
 
 - **Evaluating**:
 
