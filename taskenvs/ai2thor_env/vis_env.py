@@ -70,10 +70,15 @@ class OriThorForVis:
             x_list = np.linspace(pos1.x, pos2.x, ACT_FRAME)
             z_list = np.linspace(pos1.z, pos2.z, ACT_FRAME)
             # 确保转小角
-            tempr = pos2.rotation - 360 if pos2.rotation != 0 else 360
-            if abs(tempr - pos1.rotation) < abs(pos2.rotation - pos1.rotation):
-                pos2.rotation, tempr = tempr, pos2.rotation
-            r_list = np.linspace(pos1.rotation, pos2.rotation, ACT_FRAME)
+            pos2r = (pos2.rotation + 360) % 360
+            pos1r = (pos1.rotation + 360) % 360
+            diff = abs(pos2r-pos1r)
+            if diff > 360 - diff:
+                if pos1r > pos2r:
+                    pos1r -= 360
+                else:
+                    pos2r -= 360
+            r_list = np.linspace(pos1r, pos2r, ACT_FRAME)
             h_list = np.linspace(pos1.horizon, pos2.horizon, ACT_FRAME)
             for i in range(ACT_FRAME):
                 evt = self.ctrler.step(
@@ -86,7 +91,6 @@ class OriThorForVis:
                 if birdView:
                     pic = evt.third_party_camera_frames[0]
                     self.top_frames.append(pic[:, :, [2, 1, 0]])
-            pos2.rotation = tempr
 
     def get_frames(
         self,
