@@ -64,7 +64,7 @@ def main():
     model_id = os.path.split(load_dir)[-1].split('_')[:-1]
     model_id = '_'.join(model_id)
     if model_id == "":
-        model_id = 'NoID'
+        model_id = 'NoID_0'
     model.eval()
     # init agent
     agent = agent_cls(model, Venv, args.gpu_ids, **args.agent_args)
