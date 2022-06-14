@@ -1,16 +1,15 @@
-from __future__ import division
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from methods.utils.net_utils import norm_col_init, weights_init
 import scipy.sparse as sp
 import numpy as np
-
-from datasets.glove import Glove
-from .model_io import ModelOutput
-from utils import flag_parser
-args = flag_parser.parse_arguments()
+import os
+import h5py
+from torch.nn.parameter import Parameter
+from gym.spaces import Dict as Dictspc
+from gym.spaces import Discrete
+from ..select_funcs import policy_select
 
 
 def normalize_adj(adj):
@@ -25,15 +24,23 @@ def normalize_adj(adj):
 class MJOBASE(torch.nn.Module):
     def __init__(
         self,
-        args
+        obs_spc: Dictspc,
+        act_spc: Discrete,
+        dropout_rate,
+        learnable_x,
+        gcn_path="../vdata/gcn/",
+        wd_type="glove",
+        wd_path='../word_embedding/word_embedding.hdf5',
     ):
-        action_space = args.action_space
-        hidden_state_sz = args.hidden_state_sz
+        action_space = act_spc.n
+        hidden_state_sz = 512
         super(MJOBASE, self).__init__()
 
         # get and normalize adjacency matrix.
         # np.seterr(divide='ignore')
-        A_raw = torch.load("./data/gcn/adjmat.dat")
+        adj_path = os.path.join(gcn_path, 'adjmat.dat')
+        obj_path = os.path.join(gcn_path, 'objects.txt')
+        A_raw = torch.load(adj_path)
         A = normalize_adj(A_raw).tocsr().toarray()
         self.A = torch.nn.Parameter(torch.Tensor(A))
 
@@ -46,6 +53,14 @@ class MJOBASE(torch.nn.Module):
 
         self.hidden_state_sz = hidden_state_sz
         self.lstm = nn.LSTMCell(lstm_input_sz, hidden_state_sz)
+        self.rct_shapes = {'hx': (hidden_state_sz, ),
+                           'cx': (hidden_state_sz, ),
+                           'action_probs': (action_space, )}
+        self.hx = Parameter(torch.zeros(1, self.hidden_state_sz), learnable_x)
+        self.cx = Parameter(torch.zeros(1, self.hidden_state_sz), learnable_x)
+        self.action_probs = Parameter(torch.zeros(1, action_space), False)
+        dtype = next(self.lstm.parameters()).dtype
+        self.rct_dtypes = {'hx': dtype, 'cx': dtype, 'action_probs': dtype}
         num_outputs = action_space
         self.critic_linear = nn.Linear(hidden_state_sz, 1)
         self.actor_linear = nn.Linear(hidden_state_sz, num_outputs)
@@ -65,19 +80,19 @@ class MJOBASE(torch.nn.Module):
 
         self.action_predict_linear = nn.Linear(2 * lstm_input_sz, action_space)
 
-        self.dropout = nn.Dropout(p=args.dropout_rate)
+        self.dropout = nn.Dropout(p=dropout_rate)
 
         # glove embeddings for all the objs.
-        with open("./data/gcn/objects.txt") as f:
+        with open(obj_path) as f:
             objects = f.readlines()
             self.objects = [o.strip() for o in objects]
-        all_glove = torch.zeros(n, 300)
-        glove = Glove(args.glove_file)
+        all_wds = torch.zeros(n, 300)
+        wdf = h5py.File(wd_path, "r")
+        wd = wdf[wd_type]
         for i in range(n):
-            all_glove[i, :] = \
-                torch.Tensor(glove.glove_embeddings[self.objects[i]][:])
+            all_wds[i, :] = torch.from_numpy(wd[self.objects[i]][:])
 
-        self.all_glove = nn.Parameter(all_glove)
+        self.all_glove = nn.Parameter(all_wds)
         self.all_glove.requires_grad = False
 
         self.W0 = nn.Linear(401, 401, bias=False)
@@ -105,10 +120,8 @@ class MJOBASE(torch.nn.Module):
             y2 = v[3::4]
             objstate[ind][1] = np.sum(x1+x2)/len(x1+x2) / 300
             objstate[ind][2] = np.sum(y1+y2)/len(y1+y2) / 300
-            objstate[ind][3] = abs(max(x2) - min(x1)) * abs(max(y2) - min(y1)) / 300 / 300
-        if args.gpu_ids != -1:
-            objstate = objstate.cuda()
-            class_onehot = class_onehot.cuda()
+            objstate[ind][3] = \
+                abs(max(x2) - min(x1)) * abs(max(y2) - min(y1)) / 300 / 300
         objstate = torch.cat((objstate, glove_sim), dim=1)
         return objstate, class_onehot
 
@@ -128,8 +141,7 @@ class MJOBASE(torch.nn.Module):
         x = self.final_mapping(x)
         return x
 
-    def embedding(self, state, target, action_probs, objbb):
-        state = state[None, :, :, :]
+    def embedding(self, target, action_probs, objbb):
         objstate, class_onehot = self.list_from_raw_obj(objbb, target)
         action_embedding_input = action_probs
         action_embedding = F.relu(self.embed_action(action_embedding_input))
@@ -148,16 +160,20 @@ class MJOBASE(torch.nn.Module):
         return actor_out, critic_out, (hx, cx)
 
     def forward(self, obs, rct):
-        state = obs['']
         objbb = obs['bbox']
         (hx, cx) = rct['hx'], rct['cx']
 
         target = obs['wd']
         action_probs = rct['action_probs']
-        x, image_embedding = self.embedding(state, target, action_probs, objbb)
+        x, _ = self.embedding(target, action_probs, objbb)
         actor_out, critic_out, (hx, cx) = self.a3clstm(x, (hx, cx))
-
-        return dict(
+        out = dict(
+            policy=actor_out,
             value=critic_out,
-            logit=actor_out,
-            hidden=(hx, cx),)
+            rct=dict(
+                hx=hx, cx=cx,
+                action_probs=F.softmax(actor_out, dim=1)  # .detach()
+            )
+        )
+        out['action'] = policy_select(out).detach()
+        return out
