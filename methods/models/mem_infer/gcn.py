@@ -4,14 +4,15 @@ import h5py
 import torch.nn.functional as F
 import math
 from torch.nn.parameter import Parameter
+import os
 
 
 class YangGCN(nn.Module):
     def __init__(
         self,
-        adj_path: str = "../vdata/gcn/adjmat.dat",
-        obj_path: str = "../vdata/gcn/objects.txt",
-        wd_path: str = "../vdata/gcn/glove_map300d.hdf5",
+        gcn_path: str,
+        wd_path: str,
+        wd_type: str,
         wd_sz: int = 300,
         input_sz: int = 1000,
         output_sz: int = 512,
@@ -19,7 +20,8 @@ class YangGCN(nn.Module):
         gcn_hid_sz: int = 1024
     ):
         super(YangGCN, self).__init__()
-
+        adj_path = os.path.join(gcn_path, 'adjmat.dat')
+        obj_path = os.path.join(gcn_path, 'objects.txt')
         adj = torch.load(adj_path)
         adj = stdlize_adj(adj)
         self.register_buffer('adj', norm_adj(adj))
@@ -31,10 +33,11 @@ class YangGCN(nn.Module):
 
         # 构造词嵌入特征矩阵
         self.register_buffer('wd_clues', torch.zeros(self.obj_num, 300))
-        wd = h5py.File(wd_path, "r",)
+        wdf = h5py.File(wd_path, "r")
+        wd = wdf[wd_type]
         for i in range(self.obj_num):
             self.wd_clues[i, :] = torch.from_numpy(wd[objects[i]][:])
-        wd.close()
+        wdf.close()
 
         map2sz = gcn_in_sz // 2
         self.wd_linear = nn.Linear(wd_sz, map2sz)
