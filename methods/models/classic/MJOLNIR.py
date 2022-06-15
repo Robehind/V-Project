@@ -10,6 +10,8 @@ from torch.nn.parameter import Parameter
 from gym.spaces import Dict as Dictspc
 from gym.spaces import Discrete
 from ..select_funcs import policy_select
+from torch.nn.functional import one_hot
+from ..mem_infer.gcn import GraphConv
 
 
 def normalize_adj(adj):
@@ -30,7 +32,7 @@ class MJOBASE(torch.nn.Module):
         learnable_x,
         gcn_path="../vdata/gcn/",
         wd_type="glove",
-        wd_path='../word_embedding/word_embedding.hdf5',
+        wd_path='../vdata/word_embedding/word_embedding.hdf5',
     ):
         action_space = act_spc.n
         hidden_state_sz = 512
@@ -91,62 +93,48 @@ class MJOBASE(torch.nn.Module):
         wd = wdf[wd_type]
         for i in range(n):
             all_wds[i, :] = torch.from_numpy(wd[self.objects[i]][:])
+        wdf.close()
+
+        self.cos = torch.nn.CosineSimilarity(dim=-1)
 
         self.all_glove = nn.Parameter(all_wds)
         self.all_glove.requires_grad = False
 
-        self.W0 = nn.Linear(401, 401, bias=False)
-        self.W1 = nn.Linear(401, 401, bias=False)
-        self.W2 = nn.Linear(401, 5, bias=False)
-        self.W3 = nn.Linear(10, 1, bias=False)
+        sz = self.n + 300
+        self.W0 = GraphConv(sz, sz, False)  # nn.Linear(sz, sz, bias=False)
+        self.W1 = GraphConv(sz, sz, False)  # nn.Linear(sz, sz, bias=False)
+        self.W2 = GraphConv(sz, 5, False)  # nn.Linear(sz, 5, bias=False)
+        self.W3 = GraphConv(10, 1, False)  # nn.Linear(10, 1, bias=False)
 
         self.final_mapping = nn.Linear(n, 512)
 
-    def list_from_raw_obj(self, objbb, target):
-        objstate = torch.zeros(self.n, 4)
-        cos = torch.nn.CosineSimilarity(dim=1)
-        glove_sim = cos(self.all_glove.detach(), target[None, :])[:, None]
-        class_onehot = torch.zeros(1, self.n)
-        for k, v in objbb.items():
-            if k in self.objects:
-                ind = self.objects.index(k)
-            else:
-                continue
-            class_onehot[0][ind] = 1
-            objstate[ind][0] = 1
-            x1 = v[0::4]
-            y1 = v[1::4]
-            x2 = v[2::4]
-            y2 = v[3::4]
-            objstate[ind][1] = np.sum(x1+x2)/len(x1+x2) / 300
-            objstate[ind][2] = np.sum(y1+y2)/len(y1+y2) / 300
-            objstate[ind][3] = \
-                abs(max(x2) - min(x1)) * abs(max(y2) - min(y1)) / 300 / 300
-        objstate = torch.cat((objstate, glove_sim), dim=1)
-        return objstate, class_onehot
-
     def new_gcn_embed(self, objstate, class_onehot):
+        batch_sz = class_onehot.shape[0]
         class_word_embed = torch.cat(
-            (class_onehot.repeat(self.n, 1), self.all_glove.detach()), dim=1)
-        x = torch.mm(self.A, class_word_embed)
-        x = F.relu(self.W0(x))
-        x = torch.mm(self.A, x)
-        x = F.relu(self.W1(x))
-        x = torch.mm(self.A, x)
-        x = F.relu(self.W2(x))
-        x = torch.cat((x, objstate), dim=1)
-        x = torch.mm(self.A, x)
-        x = F.relu(self.W3(x))
-        x = x.view(1, self.n)
+            (class_onehot.repeat(self.n, 1, 1).permute(1, 0, 2),
+             self.all_glove.repeat(batch_sz, 1, 1)), dim=2)
+        # class_word_embed = torch.cat(
+        #     (class_onehot.repeat(self.n, 1), self.all_glove.detach()), dim=1)
+        x = F.relu(self.W0(class_word_embed, self.A))
+        x = F.relu(self.W1(x, self.A))
+        x = F.relu(self.W2(x, self.A))
+        x = torch.cat((x, objstate), dim=2)
+        x = F.relu(self.W3(x, self.A)).squeeze(-1)
+        # x = x.view(1, self.n)
         x = self.final_mapping(x)
         return x
 
-    def embedding(self, target, action_probs, objbb):
-        objstate, class_onehot = self.list_from_raw_obj(objbb, target)
+    def embedding(self, target, action_probs, objstate):
+        target_wd = self.all_glove[target.view(-1)]
+        glove_sim = self.cos(
+            self.all_glove.unsqueeze(0), target_wd.unsqueeze(1))
+        class_onehot = one_hot(target.view(-1), num_classes=self.n)
+        objstate = torch.cat((objstate, glove_sim.unsqueeze(-1)), dim=2)
+        # objstate, class_onehot = self.list_from_raw_obj(objbb, target)
         action_embedding_input = action_probs
         action_embedding = F.relu(self.embed_action(action_embedding_input))
         x = objstate
-        x = x.view(1, -1)
+        x = x.flatten(start_dim=1)  # x.view(1, -1)
         x = torch.cat((x, action_embedding), dim=1)
         out = torch.cat((x, self.new_gcn_embed(objstate, class_onehot)), dim=1)
 
@@ -163,7 +151,7 @@ class MJOBASE(torch.nn.Module):
         objbb = obs['bbox']
         (hx, cx) = rct['hx'], rct['cx']
 
-        target = obs['wd']
+        target = obs['idx']
         action_probs = rct['action_probs']
         x, _ = self.embedding(target, action_probs, objbb)
         actor_out, critic_out, (hx, cx) = self.a3clstm(x, (hx, cx))
