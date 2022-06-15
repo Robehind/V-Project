@@ -18,7 +18,7 @@ args.update(
         optim_args=dict(lr=0.0001,)),
     model='ScenePriors',
     model_args=dict(
-        gcn_path='/mnt/ssd/vdata/gcn',
+        gcn_path='../vdata/gcn',
         wd_path=wd_path,
         learnable_x=False),
 )

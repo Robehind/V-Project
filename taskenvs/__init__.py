@@ -97,6 +97,7 @@ register(
 register(
     id='MjoThor-v0',
     entry_point='taskenvs.ai2thor_env:MjoTDenv',
-    order_enforce=False
+    order_enforce=False,
+    kwargs=dict(obj_path='../vdata/gcn/objects.txt')
 )
 __all__ = ['TaskEnv', 'Tasker', 'ThorAveSceneTasker']

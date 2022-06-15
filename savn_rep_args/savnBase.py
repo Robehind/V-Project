@@ -1,7 +1,6 @@
 from .base_args import args
 
 args.update(
-    gpu_ids=[1],
     exp_name='Savnbase',
     # env params
     env_id='FmTdThor-v0',

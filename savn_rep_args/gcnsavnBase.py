@@ -2,7 +2,6 @@ from .base_args import args
 
 wd_path = args.env_args['wd_path']
 args.update(
-    gpu_ids=[0],
     exp_name='GcnSavnBase',
     # env params
     env_id='FmScoreTdThor-v0',
@@ -18,7 +17,7 @@ args.update(
         optim_args=dict(lr=0.0001,)),
     model='GcnSavnBase',
     model_args=dict(
-        gcn_path='/mnt/ssd/vdata/gcn',
+        gcn_path='../vdata/gcn',
         wd_path=wd_path,
-        dropout_rate=0.25, learnable_x=False),
+        dropout_rate=0, learnable_x=False),
 )

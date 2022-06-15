@@ -10,7 +10,7 @@ targets = {
         'HandTowel', 'SoapBottle', 'Sink', 'GarbageCan', 'LightSwitch']}
 
 args.update(
-    exps_dir='../new_grad_exps',
+    exps_dir='../EXPS',
     # general params
     seed=1014,
     gpu_ids=[0],
@@ -45,8 +45,8 @@ args.update(
         "targets": targets},
     # env params
     env_args={
-        'ctl_data_dir': '/mnt/ssd/vdata/thordata',
-        'wd_path': '/mnt/ssd/vdata/word_embedding/word_embedding.hdf5',
+        'ctl_data_dir': '../vdata/thordata',
+        'wd_path': '../vdata/word_embedding/word_embedding.hdf5',
         'target_embedding': 'fasttext',
         'actions': [
             'MoveAhead', 'RotateLeft', 'RotateRight',
