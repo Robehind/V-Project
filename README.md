@@ -74,7 +74,7 @@ python methods/eval_all.py demo_args/thor_a2c_demo.py
 
 V-project provides a analysis script based on [Matplotlib](https://matplotlib.org/) and [Seaborn](http://seaborn.pydata.org/) to draw curves about some metrics and heatmap (only support AI2THOR env for now)
 ```bash
-python data_analysis/plotter.py --path=<PATH-TO-THE-EVAL-DIR>
+python analysis/plotter.py --path=<PATH-TO-THE-EVAL-DIR>
 ```
 Use regular expression to filter result data and click what you want to click :)
 - **Visualization**:
@@ -82,7 +82,7 @@ Use regular expression to filter result data and click what you want to click :)
 Run:
 
 ```bash
-python data_analysis/visualize.py --path=<PATH-TO-THE-EVAL-DIR> --smooth --birdView
+python analysis/visualize.py --path=<PATH-TO-THE-EVAL-DIR> --smooth --birdView
 ```
 A simple command line interface allows you to filter and choose a particular trajectory to visualize. 
 Only support AI2THOR for now. Use `--smooth` option to display the smooth movement of a single action (takes more time to render extra frames). Use `--birdView` option to display a top-down view of the scene.

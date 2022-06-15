@@ -105,4 +105,3 @@ class Zhu2017RepAct(nn.Module):
         out = self.d(nh)
         out['action'] = policy_select(out).detach()
         out['rct'] = dict(hx=nh, cx=nc, action=out['action'].unsqueeze(1))
-        return out

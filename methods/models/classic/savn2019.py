@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from methods.utils.net_utils import weights_init, norm_col_init
+from methods.utils.net_utils import norm_col_init
 from gym.spaces import Dict as Dictspc
 from gym.spaces import Discrete
 import numpy as np
