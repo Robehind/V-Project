@@ -10,7 +10,6 @@ from torch.nn.parameter import Parameter
 from gym.spaces import Dict as Dictspc
 from gym.spaces import Discrete
 from ..select_funcs import policy_select
-from torch.nn.functional import one_hot
 from ..mem_infer.gcn import GraphConv
 
 
@@ -128,8 +127,9 @@ class MJOBASE(torch.nn.Module):
         target_wd = self.all_glove[target.view(-1)]
         glove_sim = self.cos(
             self.all_glove.unsqueeze(0), target_wd.unsqueeze(1))
-        class_onehot = one_hot(target.view(-1), num_classes=self.n)
+        # class_onehot = one_hot(target.view(-1), num_classes=self.n)
         objstate = torch.cat((objstate, glove_sim.unsqueeze(-1)), dim=2)
+        class_onehot = objstate[:, :, 0].squeeze()
         # objstate, class_onehot = self.list_from_raw_obj(objbb, target)
         action_embedding_input = action_probs
         action_embedding = F.relu(self.embed_action(action_embedding_input))
