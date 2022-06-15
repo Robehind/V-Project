@@ -83,4 +83,9 @@ register(
         target_embedding='glove',
         info_scene='FloorPlan25')
 )
+register(
+    id='MjoThor-v0',
+    entry_point='taskenvs.ai2thor_env:MjoTDenv',
+    order_enforce=False
+)
 __all__ = ['TaskEnv', 'Tasker', 'ThorAveSceneTasker']
