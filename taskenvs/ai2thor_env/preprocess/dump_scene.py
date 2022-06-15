@@ -7,8 +7,8 @@ import json
 from tqdm import tqdm
 from ai2thor.platform import CloudRendering
 from collections import defaultdict
-scenes = {'kitchen': '1-30', 'living_room': '1-30',
-          'bedroom': '1-30', 'bathroom': '1-30'}
+scenes = {'kitchen': None, 'living_room': None,
+          'bedroom': None, 'bathroom': None}
 v_fn = 'visible_map.json'
 t_fn = 'trans.json'
 move_list = [0, 1, 1, 1, 0, -1, -1, -1]
@@ -125,6 +125,8 @@ def dump(scene, ctrler, path, obs_key, rotate_angle):
                             msub.create_dataset(k, data=v)
                     elif x == 'detection':
                         msub = h5_writer[x].create_group(key)
+                        if evt.instance_detections2D is None:
+                            continue
                         for k, v in evt.instance_detections2D.items():
                             msub.create_dataset(k, data=v)
                     elif x == 'depth':
@@ -139,7 +141,7 @@ def dump(scene, ctrler, path, obs_key, rotate_angle):
                     trans_data[key] = int(
                         evt.metadata['lastActionSuccess'] and pos_mark[(x, z)])
                     out_deg += trans_data[key]
-        if out_deg == 0:
+        if out_deg == 0 and not args.obs_only:
             error_json[pstr].append("No way out")
             error_flag = True
     pbar.close()
@@ -171,7 +173,8 @@ if __name__ == '__main__':
             obs_key.append(x)
     ctrler = Controller(
         width=args.width, height=args.height, renderDepthImage=args.depth,
-        renderInstanceSegmentation=(args.seg_mask or args.seg_frame),
+        renderInstanceSegmentation=(
+            args.seg_mask or args.seg_frame or args.detection),
         rotateStepDegrees=45, gridSize=args.grid_size,
         visibilityDistance=args.vis_dist, platform=CloudRendering)
     error_scenes = []
