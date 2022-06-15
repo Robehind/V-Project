@@ -129,7 +129,7 @@ class MJOBASE(torch.nn.Module):
             self.all_glove.unsqueeze(0), target_wd.unsqueeze(1))
         # class_onehot = one_hot(target.view(-1), num_classes=self.n)
         objstate = torch.cat((objstate, glove_sim.unsqueeze(-1)), dim=2)
-        class_onehot = objstate[:, :, 0].squeeze()
+        class_onehot = objstate[:, :, 0].squeeze(-1)
         # objstate, class_onehot = self.list_from_raw_obj(objbb, target)
         action_embedding_input = action_probs
         action_embedding = F.relu(self.embed_action(action_embedding_input))

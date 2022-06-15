@@ -3,11 +3,13 @@ targets = {
     'kitchen': [
         'Fridge', 'Microwave', 'Sink', 'GarbageCan', 'LightSwitch'],
     'living_room': [
-        'Sofa', 'Television', 'Laptop', 'GarbageCan', 'LightSwitch'],
+        'Television', 'Laptop', 'GarbageCan', 'LightSwitch'],  # Sofa
     'bedroom': [
         'Bed', 'AlarmClock', 'Laptop', 'GarbageCan', 'LightSwitch'],
     'bathroom': [
-        'HandTowel', 'SoapBottle', 'Sink', 'GarbageCan', 'LightSwitch']}
+        'SoapBottle', 'Sink', 'GarbageCan', 'LightSwitch']}  # HandTowel
+
+# mjo 不支持handtowel和sofa
 
 args.update(
     exps_dir='../EXPS',
