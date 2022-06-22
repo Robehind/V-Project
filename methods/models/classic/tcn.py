@@ -56,8 +56,8 @@ class TemporalBlock(nn.Module):
         self.ll_conv1.weight.data.normal_(0, 0.01)
         self.ll_conv2.weight.data.normal_(0, 0.01)
 
-    def forward(self, x, block_num, params=None):
-        out = self.net(x, block_num, params)
+    def forward(self, x, block_num):
+        out = self.net(x, block_num)
         return out
 
 

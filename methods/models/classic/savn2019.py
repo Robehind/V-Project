@@ -7,6 +7,7 @@ from gym.spaces import Discrete
 import numpy as np
 from torch.nn.parameter import Parameter
 from ..select_funcs import policy_select
+from .tcn import TemporalConvNet
 
 
 class SavnBase(torch.nn.Module):
@@ -108,3 +109,26 @@ class SavnBase(torch.nn.Module):
         )
         out['action'] = policy_select(out).detach()
         return out
+
+
+class SAVN(SavnBase):
+    def __init__(
+        self,
+        obs_spc: Dictspc,
+        act_spc: Discrete,
+        meta_steps: int,
+        dropout_rate,
+        learnable_x,
+        target_sz=300
+    ):
+        super().__init__(
+            obs_spc, act_spc, dropout_rate,
+            learnable_x, target_sz)
+        self.meta_steps = meta_steps
+        self.ll_tc = TemporalConvNet(
+            self.meta_steps, [10, 1], kernel_size=2, dropout=0.0)
+
+    def forward(self, H):
+        H_input = H.unsqueeze(0)
+        x = self.ll_tc(H_input).squeeze(0)
+        return x.pow(2).sum(1).pow(0.5)
